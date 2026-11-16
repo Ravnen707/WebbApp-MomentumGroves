@@ -21,7 +21,9 @@ The project currently consists of an **ASP.NET Core MVC (.NET 10)** web applicat
 
 ---
 
-## Project vision and roadmap
+<a id="project-vision-and-roadmap"></a>
+<details>
+<summary><strong>Project vision and roadmap</strong></summary>
 
 MomentumGroves is intended to become more than a personal logbook. Its design direction is a recognizable, consistent theme across the website and mobile app, with the mobile interface gradually adopting the web application's visual language in a compact, touch-friendly layout. The longer-term goal is an experience that can also serve other users, but account management, multi-user support, and public deployment are **future possibilities**, not current features.
 
@@ -45,9 +47,13 @@ These are **planned milestones**, not claims that step tracking, GPS tracking, a
 
 Achievement design should encourage sustainable habits. Avoid rewarding extreme calorie restriction, excessive exercise, or rapid weight loss. Rest days, illness, and the existing Sick Day/Cheat Day behaviors need deliberate handling; in-game rewards should never determine whether a person is 'allowed' to eat.
 
+</details>
+
 ---
 
-## Overview and features
+<a id="overview-and-features"></a>
+<details>
+<summary><strong>Overview and features</strong></summary>
 
 <details>
 <summary><strong>Web application features</strong></summary>
@@ -83,9 +89,13 @@ The Android app is a temporary staging area, not a long-term backup of successfu
 
 </details>
 
+</details>
+
 ---
 
-## Technology and project structure
+<a id="technology-and-project-structure"></a>
+<details>
+<summary><strong>Technology and project structure</strong></summary>
 
 | Area | Technology |
 |---|---|
@@ -121,9 +131,13 @@ The mobile application has its own GitHub repository and its own DTO definitions
 
 ---
 
+</details>
+
 ---
 
-## Fork and set up the web application
+<a id="fork-and-set-up-the-web-application"></a>
+<details>
+<summary><strong>Fork and set up the web application</strong></summary>
 
 These instructions are for a **new fork/clone**, not for overwriting an existing installation. The repository intentionally does **not** distribute personal databases or real API credentials.
 
@@ -211,9 +225,13 @@ dotnet run --project .\MomentumGroves.csproj
 
 ---
 
+</details>
+
 ---
 
-## SQLite databases and initial data
+<a id="sqlite-databases-and-initial-data"></a>
+<details>
+<summary><strong>SQLite databases and initial data</strong></summary>
 
 The repository deliberately contains **no personal `.db` files**. Each fork creates these three SQLite databases in `src/Data/` using the Rider steps above:
 
@@ -240,10 +258,13 @@ Use the filenames above for a standard installation. The filenames are reference
 
 `.gitignore` excludes `.db` files, SQLite journal/sidecar files, and backups. Keep local databases private, and back up your own data before making schema changes. Never commit your personal database files.
 
+</details>
 
 ---
 
-## Configuration and external services
+<a id="configuration-and-external-services"></a>
+<details>
+<summary><strong>Configuration and external services</strong></summary>
 
 The repository includes `.env.example`. Create a local `.env` at the **project root** and set the following values as needed:
 
@@ -265,9 +286,13 @@ Do not expose a development sync endpoint or private keys on the public internet
 
 ---
 
+</details>
+
 ---
 
-## Android companion and synchronization
+<a id="android-companion-and-synchronization"></a>
+<details>
+<summary><strong>Android companion and synchronization</strong></summary>
 
 **The Android app is a separate project/repository.** Fork/clone and build it separately if you need mobile food entry and barcode scanning. Its own README should document the Android SDK, MAUI workload, signing, and installation; this web README does not claim to build the mobile app.
 
@@ -294,9 +319,13 @@ The import logic is designed to skip existing food names and acknowledge process
 
 ---
 
+</details>
+
 ---
 
-## Testing
+<a id="testing"></a>
+<details>
+<summary><strong>Testing</strong></summary>
 
 The repository contains a separate **NUnit** test project:
 
@@ -316,9 +345,13 @@ Or open the **Unit Tests** window in Rider and run the test project. The test pr
 
 ---
 
+</details>
+
 ---
 
-## Publishing safely
+<a id="publishing-safely"></a>
+<details>
+<summary><strong>Publishing safely</strong></summary>
 
 This section replaces the separate `PUBLISHING.md` document.
 
@@ -342,9 +375,13 @@ This section replaces the separate `PUBLISHING.md` document.
 
 ---
 
+</details>
+
 ---
 
-## Security and privacy
+<a id="security-and-privacy"></a>
+<details>
+<summary><strong>Security and privacy</strong></summary>
 
 <details>
 <summary><strong>Network and repository safety</strong></summary>
@@ -358,9 +395,13 @@ This section replaces the separate `PUBLISHING.md` document.
 
 </details>
 
+</details>
+
 ---
 
-## Troubleshooting
+<a id="troubleshooting"></a>
+<details>
+<summary><strong>Troubleshooting</strong></summary>
 
 <details>
 <summary><strong>Web app or database fails to start</strong></summary>
@@ -388,3 +429,5 @@ This section replaces the separate `PUBLISHING.md` document.
 ---
 
 *Repository-owner notes, if present, are separate from this public setup guide.*
+
+</details>
