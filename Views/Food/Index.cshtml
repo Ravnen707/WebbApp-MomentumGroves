@@ -1,0 +1,100 @@
+@{ ViewData["Title"] = "Food Diary"; }
+<div class="heading">
+  <div><p class="eyebrow">FOOD DIARY</p>
+    <h1>Log your food intake</h1>
+    <p class="muted">Targets are automatically updated from the Health & Nutrition Calculator.</p></div>
+  <div><label for="food-date">Selected date</label><input type="date" id="food-date"/></div>
+</div>
+<div class="day-flags section-gap" aria-label="Day markers">
+  <section class="panel sick-day-panel">
+    <label class="sick-day-label" for="sick-day">
+      <input type="checkbox" id="sick-day" class="check"/>
+      <span><strong>Mark as a sick day</strong><small id="sick-day-status" aria-live="polite">On sick days, intake is logged but target assessment is paused.</small></span>
+    </label>
+  </section>
+  <section class="panel cheat-day-panel">
+    <label class="cheat-day-label" for="cheat-day">
+      <input type="checkbox" id="cheat-day" class="check"/>
+      <span><strong>Mark as a cheat day</strong><small id="cheat-day-status" aria-live="polite">Cheat days are highlighted in orange and count towards the 7-day balance.</small></span>
+    </label>
+  </section>
+</div>
+<div class="stats stats-four">
+  <section class="panel">
+    <div class="statlabel">CALORIES</div>
+    <div class="stat" id="food-kcal">–</div>
+    <div class="track">
+      <div id="food-kcal-bar"></div>
+    </div>
+    <button type="button" class="nutrition-zones-link" data-open-nutrition-zones>View nutrition ranges →</button>
+  </section>
+  <section class="panel">
+    <div class="statlabel">PROTEIN</div>
+    <div class="stat" id="food-protein">–</div>
+    <div class="track">
+      <div id="food-protein-bar"></div>
+    </div>
+    <button type="button" class="nutrition-zones-link" data-open-nutrition-zones>View nutrition ranges →</button>
+  </section>
+  <section class="panel">
+    <div class="statlabel">CARBOHYDRATES</div>
+    <div class="stat" id="food-carbs">–</div>
+    <div class="track">
+      <div id="food-carbs-bar"></div>
+    </div>
+    <button type="button" class="nutrition-zones-link" data-open-nutrition-zones>View nutrition ranges →</button>
+  </section>
+  <section class="panel">
+    <div class="statlabel">FAT</div>
+    <div class="stat" id="food-fat">–</div>
+    <div class="track">
+      <div id="food-fat-bar"></div>
+    </div>
+    <button type="button" class="nutrition-zones-link" data-open-nutrition-zones>View nutrition ranges →</button>
+  </section>
+  <section class="panel">
+    <div class="statlabel">FIBRE</div>
+    <div class="stat" id="food-fiber">–</div>
+    <div class="track">
+      <div id="food-fiber-bar"></div>
+    </div>
+    <button type="button" class="nutrition-zones-link" data-open-nutrition-zones>View nutrition ranges →</button>
+  </section>
+</div>
+<section class="panel section-gap">
+  <div class="section-head">
+    <div><h2>Drinks</h2>
+      <p class="muted tiny">Search for a drink, check its nutritional values and save when ready.</p></div>
+    <button type="button" class="btn" id="open-drink">+ Add drink</button>
+  </div>
+</section>
+<section class="panel section-gap">
+  <div class="section-head">
+    <div><h2>Foods and meals</h2>
+      <p class="muted tiny">Search for foods or create a meal manually.</p></div>
+    <button type="button" class="btn" id="open-food">+ Add food or meal</button>
+  </div>
+</section>
+<section class="panel section-gap">
+  <div class="section-head"><h2>Entries</h2><span id="meal-count" class="muted tiny"></span></div>
+  <div id="food-list"></div>
+</section>
+<section class="panel section-gap">
+  <div class="section-head">
+    <div><h2>Copy a previous meal</h2>
+      <p class="muted tiny">Choose a previous meal, adjust the details and save a new entry.</p></div>
+    <button type="button" class="btn secondary" id="open-copy-meal">Copy meal →</button>
+  </div>
+</section>
+@await Html.PartialAsync("~/Views/Shared/Modals/_DrinkModal.cshtml")
+
+
+@await Html.PartialAsync("~/Views/Shared/Modals/_NutritionZonesModal.cshtml")
+@await Html.PartialAsync("~/Views/Shared/Modals/_EditMealModal.cshtml")
+<script src="~/js/food/edit-meal.js" asp-append-version="true" defer></script>
+
+@await Html.PartialAsync("~/Views/Shared/Modals/_FoodModal.cshtml")
+@await Html.PartialAsync("~/Views/Shared/Modals/_CopyMealModal.cshtml")
+
+<link rel="stylesheet" href="~/css/sick-days.css" asp-append-version="true"/>
+<link rel="stylesheet" href="~/css/cheat-days.css" asp-append-version="true"/>

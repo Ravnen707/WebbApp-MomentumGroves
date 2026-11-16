@@ -1,0 +1,97 @@
+.cheat-day-label {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+}
+
+.cheat-day-label .check {
+    flex: 0 0 auto;
+}
+
+.cheat-day-label span {
+    display: grid;
+    gap: 5px;
+}
+
+.cheat-day-label small {
+    color: var(--muted, #a5b2ba);
+    line-height: 1.5;
+}
+
+/* Cheat-day visual state is independent of the sick-day styling. */
+.cheat-day-panel {
+    border-color: #8a6432;
+    transition: border-color .15s ease, background-color .15s ease;
+}
+
+.cheat-day-panel.cheat-day-active {
+    border-color: #f0a43a;
+    background: #382a1e;
+    box-shadow: inset 3px 0 0 #f0a43a;
+}
+
+.cheat-day-panel.cheat-day-active .cheat-day-label strong,
+.cheat-day-panel.cheat-day-active #cheat-day-status {
+    color: #ffd18b;
+}
+
+.cheat-chart-day .bar {
+    background: #ffa500 !important;
+    opacity: 1;
+}
+
+.cheat-chart-day .bar-label,
+.cheat-chart-day .bar-difference {
+    color: #ffbf69;
+    font-weight: 700;
+}
+
+.cheat-day-entries .meal-row {
+    border-left: 3px solid #f0a43a;
+    background: rgba(240, 164, 58, .07);
+}
+
+/* Home dashboard cheat-day indicator and chart date labels. */
+.home-cheat-status {
+    border: 1px solid #f0a43a;
+    border-radius: 12px;
+    padding: 12px 16px;
+    background: #382a1e;
+    color: #ffd18b;
+}
+
+.home-cheat-status a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+.home-cheat-status[hidden] {
+    display: none;
+}
+
+.bar-date {
+    display: block;
+    font-size: .75em;
+    opacity: .8;
+    margin-top: 3px;
+}
+
+.cheat-chart-day .bar-number {
+    color: #ffbf69;
+    font-weight: 700;
+}
+
+/* Highlight the nutrition cards while preserving their actual recorded values. */
+.cheat-day-stats > .panel {
+    border-color: #b77b31;
+    background: linear-gradient(135deg, rgba(240, 164, 58, .10), transparent 70%);
+}
+
+.cheat-day-stats .stat, .cheat-day-stats .statlabel {
+    color: #ffbf69 !important;
+}
+
+.cheat-day-stats .track > div {
+    background: #f0a43a !important;
+}

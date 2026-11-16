@@ -1,0 +1,356 @@
+.weight-summary {
+    display: grid;
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 18px
+}
+
+.weight-summary .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px
+}
+
+.weight-summary strong {
+    font-size: clamp(1.5rem, 3vw, 2.2rem)
+}
+
+.weight-layout {
+    margin-bottom: 18px
+}
+
+.weight-choice, .weight-actions, .weight-chart-header, .weight-legend {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap
+}
+
+.weight-choice {
+    margin: 16px 0
+}
+
+.weight-actions {
+    margin-top: 14px
+}
+
+.weight-chart-header {
+    justify-content: space-between
+}
+
+.weight-chart-panel {
+    margin-bottom: 18px
+}
+
+.weight-legend {
+    font-size: .85rem;
+    margin: 12px 0
+}
+
+.weight-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #5ca8ed
+}
+
+.weight-line {
+    display: inline-block;
+    width: 24px;
+    border-top: 3px solid #f5b66b
+}
+
+.weight-chart {
+    min-height: 280px;
+    width: 100%;
+    overflow-x: auto
+}
+
+.weight-chart svg {
+    width: 100%;
+    min-width: 480px;
+    height: auto;
+    display: block
+}
+
+.weight-forecast {
+    font-size: clamp(1.3rem, 2.5vw, 2rem);
+    display: block;
+    margin: 12px 0
+}
+
+.weight-history table {
+    width: 100%;
+    border-collapse: collapse
+}
+
+.weight-history th, .weight-history td {
+    padding: 10px;
+    border-bottom: 1px solid rgba(128, 128, 128, .22);
+    text-align: left
+}
+
+@media (max-width: 760px) {
+    .weight-summary {
+        grid-template-columns:1fr
+    }
+
+    .weight-layout {
+        display: block
+    }
+
+    .weight-layout .panel {
+        margin-bottom: 16px
+    }
+}
+
+.weight-chart {
+    position: relative
+}
+
+.weight-chart-point {
+    cursor: crosshair;
+    outline: none
+}
+
+.weight-chart-point:hover, .weight-chart-point:focus {
+    stroke: #fff;
+    stroke-width: 2.5;
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, .5))
+}
+
+.weight-chart-tooltip {
+    position: absolute;
+    z-index: 3;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 175px;
+    padding: 10px 12px;
+    border: 1px solid #52616b;
+    border-radius: 9px;
+    background: #101820;
+    color: #f5f7fa;
+    font-size: 13px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, .35)
+}
+
+.weight-chart-tooltip[hidden] {
+    display: none
+}
+
+.weight-goals-panel {
+    margin-bottom: 18px
+}
+
+.weight-goal-options {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 14px 0
+}
+
+.weight-goal-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border: 1px solid rgba(128, 128, 128, .35);
+    border-radius: 10px;
+    cursor: pointer;
+    min-width: 190px
+}
+
+.weight-goal-option:has(input:checked) {
+    border-color: #5ca8ed;
+    background: rgba(92, 168, 237, .10)
+}
+
+.weight-goal-option span {
+    display: flex;
+    flex-direction: column;
+    gap: 3px
+}
+
+.weight-goal-option small {
+    opacity: .7
+}
+
+.weight-milestone-form {
+    display: flex;
+    align-items: end;
+    gap: 12px;
+    flex-wrap: wrap
+}
+
+.weight-milestone-form label {
+    min-width: 180px
+}
+
+.weight-milestones {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 14px
+}
+
+.weight-milestone-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    border: 1px solid rgba(128, 128, 128, .3);
+    border-radius: 8px;
+    padding: 7px 10px
+}
+
+.weight-milestone-chip.is-active {
+    border-color: #5ca8ed
+}
+
+.weight-milestone-chip.is-reached {
+    opacity: .65
+}
+
+.weight-milestone-chip button {
+    background: none;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1.1rem
+}
+
+.weight-goal-status {
+    margin-top: 10px
+}
+
+.weight-chart-goal-label {
+    font-size: 12px;
+    fill: #b8dd9d
+}
+
+/* Compact goal cards share the summary row. */
+.weight-summary {
+    grid-template-columns:repeat(4, minmax(0, 1fr))
+}
+
+.weight-goal-card {
+    min-width: 0
+}
+
+.weight-goal-card-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap
+}
+
+.weight-goal-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .75rem;
+    cursor: pointer;
+    white-space: nowrap
+}
+
+.weight-goal-toggle input {
+    accent-color: #5ca8ed
+}
+
+.weight-inline-goal-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap
+}
+
+.weight-goal-input-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    flex: 1
+}
+
+.weight-goal-input-label input {
+    width: 100%;
+    min-width: 75px;
+    font-size: 1.25rem;
+    font-weight: 700
+}
+
+.weight-goal-input-label span {
+    font-size: .85rem
+}
+
+.weight-inline-goal-form .btn {
+    padding: 9px 12px
+}
+
+.weight-goal-default {
+    font-size: .72rem;
+    color: #9eacb5
+}
+
+.weight-goal-message {
+    margin: 0 0 14px
+}
+
+.weight-chart-target-note {
+    font-size: .78rem;
+    color: #b8dd9d;
+    margin: 0 0 6px 55px
+}
+
+@media (max-width: 1100px) {
+    .weight-summary {
+        grid-template-columns:repeat(2, minmax(0, 1fr))
+    }
+}
+
+@media (max-width: 600px) {
+    .weight-summary {
+        grid-template-columns:1fr
+    }
+}
+
+.weight-period-controls {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap
+}
+
+.weight-period-controls #weight-period-label {
+    font-size: .88rem;
+    white-space: nowrap;
+    min-width: 210px;
+    text-align: center
+}
+
+.weight-period-controls .btn {
+    padding: 7px 12px
+}
+
+.weight-period-controls .btn:disabled {
+    opacity: .4;
+    cursor: not-allowed
+}
+
+.weight-history-more {
+    margin: 14px 10px 0 0
+}
+
+@media (max-width: 700px) {
+    .weight-chart-header {
+        align-items: flex-start
+    }
+
+    .weight-period-controls #weight-period-label {
+        min-width: 0;
+        white-space: normal
+    }
+}

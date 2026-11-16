@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>@ViewData["Title"] – Momentum Groves</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar">
+        <a class="brand" asp-controller="Home" asp-action="Index">☀ Momentum Groves</a>
+        <nav aria-label="Main menu">
+            <a asp-controller="Home" asp-action="Index">Dashboard</a>
+            <a asp-controller="Food" asp-action="Index">Food Diary</a>
+            <a asp-controller="Training" asp-action="Index">Training</a>
+            <a asp-controller="Routes" asp-action="Index">Walking & Running Routes</a>
+            <a asp-controller="BodyMetrics" asp-action="Index">Health & Nutrition Calculator</a>
+            <a asp-controller="WeightTracking" asp-action="Index">Weight Progress</a>
+            <details class="sidebar-group" id="food-library-nav"
+                     open="@(ViewContext.RouteData.Values["controller"]?.ToString() == "FoodLibrary")">
+                <summary>Food Library</summary>
+                <a asp-controller="FoodLibrary" asp-action="Foods">My Foods</a><a asp-controller="FoodLibrary"
+                                                                                        asp-action="Recipes">My Recipes</a>
+            </details>
+            <a asp-controller="Admin" asp-action="Index">Admin</a>
+        </nav>
+        <p class="sidebar-note">Data is stored locally in SQLite.</p>
+    </aside>
+    <main class="content">
+        <div class="topbar"><span id="today"></span></div>
+        @RenderBody()
+    </main>
+</div>
+<script type="module" src="~/js/app.js?v=20261113-kiss-import-fix2"></script>
+@await RenderSectionAsync("Scripts", required: false)
+<script>
+    (() => {
+        const menu = document.getElementById('food-library-nav');
+        if (!menu) return;
+        const saved = sessionStorage.getItem('momentum-food-library-nav');
+        if (saved !== null) menu.open = saved === 'open';
+        menu.addEventListener('toggle', () => {
+            sessionStorage.setItem('momentum-food-library-nav', menu.open ? 'open' : 'closed');
+        });
+    })();
+</script>
+</body>
+</html>

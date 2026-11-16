@@ -1,0 +1,90 @@
+/* Day status controls */
+.sick-day-panel {
+    border: 1px solid #4d6c81;
+}
+
+.sick-day-label {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+}
+
+.sick-day-label .check {
+    flex: 0 0 auto;
+}
+
+.sick-day-label span {
+    display: grid;
+    gap: 5px;
+}
+
+.sick-day-label small {
+    color: var(--muted, #a5b2ba);
+    line-height: 1.5;
+}
+
+.sick-chart-day .bar {
+    opacity: .8;
+}
+
+.sick-chart-day .bar-difference {
+    color: #a8c9e2;
+    font-weight: 700;
+}
+
+.home-sick-status {
+    border: 1px solid #4d6c81;
+    border-radius: 12px;
+    padding: 12px 16px;
+    background: #22313c;
+    color: #d5e8f7;
+}
+
+.home-sick-status a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+.home-sick-status[hidden] {
+    display: none;
+}
+
+.day-flags {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+@media (max-width: 700px) {
+    .day-flags {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Ens dimensioner for dagsmarkeringerne uden at dele deres farver/styling. */
+.day-flags {
+    display: grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: stretch;
+}
+
+.day-flags > .sick-day-panel, .day-flags > .cheat-day-panel {
+    margin: 0;
+    min-width: 0;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.day-flags > .sick-day-panel > label, .day-flags > .cheat-day-panel > label {
+    height: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 700px) {
+    .day-flags {
+        grid-template-columns:1fr;
+    }
+}

@@ -1,0 +1,46 @@
+@{ ViewData["Title"] = "Training"; }
+<div class="heading">
+    <div><p class="eyebrow">TRAINING</p>
+        <h1>Your training programmes</h1>
+        <p class="muted">Full Body A, B and C · edit exercises, images and training values.</p></div>
+</div>
+<div id="training-program-tabs" class="training-program-tabs" role="tablist" aria-label="Training programme">
+    <button type="button" class="btn secondary active" role="tab" data-program="full" aria-selected="true">Full Body
+    </button>
+    <button type="button" class="btn secondary" role="tab" data-program="custom" aria-selected="false">My other programmes
+    </button>
+    <button type="button" class="btn secondary" role="tab" data-program="progress" aria-selected="false">
+        Training progress
+    </button>
+    <button type="button" class="btn secondary" id="training-add-program">+ New programme group</button>
+</div>
+<div class="training-program-actions">
+    <button type="button" id="training-add-box" class="btn secondary">+ Add programme</button>
+</div>
+<div id="training-days" class="training-stack"></div>
+<div class="training-footer">
+    <button id="save-workouts" class="btn">Save training programme</button>
+    <span class="muted" id="save-message" role="status"></span></div>
+<section class="training-development" id="training-progress" hidden aria-label="Training progress">
+    <div class="training-development-heading">
+        <div><h2>Training progress</h2>
+            <p class="muted">Track completed workouts and exercise progress over time.</p></div>
+    </div>
+    <div class="training-progress-stats" id="training-progress-stats"></div>
+    <div class="training-development-grid">
+        <section class="panel training-development-card"><h3>Training activity</h3>
+            <p class="muted tiny">Completed training days per week · last 8 weeks</p>
+            <div id="training-progress-weeks" class="training-progress-weeks"></div>
+        </section>
+        <section class="panel training-development-card"><h3>Exercise progress</h3>
+            <div class="training-progress-filters">
+                <label>Category<select id="training-progress-category"
+                                       aria-label="Choose a training category"></select></label>
+                <label>Programme<select id="training-progress-topic" aria-label="Choose a training programme"></select></label>
+                <label>Exercise<select id="training-progress-exercise" aria-label="Choose an exercise"></select></label>
+            </div>
+            <div id="training-progress-strength" class="training-progress-strength muted" aria-live="polite">Choose an exercise to see your progress.
+            </div>
+        </section>
+    </div>
+</section>

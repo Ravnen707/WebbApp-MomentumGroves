@@ -1,0 +1,68 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Administration";
+}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Administration – Momentum Groves</title>
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true"/>
+    <script src="~/js/admin/admin.js" asp-append-version="true" defer></script>
+</head>
+<body>
+<div class="admin-shell">
+    <aside class="admin-sidebar">
+        <a class="admin-brand" asp-controller="Home" asp-action="Index">☀ Momentum Groves</a>
+        <nav aria-label="Administration">
+            <a class="active" asp-controller="Admin" asp-action="Index">Administration</a>
+            <a asp-controller="Home" asp-action="Index">Back to dashboard</a>
+        </nav>
+    </aside>
+    <main class="admin-main">
+        <header>
+            <span class="eyebrow">Administration</span>
+            <h1>Databases</h1>
+            <p>Manage the DTU Frida dataset. Your personal momentum.db is unaffected.</p>
+        </header>
+        <section class="admin-card" aria-labelledby="frida-heading">
+            <div class="card-heading">
+                <div>
+                    <h2 id="frida-heading">DTU Frida</h2>
+                    <p>Food database · <span id="installed-version">Loading version…</span> · <span id="food-count">–</span>
+                        foods</p>
+                </div>
+                <span class="database-label">frida.db</span>
+            </div>
+            <div class="button-row">
+                <button id="check-button" type="button" class="button primary">Check for updates</button>
+            </div>
+            <div id="status" class="status" role="status" aria-live="polite">Ready to check for updates.</div>
+            <div id="update-prompt" class="update-prompt" hidden>
+                <h3>New version available</h3>
+                <p id="update-description"></p>
+                <p><strong>Install the new dataset?</strong></p>
+                <div class="button-row">
+                    <button id="install-button" class="button primary" type="button">Yes, install</button>
+                    <button id="cancel-button" class="button secondary" type="button">No, cancel</button>
+                </div>
+            </div>
+            <div id="loading" class="loading" role="status" aria-live="polite" hidden>
+                <span class="spinner" aria-hidden="true"></span>
+                <div><strong>Update in progress</strong>
+                    <p>Update in progress; this may take a while. Keep this page open.</p></div>
+            </div>
+        </section>
+        <section class="admin-card" aria-labelledby="test-heading">
+            <h2 id="test-heading">Test</h2>
+            <p>Check the connection to DTU and the version lookup without downloading the Excel file or changing the database.</p>
+            <button id="test-button" class="button secondary" type="button">Test DTU connection</button>
+            <div id="test-result" class="status" role="status" aria-live="polite">No test run yet.</div>
+        </section>
+        <p class="footnote">The admin page is accessible only from this computer. Frida updates save a backup as frida.db.backup.</p>
+    </main>
+</div>
+<form id="antiforgery-form" hidden>@Html.AntiForgeryToken()</form>
+</body>
+</html>

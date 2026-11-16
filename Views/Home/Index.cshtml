@@ -1,0 +1,135 @@
+@{ ViewData["Title"] = "Dashboard"; }
+<div class="heading">
+  <div><p class="eyebrow">DASHBOARD</p>
+    <h1>Your daily overview</h1>
+    <p class="muted">Your targets are calculated from your personal profile.</p></div>
+  <a class="btn" asp-controller="Calculator" asp-action="Index">Adjust my targets →</a></div>
+<p id="home-sick-status" class="home-sick-status" hidden>🩺 Today is marked as a sick day. Your entries are shown, but nutrition targets are not assessed. <a asp-controller="Food" asp-action="Index">Open food diary</a></p>
+<p id="home-cheat-status" class="home-cheat-status" hidden>★ Today is marked as a cheat day. Your entries still count towards the 7-day balance. <a asp-controller="Food" asp-action="Index">Open food diary</a></p>
+<div class="stats stats-four">
+  <section class="panel">
+    <div class="statlabel">CALORIES</div>
+    <div class="stat" id="kcal-stat">–</div>
+    <small class="zone-status" id="kcal-zone"></small>
+    <div class="track">
+      <div id="kcal-bar"></div>
+    </div>
+    <p class="muted tiny" id="kcal-remaining"></p>
+    <button type="button" class="nutrition-zones-link" data-open-nutrition-zones>View nutrition ranges →</button>
+  </section>
+  <section class="panel">
+    <div class="statlabel">PROTEIN</div>
+    <div class="stat" id="protein-stat">–</div>
+    <small class="zone-status" id="protein-zone"></small>
+    <div class="track">
+      <div id="protein-bar"></div>
+    </div>
+    <p class="muted tiny" id="protein-remaining"></p>
+    <button type="button" class="nutrition-zones-link" data-open-nutrition-zones>View nutrition ranges →</button>
+  </section>
+  <section class="panel">
+    <div class="statlabel">CARBOHYDRATES</div>
+    <div class="stat" id="carbs-stat">–</div>
+    <small class="zone-status" id="carbs-zone"></small>
+    <div class="track">
+      <div id="carbs-bar"></div>
+    </div>
+    <p class="muted tiny" id="carbs-remaining"></p>
+    <button type="button" class="nutrition-zones-link" data-open-nutrition-zones>View nutrition ranges →</button>
+  </section>
+  <section class="panel">
+    <div class="statlabel">FAT</div>
+    <div class="stat" id="fat-stat">–</div>
+    <small class="zone-status" id="fat-zone"></small>
+    <div class="track">
+      <div id="fat-bar"></div>
+    </div>
+    <p class="muted tiny" id="fat-remaining"></p>
+    <button type="button" class="nutrition-zones-link" data-open-nutrition-zones>View nutrition ranges →</button>
+  </section>
+  <section class="panel">
+    <div class="statlabel">FIBRE</div>
+    <div class="stat" id="fiber-stat">–</div>
+    <small class="zone-status" id="fiber-zone"></small>
+    <div class="track">
+      <div id="fiber-bar"></div>
+    </div>
+    <p class="muted tiny" id="fiber-remaining"></p>
+    <button type="button" class="nutrition-zones-link" data-open-nutrition-zones>View nutrition ranges →</button>
+  </section>
+</div>
+<section class="panel section-gap workout-wide">
+  <div class="section-head"><h2>Training programmes</h2><a asp-controller="Training" asp-action="Index">Training programme
+      →</a>
+  </div>
+  <div id="home-workouts" class="workout-horizontal"></div>
+</section>
+<section class="panel calorie-balance-panel section-gap" aria-labelledby="balance-heading">
+  <div class="section-head weekly-balance-head">
+    <div class="weekly-balance-title-group">
+      <h2 id="balance-heading">Calorie balance – last 7 days</h2>
+      <div class="weekly-balance-controls">
+        <label for="balance-metric">Show nutrient
+          <select id="balance-metric" aria-label="Choose a nutrient for the weekly balance">
+            <option value="kcal">Calories</option>
+            <option value="protein">Protein</option>
+            <option value="carbs">Carbohydrates</option>
+            <option value="fat">Fat</option>
+            <option value="fiber">Fibre</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <span class="muted tiny" id="balance-days">–</span>
+  </div>
+  <div class="calorie-balance-number" id="balance-total">–</div>
+  <div class="calorie-balance-status" id="balance-status" aria-live="polite">–</div>
+  <p class="muted tiny" id="balance-actual"></p>
+  <div class="calorie-balance-thresholds" aria-label="Guideline weekly balance ranges">
+    <p class="muted tiny">Guideline ranges for the total difference from the target on logged days:</p>
+    <div class="balance-zones-scroll">
+      <div class="balance-zones" id="balance-zones">
+        <div class="balance-zone"><strong>Well below target</strong><span
+            class="balance-zone-bar balance-zone-red"></span><small>–</small></div>
+        <div class="balance-zone"><strong>Slightly below target</strong><span
+            class="balance-zone-bar balance-zone-orange"></span><small>–</small></div>
+        <div class="balance-zone"><strong>Close to target</strong><span class="balance-zone-bar balance-zone-green"></span><small>–</small>
+        </div>
+        <div class="balance-zone"><strong>Slightly above target</strong><span
+            class="balance-zone-bar balance-zone-orange"></span><small>–</small></div>
+        <div class="balance-zone"><strong>Well above target</strong><span
+            class="balance-zone-bar balance-zone-red"></span><small>–</small></div>
+      </div>
+    </div>
+  </div>
+  <p class="muted tiny calorie-balance-note" id="balance-note"></p>
+</section>
+<section class="panel section-gap">
+  <div class="section-head"><h2>Nutrition over the last 7 days</h2><a asp-controller="Food" asp-action="Index">Food Diary
+      →</a></div>
+  <div class="chart-selector"><label for="week-chart-metric">Show nutrient
+      <select id="week-chart-metric" aria-label="Choose a nutrient for the last 7 days">
+        <option value="kcal">Calories (kcal)</option>
+        <option value="protein">Protein (g)</option>
+        <option value="carbs">Carbohydrates (g)</option>
+        <option value="fat">Fat (g)</option>
+        <option value="fiber">Fibre (g)</option>
+      </select>
+    </label></div>
+  <div id="week-chart" class="chart"></div>
+  <p id="week-chart-goal" class="muted tiny" aria-live="polite">The dashed line shows your daily target.</p></section>
+<section class="panel section-gap meals-launch">
+  <div class="section-head">
+    <div><h2>Today's recent meals</h2>
+      <p class="muted tiny">View your latest entries from the dashboard.</p></div>
+    <button type="button" class="btn secondary" data-open-meals>View meals →</button>
+  </div>
+</section>
+@await Html.PartialAsync("~/Views/Shared/Modals/_RecentMealsModal.cshtml")
+
+
+
+@await Html.PartialAsync("~/Views/Shared/Modals/_NutritionZonesModal.cshtml")
+
+<link rel="stylesheet" href="~/css/sick-days.css" asp-append-version="true"/>
+<link rel="stylesheet" href="~/css/cheat-days.css" asp-append-version="true"/>

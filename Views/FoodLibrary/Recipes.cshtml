@@ -1,0 +1,41 @@
+@{ ViewData["Title"] = "My Recipes"; }
+<section class="panel library-page" id="library-recipes">
+    <h1>My Recipes</h1>
+    <h2 id="library-recipe-heading">Create recipe</h2>
+    <form id="library-recipe-form" class="library-form">
+        <label>Recipe name *<input name="name" maxlength="200" required></label>
+        <h3>Ingredients</h3>
+        <div id="library-recipe-ingredients" class="library-results library-recipe-rows"></div>
+        <label>Find an ingredient in My Foods<input id="library-recipe-search" type="search"
+                                                      placeholder="Search for a saved food..."></label>
+        <div id="library-recipe-food-results" class="library-results"></div>
+        <label>Meal weight (g)<input name="finishedWeight" type="text" inputmode="decimal" min="0.001" step="any"
+                                        placeholder="Weight before or after cooking"></label>
+        <section class="recipe-live-nutrition" aria-label="Calculated nutrition">
+            <h3>Nutrition for selected ingredient amounts</h3>
+            <div class="recipe-live-nutrition-grid">
+                <div><span>Calories</span><strong id="recipe-live-kcal">0 kcal</strong></div>
+                <div><span>Protein</span><strong id="recipe-live-protein">0 g</strong></div>
+                <div><span>Carbohydrates</span><strong id="recipe-live-carbs">0 g</strong></div>
+                <div><span>Fat</span><strong id="recipe-live-fat">0 g</strong></div>
+                <div><span>Fibre</span><strong id="recipe-live-fiber">–</strong></div>
+                <div><span>Ingredient weight</span><strong id="recipe-live-weight">0 g</strong></div>
+            </div>
+            <p class="muted tiny">Totals for the ingredients, rather than per 100 g. Meal weight can be before or after cooking.</p>
+        </section>
+        <div class="library-recipe-status"><span>Status</span><span id="library-recipe-preview"
+                                                                    class="library-status-badge">Waiting for ingredients and meal weight</span>
+        </div>
+        <div class="library-actions">
+            <button class="btn" type="submit">Save recipe</button>
+            <button class="btn secondary" type="button" id="library-recipe-clone">Save as new / Clone</button>
+            <button class="btn secondary" type="button" id="library-recipe-reset">Clear</button>
+        </div>
+    </form>
+    <p id="library-recipe-message" role="status" class="muted"></p>
+    <h2>Saved recipes</h2>
+    <div id="library-recipe-list" class="library-results"></div>
+</section>
+
+@section Scripts {
+    <script src="~/js/food/food-library.js" asp-append-version="true" defer></script> }

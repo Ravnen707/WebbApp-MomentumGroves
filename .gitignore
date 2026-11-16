@@ -1,0 +1,106 @@
+﻿# .NET build, publish, and package outputs at any project depth
+[Bb]in/
+[Oo]bj/
+.codex-build/
+publish/
+publish-*/
+artifacts/
+out/
+packages/
+*.nupkg
+*.snupkg
+*.apk
+*.aab
+
+# IDE settings and machine-specific tooling
+.idea/
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.sln.iml
+local.properties
+*.pubxml
+*.publishsettings
+
+# Exclude all local SQLite databases, journals, and backups.
+# Reviewed reference CSV/JSON files may be tracked.
+*.db
+*.db.*
+*.db-*
+*.sqlite
+*.sqlite.*
+*.sqlite-*
+*.sqlite3
+*.sqlite3.*
+*.sqlite3-*
+*.db3
+*.db3.*
+*.db3-*
+*.mdf
+*.ldf
+*.sdf
+*.sql
+
+# Secrets and local configuration; only sanitized examples may be committed
+.env
+.env.*
+!.env.example
+appsettings.*.json
+!appsettings.*.example.json
+secrets.json
+credentials.json
+Properties/launchSettings.json
+*.pfx
+*.p12
+*.pem
+*.key
+*.keystore
+*.jks
+*.cer
+
+# Personal exports, uploads, backups, archives, and downloaded datasets
+backups/
+exports/
+uploads/
+private/
+*.backup
+*.bak
+*.dump
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+*.xlsx
+*.xls
+*.gpx
+*.fit
+*.tcx
+
+# Logs, test results, coverage, and temporary/editor files
+logs/
+*.log
+TestResults/
+coverage/
+coverage.*
+*.trx
+*.coverage
+*.coveragexml
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+node_modules/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Readme for Developper notes.
+/DEVELOPER_NOTES.md
