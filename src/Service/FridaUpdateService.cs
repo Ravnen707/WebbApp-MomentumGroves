@@ -100,7 +100,8 @@ public sealed class FridaUpdateService
                     throw new InvalidDataException("The Excel file exceeds the 100 MB size limit.");
                 }
             }
-
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            
             var foods = ReadFoods(temporaryFile);
             if (foods.Count < 500)
             {
@@ -109,6 +110,7 @@ public sealed class FridaUpdateService
             }
 
             // Build a completely new SQLite file, then atomically replace the old database.
+            Directory.CreateDirectory(Path.GetDirectoryName(_databasePath)!);
             var stagedPath = _databasePath + ".staging";
             try
             {
@@ -118,8 +120,16 @@ public sealed class FridaUpdateService
                 }
 
                 await CreateDatabaseAsync(stagedPath, foods, latest, cancellationToken);
-                // File.Replace keeps a backup of the previous version on the same volume.
-                File.Replace(stagedPath, _databasePath, _databasePath + ".backup", true);
+                // On first installation there is no database to replace.
+                // Later updates retain the existing database as a backup.
+                if (File.Exists(_databasePath))
+                {
+                    File.Replace(stagedPath, _databasePath, _databasePath + ".backup", true);
+                }
+                else
+                {
+                    File.Move(stagedPath, _databasePath);
+                }
             }
             finally
             {
@@ -165,6 +175,13 @@ public sealed class FridaUpdateService
 
     public async Task<(string Version, int Count)> GetInstalledAsync(CancellationToken cancellationToken)
     {
+        // An absent database means Frida has not been installed yet.
+        // Do not create an empty file: installation creates the complete schema and data.
+        if (!File.Exists(_databasePath))
+        {
+            return ("", 0);
+        }
+
         // This file is replaced during installation; idle pooled handles would keep it locked on Windows.
         var builder = new SqliteConnectionStringBuilder
         {

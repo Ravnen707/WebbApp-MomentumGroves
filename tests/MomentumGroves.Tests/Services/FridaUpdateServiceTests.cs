@@ -91,11 +91,36 @@ public class FridaUpdateServiceTests : DatabaseServiceTests
     }
 
     [Test]
-    public void GetInstalled_MissingDatabase_Throws()
+    public async Task GetInstalled_MissingDatabase_ReturnsNotInstalledWithoutCreatingFile()
     {
         SqliteConnection.ClearAllPools();
         File.Delete(DataPath("frida.db"));
-        Assert.ThrowsAsync<SqliteException>(() => Create().GetInstalledAsync(default));
+        Assert.That(await Create().GetInstalledAsync(default), Is.EqualTo(("", 0)));
+        Assert.That(File.Exists(DataPath("frida.db")), Is.False);
+    }
+
+    [Test]
+    public async Task Check_MissingDatabase_ReportsAvailableInstallation()
+    {
+        SqliteConnection.ClearAllPools();
+        File.Delete(DataPath("frida.db"));
+        var result = await Create().CheckAsync(default);
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.UpdateAvailable, Is.True);
+        Assert.That(result.FoodCount, Is.Zero);
+        Assert.That(File.Exists(DataPath("frida.db")), Is.False);
+    }
+
+    [Test]
+    public async Task Install_MissingDatabase_CreatesPopulatedDatabase()
+    {
+        SqliteConnection.ClearAllPools();
+        File.Delete(DataPath("frida.db"));
+        var result = await Create().InstallAsync(InstallRequest, default);
+        Assert.That(result.Success, Is.True, result.Message);
+        Assert.That(File.Exists(DataPath("frida.db")), Is.True);
+        Assert.That(await Create().GetInstalledAsync(default), Is.EqualTo(("7.0", 500)));
+        Assert.That(File.Exists(DataPath("frida.db.backup")), Is.False);
     }
 
     [TestCase("7.0", true)]
