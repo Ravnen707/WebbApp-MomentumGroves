@@ -105,7 +105,7 @@ The Android app is a temporary staging area, not a long-term backup of successfu
 | Spreadsheet import | `ExcelDataReader` 3.7.0 |
 | Automated tests | **NUnit** 3.14.0, NUnit3TestAdapter 4.5.0, Microsoft.NET.Test.Sdk 17.8.0 |
 | Coverage | `coverlet.collector` 6.0.0 |
-| Recommended IDE | JetBrains Rider (Visual Studio or `dotnet` CLI also works) |
+| Development environment | Any .NET 10-compatible IDE or code editor (such as Rider, Visual Studio, or VS Code) |
 
 ```text
 MomentumGroves/
@@ -144,10 +144,10 @@ These instructions are for a **new fork/clone**, not for overwriting an existing
 ### Step 1 — Install prerequisites
 
 1. Install the **.NET 10 SDK** (not just the runtime).
-2. Install **JetBrains Rider** or another .NET 10-compatible IDE.
+2. Install your preferred .NET 10-compatible IDE or code editor.
 3. Install **Git** if you intend to fork and clone.
 4. Fork the web repository on GitHub, then clone your fork to a local folder.
-5. Open `MomentumGroves.sln` in Rider, or open the project root in your editor.
+5. Open `MomentumGroves.sln` in your IDE, or open the project root in your code editor.
 
 The installed SDK must support `net10.0`. This web repository does **not** require the MAUI/Android workload.
 
@@ -160,50 +160,21 @@ The installed SDK must support `net10.0`. This web repository does **not** requi
 
 `Program.cs` calls `DotEnvLoader.Load(...)` for the root `.env` file, so **this application does load `.env`** when started from the repository root. If you run it with a different working directory, check that the file is being found.
 
-### Step 3 — Create the two local SQLite databases in Rider (required)
+### Step 3 — Database setup (automatic)
 
-**The GitHub repository contains no SQLite database files.** For a fresh clone, create `food_and_recipes.db` and `momentum.db` in `src/Data/`. **Do not create `frida.db` manually:** the Admin installer now creates and populates it automatically.
+The repository does not include personal database files. MomentumGroves checks for the required database files when the application starts.
 
-Use **JetBrains Rider's graphical Database tool**; Python and a terminal are **not required** to create the two local databases.
+- If `momentum.db` or `food_and_recipes.db` is missing, a **Database initialization** modal appears. Click **Yes, initialize** to create the missing local database files and initialize their required tables.
+- Once local initialization is complete, if `frida.db` is missing, the modal offers **Go to Admin to make FridaDb**. Click it to open the existing Frida installation page.
+- In Admin, click **Check for updates**, then **Yes, install**. This downloads the DTU Frida dataset and creates and populates `frida.db` automatically.
+- If only Frida is missing, you are directed to Admin without being asked to initialize the other databases again.
+- When all three databases already exist, the startup check runs without showing a modal or additional status messages.
 
-1. In Rider's **Solution** view, expand `src` and find the **`Data`** folder. This is where the local SQLite databases belong.
-2. Get the folder's **absolute path**: right-click `Data` and choose **Copy Path/Reference → Absolute Path**, or **Open In → Explorer** and copy the folder path from File Explorer's address bar.
-3. Open **View → Tool Windows → Database**.
-4. In the **Database** tool window, click **+** (top-left), then **Connect to Database...**.
-5. Choose **Use connection string**, and set **Database type** to **SQLite**.
-6. Replace the example `jdbc:sqlite:identifier.sqlite` with a connection string containing the **absolute path to the new database file**, for example:
-
-   ```text
-   jdbc:sqlite:C:/YOUR/PATH/MomentumGroves/src/Data/food_and_recipes.db
-   ```
-
-   Replace `C:/YOUR/PATH/MomentumGroves` with your real path. **Use `.db` and the exact filename shown**, not the example `.sqlite` filename. The extension itself does not change the SQLite format, but the application expects these particular `.db` filenames.
-7. Click **Test Connection**, then **Connect to Database**. Confirm that a **real SQLite database file** has appeared inside `src/Data/`. If Rider reports it cannot connect and no file appears, the database has **not** been created; do not treat a saved data-source connection as a database file. Create the database using a SQLite database-creation tool such as DB Browser for SQLite (**New Database**, save to `src/Data/`), then connect to that file from Rider.
-8. Repeat steps 4–7 for `momentum.db`, using:
-
-   ```text
-   jdbc:sqlite:C:/YOUR/PATH/MomentumGroves/src/Data/momentum.db
-   ```
-
-9. Before installing Frida, your `Data` folder should contain these two database files:
-
-   ```text
-   MomentumGroves/
-   └── src/
-       └── Data/
-           ├── food_and_recipes.db
-           └── momentum.db
-   ```
-
-**Database files are not the same as database tables.** Creating these files produces valid, initially empty SQLite databases; it does not create all application tables. When the web app runs, its existing services initialize the required tables in `food_and_recipes.db` and `momentum.db`. The mobile-import mapping table is initialized by its service. **Do not invent these schemas manually.**
-
-**Frida is installed separately through Admin.** On the first installation, the application creates `src/Data/frida.db` and imports the downloaded DTU Frida foods into it. See [Frida data initialization](#frida-data-initialization).
-
-SQLite does not need a separate database server. Keep the default filenames.
+The databases are stored under `src/Data/`. Existing database files are preserved; the setup flow must not overwrite or reset them. No SQLite server or database creation tool is required.
 
 ### Step 4 — Run the web app
 
-In Rider, select **MomentumGroves** as the run configuration and click **Run**. Open the local address shown in the Run window. Rider restores the required packages.
+Start **MomentumGroves** using your development environment’s run or debug command. Open the local address shown in its output. Restore the project’s NuGet dependencies if your environment does not do so automatically.
 
 Optional command-line alternative from the repository root:
 
@@ -213,10 +184,10 @@ dotnet run --project .\MomentumGroves.csproj
 
 ### Step 5 — Check your installation
 
-1. Confirm the home page opens.
+1. Confirm the home page opens and complete the automatic database initialization modal if prompted.
 2. Open the custom food library and add a temporary test food; this confirms `food_and_recipes.db` and its tables work.
 3. Save an application setting or other app-state entry to confirm `momentum.db` works.
-4. Open **Admin** and install/update the Frida dataset; then test Frida food search.
+4. If Frida is missing, use **Go to Admin to make FridaDb** and install the dataset; then test Frida food search.
 5. Configure your own routing API key if you want route generation.
 6. Run the automated tests under [Testing](#testing).
 7. For Android transfers, follow [Android companion and synchronization](#android-companion-and-synchronization).
@@ -231,13 +202,22 @@ dotnet run --project .\MomentumGroves.csproj
 <details>
 <summary><strong>SQLite databases and initial data</strong></summary>
 
-The repository deliberately contains **no personal `.db` files**. A fresh clone needs two locally created databases; the third, `frida.db`, is created automatically when installing DTU Frida through Admin:
+The repository deliberately contains **no personal `.db` files**. All three databases are handled through the application; there is no manual database creation step.
 
 | Filename | Purpose | How to initialize |
 |---|---|---|
-| `food_and_recipes.db` | Custom foods, recipes, ingredients, and mobile import mapping | Create an empty SQLite database; application services initialize their tables |
-| `momentum.db` | Application state and saved tracking data | Create an empty SQLite database; `MomentumDataService` initializes `AppState` |
-| `frida.db` | DTU Frida food composition reference data | **Automatically created and populated** by the Frida installer in **Admin**; no manual database creation required |
+| `food_and_recipes.db` | Custom foods, recipes, ingredients, and mobile import mapping | Created and initialized by the **Database initialization** modal when missing |
+| `momentum.db` | Application state and saved tracking data | Created and initialized by the **Database initialization** modal when missing |
+| `frida.db` | DTU Frida food composition reference data | Created and populated separately through **Admin → Check for updates → Yes, install** |
+
+### First-run setup
+
+1. Start MomentumGroves.
+2. If either local database is missing, click **Yes, initialize** in the setup modal.
+3. When local initialization finishes, click **Go to Admin to make FridaDb** if Frida has not yet been installed.
+4. Install Frida from Admin using the existing update workflow.
+
+Only missing local databases are initialized. The Frida dataset is **not** created by the local initialization action. If all databases already exist, the startup check remains silent.
 
 ### Frida data initialization
 
@@ -247,7 +227,7 @@ The repository deliberately contains **no personal `.db` files**. A fresh clone 
 4. Select **Yes, install** when prompted. The application downloads the dataset and automatically creates and populates `src/Data/frida.db` if it does not exist.
 5. Confirm that Admin displays the installed version and food count, then test a Frida food search.
 
-The same Admin workflow supports both first-time installation and later updates. No empty `frida.db` needs to be created in Rider. Installation requires internet access. In the verified first-install test, Admin installed DTU Frida version 6.1 and imported 1,390 foods.
+The same Admin workflow supports both first-time installation and later updates. No database needs to be created manually. Installation requires internet access. In the verified first-install test, Admin installed DTU Frida version 6.1 and imported 1,390 foods.
 
 ### Database filenames and versions
 
@@ -308,8 +288,8 @@ To connect the two apps on a **trusted private Wi-Fi network**:
    ```
 
 4. Run `ipconfig` on the PC to find the current LAN IPv4 address.
-5. In the Android app, open **Se mine fødevarer** and set the PC address to `http://YOUR-PC-IP:5000`.
-6. Enter the matching sync key and choose **Overfør til PC**.
+5. In the Android app, open the food synchronization screen and set the PC address to `http://YOUR-PC-IP:5000`.
+6. Enter the matching sync key and use the app’s transfer-to-PC action.
 7. Verify the imported foods appear in the web food library before deleting anything manually.
 
 The web endpoint is `POST /api/mobile/foods/import`, with the key sent in the `X-Momentum-Sync-Key` header. `localhost` on the phone refers to the phone, **not** the PC. The current example uses **unencrypted HTTP**, so do not use public Wi-Fi, router port forwarding, or public firewall rules. If Windows Firewall blocks port 5000, permit it on **private networks only**.
@@ -340,7 +320,7 @@ Run the tests from the repository root:
 dotnet test .\tests\MomentumGroves.Tests\MomentumGroves.Tests.csproj
 ```
 
-Or open the **Unit Tests** window in Rider and run the test project. The test project includes `coverlet.collector` for coverage collection. Tests are not a guarantee that all browser interactions or external-service integrations work; test those separately.
+Or open the **Unit Tests** window in your application and run the test project. The test project includes `coverlet.collector` for coverage collection. Tests are not a guarantee that all browser interactions or external-service integrations work; test those separately.
 
 ---
 
@@ -370,7 +350,7 @@ This section replaces the separate `PUBLISHING.md` document.
 - If a private file was already tracked, `.gitignore` will **not** untrack it. Use `git rm --cached -- path/to/file` to stop tracking it locally, then commit that change.
 - If a secret or private dataset was **ever committed**, removing it from the latest commit does not erase its history. Clean the Git history before publishing, rotate exposed credentials, and remember existing clones/forks may retain copies.
 - Test sync keys found in automated tests are **fixtures**, not real deployment credentials; never reuse them.
-- A fresh clone contains **no SQLite `.db` files**. Create `food_and_recipes.db` and `momentum.db` using Step 3. Install DTU Frida through Admin; the installer creates and populates `frida.db` automatically.
+- A fresh clone contains **no SQLite `.db` files**. On first launch, use the initialization modal to create missing local databases, then follow its Admin link to install DTU Frida. No manual SQLite database creation is required.
 
 ---
 
@@ -408,7 +388,9 @@ This section replaces the separate `PUBLISHING.md` document.
 - Verify the .NET 10 SDK is installed.
 - Start the web project from the correct root directory.
 - Check that `src/Data/` exists and is writable.
-- If `frida.db` is missing or Frida search is empty, open Admin, click **Check for updates**, and install the DTU Frida dataset. Do not manually create an empty `frida.db`.
+- If a local database is missing, use the **Database initialization** modal and click **Yes, initialize**.
+- If `frida.db` is missing or Frida search is empty, use **Go to Admin to make FridaDb**, or open Admin directly, click **Check for updates**, and install the dataset. Do not create `frida.db` manually.
+- If the database status check fails, use the modal’s **Retry check** action and inspect the application error if it persists.
 - Read the application error before deleting or replacing any database.
 
 </details>
