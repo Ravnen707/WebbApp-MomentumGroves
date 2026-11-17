@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>@ViewData["Title"] – Momentum Groves</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/css/modals/database-initialization.css" asp-append-version="true"/>
 </head>
 <body>
 <div class="app-shell">
@@ -21,7 +22,7 @@
                      open="@(ViewContext.RouteData.Values["controller"]?.ToString() == "FoodLibrary")">
                 <summary>Food Library</summary>
                 <a asp-controller="FoodLibrary" asp-action="Foods">My Foods</a><a asp-controller="FoodLibrary"
-                                                                                        asp-action="Recipes">My Recipes</a>
+                                                                                  asp-action="Recipes">My Recipes</a>
             </details>
             <a asp-controller="Admin" asp-action="Index">Admin</a>
         </nav>
@@ -32,6 +33,8 @@
         @RenderBody()
     </main>
 </div>
+@await Html.PartialAsync("Modals/_DatabaseInitializationModal")
+<script src="~/js/modals/database-initialization.js" asp-append-version="true" defer></script>
 <script type="module" src="~/js/app.js?v=20261113-kiss-import-fix2"></script>
 @await RenderSectionAsync("Scripts", required: false)
 <script>

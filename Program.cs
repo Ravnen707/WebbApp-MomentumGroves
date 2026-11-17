@@ -2,6 +2,7 @@ MomentumGroves.Helper.DotEnvLoader.Load(Path.Combine(Directory.GetCurrentDirecto
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<MomentumGroves.Service.DatabaseInitializationService>();
 builder.Services.AddScoped<MomentumGroves.Service.DrinkService>();
 builder.Services.AddScoped<MomentumGroves.Service.FoodService>();
 builder.Services.AddScoped<MomentumGroves.Service.MobileFoodSyncService>();
@@ -24,6 +25,8 @@ builder.Services.AddHttpClient();
 builder.Services.AddSingleton<MomentumGroves.Repository.RouteRepository>();
 builder.Services.AddSingleton<MomentumGroves.Service.RouteService>();
 var app = builder.Build();
+// Capture file existence before any other application service can create a database.
+_ = app.Services.GetRequiredService<MomentumGroves.Service.DatabaseInitializationService>();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");

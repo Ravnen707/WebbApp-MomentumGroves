@@ -1,0 +1,14 @@
+@Html.AntiForgeryToken()
+<div id="database-setup-overlay" class="database-setup-overlay" hidden>
+    <section class="database-setup-dialog" role="dialog" aria-modal="true" aria-labelledby="database-setup-title">
+        <h2 id="database-setup-title">Database initialization</h2>
+        <p id="database-setup-description">MomentumGroves has detected missing local databases. Would you like to initialize them now?</p>
+        <ul id="database-setup-missing" class="database-setup-list"></ul>
+        <p id="database-setup-error" class="database-setup-error" hidden></p>
+        <div class="database-setup-actions">
+            <button type="button" id="database-setup-confirm">Yes, initialize</button>
+            <button type="button" id="database-setup-admin" hidden>Go to Admin to make FridaDb</button>
+            <button type="button" id="database-setup-cancel">Cancel</button>
+        </div>
+    </section>
+</div>

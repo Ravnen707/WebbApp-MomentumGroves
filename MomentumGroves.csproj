@@ -7,7 +7,6 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.22"/>
         <PackageReference Include="ExcelDataReader" Version="3.7.0"/>
-        <Content Include="src/Data/food_and_recipes.db" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
     <ItemGroup>
         <_ContentIncludedByDefault Remove="Views\Calculator\Index.cshtml"/>
