@@ -9,33 +9,35 @@
     <h2>1. Your details</h2>
     <form id="calculator-form">
       <div class="form-grid">
-        <label>Current weight (kg)<input name="weight" type="text" inputmode="decimal" min="20" max="500" step="0.1"
+        <label>Current weight (kg)<input name="weight" type="text" inputmode="decimal" min="20" max="500" step="0.1" value="0"
                                          required/></label>
-        <label>Target weight (kg)<input name="targetWeight" type="text" inputmode="decimal" min="20" max="500" step="0.1"
+        <label>Target weight (kg)<input name="targetWeight" type="text" inputmode="decimal" min="20" max="500" step="0.1" value="0"
                                   required/></label>
-        <label>Height (cm)<input name="height" type="text" inputmode="decimal" min="100" max="250" step="0.1" required/></label>
-        <label>Age (years)<input name="age" type="text" inputmode="decimal" min="18" max="110" step="1"
+        <label>Height (cm)<input name="height" type="text" inputmode="decimal" min="100" max="250" step="0.1" value="0" required/></label>
+        <label>Age (years)<input name="age" type="text" inputmode="decimal" min="18" max="110" step="1" value="0"
                                 required/></label>
       </div>
-      <label>Calculation formula<select name="sex">
+      <label>Calculation formula<select name="sex" required>
+          <option value="" selected disabled>Choose physiology</option>
           <option value="male">Male physiology</option>
           <option value="female">Female physiology</option>
         </select></label>
       <h2>2. Activity and training</h2>
-      <label class="toggle-row"><input name="includeTraining" type="checkbox" checked/><span><strong>Include training in calorie needs</strong><small>Turn off for a sedentary estimate. Your training log is unaffected.</small></span></label>
-      <div id="training-settings"><label>Training sessions per week<input name="trainingDays" type="text" inputmode="decimal"
+      <label class="toggle-row"><input name="includeTraining" type="checkbox"/><span><strong>Include training in calorie needs</strong><small>Turn off for a sedentary estimate. Your training log is unaffected.</small></span></label>
+      <div id="training-settings" hidden><label>Training sessions per week<input name="trainingDays" type="text" inputmode="decimal"
                                                                    min="0" max="7"
-                                                                   step="1" value="3"/></label>
+                                                                   step="1" value="0"/></label>
         <p class="muted tiny" id="training-info"></p></div>
       <h2>3. Your weight loss and macro split</h2>
-      <label>Desired daily calorie deficit<select name="deficit">
+      <label>Desired daily calorie deficit<select name="deficit" required>
+          <option value="" selected disabled>Select desired deficit</option>
           <option value="300">Gentle – 300 kcal</option>
           <option value="500">Moderate – 500 kcal</option>
           <option value="700">Faster – 700 kcal</option>
         </select></label>
       <div class="form-grid"><label>Protein per kg of target weight (g)<input name="proteinFactor" type="text"
                                                                      inputmode="decimal" min="0.8"
-                                                                     max="2.5" step="0.1"/></label><label>Calories from fat (%)<input name="fatPercent" type="text" inputmode="decimal" min="15" max="45" step="1"/></label>
+                                                                     max="2.5" step="0.1" value="0"/></label><label>Calories from fat (%)<input name="fatPercent" type="text" inputmode="decimal" min="15" max="45" step="1" value="0"/></label>
       </div>
       <button class="btn" type="submit">Save calculation as my targets</button>
       <p class="muted tiny" id="calculator-message" role="status"></p>

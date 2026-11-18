@@ -162,6 +162,17 @@ nav a:hover, nav a.active {
     font-weight: 500
 }
 
+.dashboard-nutrition .stat {
+    font-size: clamp(27px, 3vw, 34px);
+    white-space: normal;
+}
+
+.dashboard-nutrition .stat small {
+    display: inline-block;
+    font-size: clamp(20px, 2vw, 24px);
+    white-space: nowrap;
+}
+
 .track {
     height: 8px;
     background: #323e3f;
@@ -790,6 +801,10 @@ button:focus-visible, a:focus-visible {
     font-size: 12px;
     font-weight: 700;
     margin-top: 6px
+}
+
+.dashboard-nutrition .zone-status {
+    min-height: 1lh;
 }
 
 

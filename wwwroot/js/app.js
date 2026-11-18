@@ -1,9 +1,9 @@
 import {initializeData, showDataError} from './core/storage.js';
 import {localDate} from './core/utils.js';
-import {drawChart, renderCalorieBalance, renderHome} from './home/dashboard.js?v=20261113-kiss-import-fix2';
+import {drawChart, renderCalorieBalance, renderHome} from './home/dashboard.js?v=20261118-fibre-diary';
 import {renderFood} from './food/food-diary.js';
 import {renderTraining} from './tracking/training-programs.js';
-import {renderCalculator} from './tracking/nutrition-targets.js?v=20261113-kiss-import-fix2';
+import {renderCalculator} from './tracking/nutrition-targets.js?v=20261118-empty-calculator';
 import './food/meal-editor.js';
 
 function setupNavigation() {

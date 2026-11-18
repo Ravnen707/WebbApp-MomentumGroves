@@ -1,5 +1,4 @@
 import {read, write, PROFILE_KEY, GOAL_KEY} from "../core/storage.js";
-import {DEFAULT_PROFILE} from "../core/profile-defaults.js";
 import {parseDecimal, fmt, setText, localDate} from "../core/utils.js";
 import {isCheatDay} from "./cheat-days.js";
 import {isSickDay, fiberActive, fiberComplete} from "./sick-days.js";
@@ -29,6 +28,7 @@ function nutritionZone(key, value) {
 }
 
 function nutritionColor(key, value, goal, date) {
+    if (goal <= 0) return 'var(--muted)';
     if (key === 'fiber' && !fiberActive(date)) return '#8fb4ce';
     if (isSickDay(date)) {
         return '#8fb4ce';
@@ -42,23 +42,24 @@ function nutritionColor(key, value, goal, date) {
 const zoneNames = {low: 'Low', good: 'Good', high: 'High', over: 'Above target'};
 
 function updateZoneDisplay(key, value, goal, date, prefix) {
+    const hasTarget = goal > 0;
     const inactive = key === 'fiber' && !fiberActive(date);
     const unknown = key === 'fiber' && !fiberComplete(date);
     const stat = document.querySelector(prefix === 'home' ? `#${key}-stat` : `#food-${key}`);
     if (stat) {
         stat.style.color = inactive || unknown ? 'var(--muted)' : nutritionColor(key, value, goal, date);
-        stat.title = inactive ? 'Fibre was not assessed on this date' : unknown ? 'Fibre is missing for one or more entries' : isSickDay(date) ? 'Sick day – target assessment paused' : isCheatDay(date) ? 'Cheat day – included in balance' : zoneNames[nutritionZone(key, value)];
+        stat.title = !hasTarget ? '' : inactive ? 'Fibre was not assessed on this date' : unknown ? 'Fibre is missing for one or more entries' : isSickDay(date) ? 'Sick day – target assessment paused' : isCheatDay(date) ? 'Cheat day – included in balance' : zoneNames[nutritionZone(key, value)];
     }
     const label = document.querySelector(prefix === 'home' ? `#${key}-zone` : `#food-${key}-zone`);
     if (label) {
         const cheat = !isSickDay(date) && isCheatDay(date);
-        label.textContent = inactive ? 'Not active yet' : unknown ? 'Partially/not specified' : isSickDay(date) ? 'Sick day – targets paused' : cheat ? 'Cheat day – included in balance' : zoneNames[nutritionZone(key, value)];
+        label.textContent = !hasTarget ? '' : inactive ? 'Not active yet' : unknown ? 'Partially/not specified' : isSickDay(date) ? 'Sick day – targets paused' : cheat ? 'Cheat day – included in balance' : zoneNames[nutritionZone(key, value)];
         label.style.color = inactive || unknown ? 'var(--muted)' : nutritionColor(key, value, goal, date);
     }
 }
 
 
-const getProfile = () => ({...DEFAULT_PROFILE, ...read(PROFILE_KEY, {})});
+const getProfile = () => read(PROFILE_KEY, {});
 
 function calculate(profile) {
     const p = {...profile};
@@ -76,13 +77,13 @@ function calculate(profile) {
 }
 
 const getGoals = () => {
-    const result = calculate(getProfile());
+    const result = read(GOAL_KEY, null) && calculate(getProfile());
     return result ? {
         kcal: result.kcal,
         protein: result.protein,
         carbs: result.carbs,
         fat: result.fat, fiber: 30
-    } : {kcal: 2463, protein: 153, carbs: 278, fat: 82, fiber: 30};
+    } : {kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0};
 };
 
 function setProgress(selector, value, goal, date = localDate(), key = 'kcal') {

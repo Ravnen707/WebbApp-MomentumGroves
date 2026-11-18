@@ -7,7 +7,7 @@ import {
     updateZoneDisplay,
     getGoals,
     setProgress
-} from "../tracking/nutrition-targets.js?v=20261113-kiss-import-fix2";
+} from "../tracking/nutrition-targets.js?v=20261118-empty-calculator";
 import {food, totals} from "../food/food-diary.js";
 
 function drawChart() {
@@ -119,7 +119,7 @@ function renderCalorieBalance() {
     });
     if (!daysCount || !Number.isFinite(expected) || expected <= 0) {
         totalElement.textContent = '–';
-        statusElement.textContent = 'No eligible logged days yet';
+        statusElement.textContent = goal > 0 ? 'No eligible logged days yet' : 'Save a calculation to set your daily targets';
         totalElement.style.color = 'var(--muted)';
         statusElement.style.color = 'var(--muted)';
         return;
@@ -134,16 +134,24 @@ function renderCalorieBalance() {
 
 function renderHome() {
     if (!document.querySelector('#kcal-stat')) return;
-    const t = totals(localDate()), g = getGoals();
+    const today = localDate();
+    const t = totals(today), g = getGoals();
+    const hasTargets = g.kcal > 0;
+    const needsFibre = hasTargets && !fiberComplete(today);
     for (const key of ['kcal', 'protein', 'carbs', 'fat', 'fiber']) {
         const unit = key === 'kcal' ? 'kcal' : 'g', delta = g[key] - t[key];
-        setHTML(`#${key}-stat`, key === 'fiber' && !fiberComplete(localDate()) ? (fiberKnown(localDate()) ? `${fmt(t.fiber)} g <small>(partial)</small>` : 'Not specified') : `${fmt(t[key])} <small>/ ${fmt(g[key])} ${unit}</small>`);
-        setProgress(`#${key}-bar`, t[key], g[key], localDate(), key);
-        updateZoneDisplay(key, t[key], g[key], localDate(), 'home');
+        const incomplete = key === 'fiber' && needsFibre;
+        const intake = incomplete && !fiberKnown(today) ? '–' : fmt(t[key]);
+        setHTML(`#${key}-stat`, hasTargets ? `${intake} <small>/ ${fmt(g[key])} ${unit}</small>` : '0<small>/0</small>');
+        setProgress(`#${key}-bar`, t[key], g[key], today, key);
+        updateZoneDisplay(key, t[key], g[key], today, 'home');
+        if (incomplete) setText('#fiber-zone', intake === '–' ? '' : 'Partial intake');
         const stat = document.querySelector(`#${key}-stat`);
-        if (stat) stat.classList.toggle('cheat-over', isCheatDay(localDate()) && t[key] > g[key]);
-        setText(`#${key}-remaining`, key === 'fiber' && !fiberComplete(localDate()) ? 'Fibre not fully specified' : isSickDay(localDate()) ? 'Sick day – target assessment paused' : isCheatDay(localDate()) ? 'Cheat day – included in balance' : `${fmt(Math.abs(delta))} ${unit} ${delta >= 0 ? 'remaining' : 'above target'}`);
+        if (stat) stat.classList.toggle('cheat-over', hasTargets && !incomplete && isCheatDay(today) && t[key] > g[key]);
+        setText(`#${key}-remaining`, !hasTargets || incomplete ? '' : isSickDay(today) ? 'Sick day – target assessment paused' : isCheatDay(today) ? 'Cheat day – included in balance' : `${fmt(Math.abs(delta))} ${unit} ${delta >= 0 ? 'remaining' : 'above target'}`);
     }
+    const fibreDiaryLink = document.querySelector('#fiber-diary-link');
+    if (fibreDiaryLink) fibreDiaryLink.hidden = !needsFibre;
     const homeSick = document.querySelector('#home-sick-status');
     if (homeSick) homeSick.hidden = !isSickDay(localDate());
     const homeCheat = document.querySelector('#home-cheat-status');
