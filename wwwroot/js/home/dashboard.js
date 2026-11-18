@@ -83,23 +83,23 @@ function renderCalorieBalance() {
     const fixedZones = {
         kcal: {
             limits: [-3500, -1500, 200, 700],
-            labels: ['Large deficit', 'Moderatee deficit', 'Good balance', 'Small surplus', 'Large surplus']
+            labels: ['Large deficit', 'Moderate deficit', 'Good balance', 'Small surplus', 'Large surplus']
         },
         protein: {
             limits: [-250, -100, 100, 200],
-            labels: ['Large deficit', 'Moderatee deficit', 'Good balance', 'Small surplus', 'Large surplus']
+            labels: ['Large deficit', 'Moderate deficit', 'Good balance', 'Small surplus', 'Large surplus']
         },
         carbs: {
             limits: [-450, -180, 180, 350],
-            labels: ['Large deficit', 'Moderatee deficit', 'Good balance', 'Small surplus', 'Large surplus']
+            labels: ['Large deficit', 'Moderate deficit', 'Good balance', 'Small surplus', 'Large surplus']
         },
         fiber: {
             limits: [-80, -30, 30, 60],
-            labels: ['Large deficit', 'Moderatee deficit', 'Good balance', 'Small surplus', 'Large surplus']
+            labels: ['Large deficit', 'Moderate deficit', 'Good balance', 'Small surplus', 'Large surplus']
         },
         fat: {
             limits: [-130, -50, 50, 100],
-            labels: ['Large deficit', 'Moderatee deficit', 'Good balance', 'Small surplus', 'Large surplus']
+            labels: ['Large deficit', 'Moderate deficit', 'Good balance', 'Small surplus', 'Large surplus']
         }
     };
     const {limits, labels} = fixedZones[key];
