@@ -1,89 +1,74 @@
-using Microsoft.Data.Sqlite;
+using System.Text.RegularExpressions;
 
 namespace MomentumGroves.Service;
 
-/// <summary>
-/// Reads and stores training exercise images in SQLite.
-/// </summary>
-public sealed class TrainingImageService
+public sealed class TrainingImageService(IWebHostEnvironment environment)
 {
-    private readonly ILogger<TrainingImageService> _logger;
-    private readonly string _connectionString;
+    public const int MaxUploadBytes = 8_000_000;
+    private readonly string _directory = Path.Combine(
+        environment.WebRootPath ?? Path.Combine(environment.ContentRootPath, "wwwroot"), "TrainingImages");
 
-    /// <summary>
-    /// Initializes the training image storage connection.
-    /// </summary>
-    /// <param name="environment">The hosting environment.</param>
-    public TrainingImageService(IWebHostEnvironment environment, ILogger<TrainingImageService> logger)
+    public IReadOnlyList<TrainingPicture> List()
     {
-        _logger = logger;
-        var path = Path.Combine(environment.ContentRootPath, "src", "Data", "momentum.db");
-        _connectionString = new SqliteConnectionStringBuilder { DataSource = path }.ToString();
+        if (!Directory.Exists(_directory))
+            return [];
+
+        return Directory.EnumerateFiles(_directory)
+            .Where(path => Path.GetExtension(path).ToLowerInvariant() is ".jpg" or ".jpeg" or ".png" or ".webp")
+            .Select(path => Describe(Path.GetFileName(path)))
+            .OrderBy(image => image.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 
-    /// <summary>
-    /// Retrieves an exercise image from the existing database.
-    /// </summary>
-    /// <param name="key">The exercise image key.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The image data and content type, or null if not found.</returns>
-    public async Task<(byte[] Data, string Type)?> ReadAsync(string key, CancellationToken cancellationToken)
+    public async Task<TrainingPicture> SaveAsync(string originalName, byte[] data, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        var extension = GetExtension(data);
+        if (data.Length > MaxUploadBytes || extension is null)
+            throw new ArgumentException("Choose a JPG, PNG or WebP image no larger than 8 MB.");
+
+        var name = Regex.Replace(Path.GetFileNameWithoutExtension(originalName), "[^a-zA-Z0-9]+", "-").Trim('-');
+        name = name[..Math.Min(name.Length, 80)].TrimEnd('-');
+        if (name.Length == 0)
+            name = "exercise";
+
+        var filename = $"{Guid.NewGuid():N}_{name}{extension}";
+        Directory.CreateDirectory(_directory);
+        var temporaryPath = Path.Combine(_directory, filename + ".tmp");
         try
         {
-            await using var connection = new SqliteConnection(_connectionString);
-            await connection.OpenAsync(cancellationToken);
-            await using var command = connection.CreateCommand();
-            command.CommandText = "SELECT ImageData, ContentType FROM TrainingImages WHERE ExerciseKey = $key";
-            command.Parameters.AddWithValue("$key", key);
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-            if (await reader.ReadAsync(cancellationToken))
-            {
-                return ((byte[])reader[0], reader.GetString(1));
-            }
-
-            return null;
+            await File.WriteAllBytesAsync(temporaryPath, data, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            File.Move(temporaryPath, Path.Combine(_directory, filename));
         }
-        catch (Exception exception) when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
+        finally
         {
-            _logger.LogError(exception, "Training image operation {Operation} failed", nameof(ReadAsync));
-            throw;
+            File.Delete(temporaryPath);
         }
+
+        return Describe(filename);
     }
 
-    /// <summary>
-    /// Creates or updates an exercise image in the existing database.
-    /// </summary>
-    /// <param name="key">The exercise image key.</param>
-    /// <param name="type">The image content type.</param>
-    /// <param name="data">The image bytes.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task representing the operation.</returns>
-    public async Task SaveAsync(string key, string type, byte[] data, CancellationToken cancellationToken)
+    private static string? GetExtension(ReadOnlySpan<byte> data)
     {
-        if (string.IsNullOrWhiteSpace(key) || key.Length > 100 || data is null || data.Length is 0 or > 8_000_000 ||
-            type is not ("image/jpeg" or "image/png" or "image/webp"))
-        {
-            _logger.LogWarning("Training image save rejected: invalid key, content type, or image size");
-            throw new ArgumentException("Invalid training image.");
-        }
+        if (data.StartsWith(new byte[] { 0xff, 0xd8, 0xff }))
+            return ".jpg";
+        if (data.StartsWith(new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a }))
+            return ".png";
+        if (data.Length >= 12 && data.StartsWith("RIFF"u8) && data[8..].StartsWith("WEBP"u8))
+            return ".webp";
 
-        try
-        {
-            await using var connection = new SqliteConnection(_connectionString);
-            await connection.OpenAsync(cancellationToken);
-            await using var command = connection.CreateCommand();
-            command.CommandText =
-                "INSERT INTO TrainingImages (ExerciseKey, ContentType, ImageData) VALUES ($key, $type, $data) ON CONFLICT(ExerciseKey) DO UPDATE SET ContentType = excluded.ContentType, ImageData = excluded.ImageData";
-            command.Parameters.AddWithValue("$key", key);
-            command.Parameters.AddWithValue("$type", type);
-            command.Parameters.AddWithValue("$data", data);
-            await command.ExecuteNonQueryAsync(cancellationToken);
-        }
-        catch (Exception exception) when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
-        {
-            _logger.LogError(exception, "Training image operation {Operation} failed", nameof(SaveAsync));
-            throw;
-        }
+        return null;
+    }
+
+    private static TrainingPicture Describe(string filename)
+    {
+        var name = Path.GetFileNameWithoutExtension(filename);
+        if (name.Length > 33 && name[32] == '_' && Guid.TryParseExact(name[..32], "N", out _))
+            name = name[33..];
+
+        return new TrainingPicture(name.Replace('-', ' '), $"/TrainingImages/{Uri.EscapeDataString(filename)}");
     }
 }
+
+public sealed record TrainingPicture(string Name, string Url);

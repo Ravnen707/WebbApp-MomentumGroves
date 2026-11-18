@@ -1,5 +1,3 @@
-using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Logging;
 using MomentumGroves.Service;
 
 namespace MomentumGroves.Tests.Services;
@@ -7,110 +5,70 @@ namespace MomentumGroves.Tests.Services;
 [TestFixture]
 public class TrainingImageServiceTests : DatabaseServiceTests
 {
+    private readonly byte[] _png = Convert.FromBase64String(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j6yQAAAAASUVORK5CYII=");
     private TrainingImageService _service = null!;
-    private TestLogger<TrainingImageService> _logger = null!;
+    private string _directory = null!;
 
     [SetUp]
     public void SetUp()
     {
-        Sql("momentum.db",
-            "CREATE TABLE TrainingImages (ExerciseKey TEXT PRIMARY KEY, ContentType TEXT NOT NULL, ImageData BLOB NOT NULL)");
-        _logger = new();
-        _service = new(Environment, _logger);
-    }
-
-    [TestCase("image/jpeg")]
-    [TestCase("image/png")]
-    [TestCase("image/webp")]
-    public async Task SaveAndRead_RoundTripBytesAndContentType(string type)
-    {
-        byte[] bytes = { 0, 1, 127, 255 };
-        await _service.SaveAsync("squat", type, bytes, default);
-        var result = await _service.ReadAsync("squat", default);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Value.Data, Is.EqualTo(bytes));
-        Assert.That(result.Value.Type, Is.EqualTo(type));
+        Environment.WebRootPath = Path.Combine(Environment.ContentRootPath, "wwwroot");
+        _directory = Path.Combine(Environment.WebRootPath, "TrainingImages");
+        _service = new TrainingImageService(Environment);
     }
 
     [Test]
-    public async Task Save_ExistingKey_ReplacesBytesAndType()
+    public void List_ReturnsOnlySupportedPicturesInTheFolder()
     {
-        await _service.SaveAsync("key", "image/png", new byte[] { 1 }, default);
-        await _service.SaveAsync("key", "image/webp", new byte[] { 2, 3 }, default);
-        var result = await _service.ReadAsync("key", default);
-        Assert.That(result!.Value.Data, Is.EqualTo(new byte[] { 2, 3 }));
-        Assert.That(result.Value.Type, Is.EqualTo("image/webp"));
+        Assert.That(_service.List(), Is.Empty);
+        Directory.CreateDirectory(_directory);
+        File.WriteAllBytes(Path.Combine(_directory, "chest press.PNG"), _png);
+        File.WriteAllText(Path.Combine(_directory, "notes.txt"), "notes");
+
+        Assert.That(_service.List(), Is.EqualTo(new[]
+        {
+            new TrainingPicture("chest press", "/TrainingImages/chest%20press.PNG")
+        }));
     }
-
-    [TestCase("missing")]
-    [TestCase("")]
-    [TestCase("' OR 1=1 --")]
-    public async Task Read_UnknownKey_ReturnsNull(string key) =>
-        Assert.That(await _service.ReadAsync(key, default), Is.Null);
-
-    [TestCase(1)]
-    [TestCase(100)]
-    public async Task Save_KeyLengthBoundary_Accepted(int length)
-    {
-        var key = new string('k', length);
-        await _service.SaveAsync(key, "image/png", new byte[] { 1 }, default);
-        Assert.That(await _service.ReadAsync(key, default), Is.Not.Null);
-    }
-
-    [TestCase("")]
-    [TestCase("  ")]
-    public void Save_MissingKey_Rejects(string key) => AssertInvalid(key, "image/png", new byte[] { 1 });
 
     [Test]
-    public void Save_OverlongKey_Rejects() => AssertInvalid(new string('x', 101), "image/png", new byte[] { 1 });
+    public async Task Upload_StoresOriginalBytesAndAddsEachUploadToTheGallery()
+    {
+        var first = await _service.SaveAsync("Chest Press.png", _png, default);
+        var second = await _service.SaveAsync("Chest Press.png", _png, default);
 
-    [TestCase("")]
-    [TestCase("image/gif")]
-    [TestCase("IMAGE/PNG")]
-    [TestCase("text/plain")]
-    public void Save_UnsupportedType_Rejects(string type) => AssertInvalid("key", type, new byte[] { 1 });
-
-    [TestCase(0)]
-    [TestCase(8_000_001)]
-    public void Save_InvalidByteCount_Rejects(int length) => AssertInvalid("key", "image/png", new byte[length]);
+        Assert.That(first.Name, Is.EqualTo("Chest Press"));
+        Assert.That(first.Url, Is.Not.EqualTo(second.Url));
+        Assert.That(_service.List(), Is.EquivalentTo(new[] { first, second }));
+        Assert.That(File.ReadAllBytes(Path.Combine(_directory, Path.GetFileName(first.Url))), Is.EqualTo(_png));
+    }
 
     [Test]
-    public void Save_NullBytes_Rejects() => AssertInvalid("key", "image/png", null!);
+    public void Upload_RejectsNonImageBytes()
+    {
+        Assert.ThrowsAsync<ArgumentException>(() => _service.SaveAsync("picture.png", "text"u8.ToArray(), default));
+        Assert.That(Directory.Exists(_directory), Is.False);
+    }
 
     [Test]
-    public async Task Save_MaximumByteCount_Accepted()
+    public void Upload_RejectsFilesOverTheLimit()
     {
-        await _service.SaveAsync("max", "image/png", new byte[8_000_000], default);
-        Assert.That((await _service.ReadAsync("max", default))!.Value.Data, Has.Length.EqualTo(8_000_000));
+        var data = new byte[TrainingImageService.MaxUploadBytes + 1];
+        _png.CopyTo(data, 0);
+
+        Assert.ThrowsAsync<ArgumentException>(() => _service.SaveAsync("picture.png", data, default));
+        Assert.That(Directory.Exists(_directory), Is.False);
     }
 
-    [TestCase(true)]
-    [TestCase(false)]
-    public void StorageFailure_LogsAndRethrows(bool save)
+    [Test]
+    public void Upload_CancellationLeavesNoPicture()
     {
-        Sql("momentum.db", "DROP TABLE TrainingImages");
-        var exception = Assert.ThrowsAsync<SqliteException>(() => Execute(save, default));
-        _logger.AssertError(exception!, save ? "SaveAsync" : "ReadAsync");
-    }
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
 
-    [TestCase(true)]
-    [TestCase(false)]
-    public void Cancellation_PropagatesWithoutErrorLogging(bool save)
-    {
-        using var cts = new CancellationTokenSource();
-        cts.Cancel();
-        Assert.CatchAsync<OperationCanceledException>(() => Execute(save, cts.Token));
-        Assert.That(_logger.Entries, Is.Empty);
-    }
-
-    private Task Execute(bool save, CancellationToken token) => save
-        ? _service.SaveAsync("key", "image/png",
-            new byte[] { 1 }, token)
-        : _service.ReadAsync("key", token);
-
-    private void AssertInvalid(string key, string type, byte[] bytes)
-    {
-        Assert.ThrowsAsync<ArgumentException>(() => _service.SaveAsync(key, type, bytes, default));
-        Assert.That(_logger.Entries.Single().Level, Is.EqualTo(LogLevel.Warning));
+        Assert.CatchAsync<OperationCanceledException>(() =>
+            _service.SaveAsync("picture.png", _png, cancellation.Token));
+        Assert.That(_service.List(), Is.Empty);
     }
 }

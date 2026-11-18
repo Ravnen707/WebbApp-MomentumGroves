@@ -45,9 +45,15 @@ a:hover {
 }
 
 .brand {
-    font-size: 23px;
-    font-weight: 800;
-    color: var(--text)
+    display: block;
+    width: min(100%, 180px);
+}
+
+.brand img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
 }
 
 nav {
@@ -2088,6 +2094,31 @@ body:has(#food-date) .two-col {
     background: #533337;
 }
 
+.training-image-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.training-image-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 120px), 1fr));
+    gap: 8px;
+}
+
+.training-image-gallery button {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    overflow-wrap: anywhere;
+}
+
+.training-image-gallery img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: contain;
+}
+
 .training-exercise-content {
     min-width: 0;
     display: grid;
@@ -2176,7 +2207,8 @@ body:has(#food-date) .two-col {
     gap: 8px;
 }
 
-.training-program-tabs [role="tab"].active {
+.training-program-tabs [role="tab"].active,
+#training-dashboard-group[aria-pressed="true"] {
     background: #a6da7e;
     color: #17221a;
     border-color: #a6da7e;
@@ -2185,6 +2217,8 @@ body:has(#food-date) .two-col {
 
 .training-program-actions {
     display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     justify-content: flex-end;
     margin: 12px 0 20px;
 }

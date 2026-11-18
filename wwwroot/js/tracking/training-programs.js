@@ -1,5 +1,6 @@
-import {read, write, WORKOUT_KEY, DONE_KEY} from "../core/storage.js";
+import {read, write, DONE_KEY} from "../core/storage.js";
 import {esc, setText, localDate, shift, monday} from "../core/utils.js";
+import {PROGRAM_KEY, HISTORY_KEY, readTrainingProgrammes, setProgrammeCompleted} from "../core/training-storage.js";
 
 const exercise = name => ({
     name,
@@ -11,101 +12,6 @@ const exercise = name => ({
     type: 'strength',
     minutes: 0
 });
-const PROGRAM_KEY = 'sunhed.training-programs.v3';
-const HISTORY_KEY = 'sunhed.training-history.v1';
-const fullBody = [
-    {
-        id: 'full-a', title: 'Full Body A', subtitle: 'Full body · 6 exercises', exercises: [
-            ['Chest Press', 2, '10–12', 'Chest and triceps. Press the handles forwards at chest height.'],
-            ['Lat Pulldown', 2, '10–12', 'Back. Use a wide grip and pull the bar down in front of your body.'],
-            ['Leg Press', 2, '10–12', 'Quads and glutes. Place your feet shoulder-width apart on the platform.'],
-            ['Seated Leg Curl', 2, '12', 'Hamstrings. Curl your legs towards the seat with control.'],
-            ['Hip Adductor', 2, '12–15', 'Inner thighs. Press your legs inwards with a controlled movement.'],
-            ['Abdominal Crunch', 2, '12–15', 'Abs. Curl your upper body forwards with control.']
-        ]
-    },
-    {
-        id: 'full-b', title: 'Full Body B', subtitle: 'Full body · 5 exercises', exercises: [
-            ['Leg Press', 2, '10–12', 'Feet shoulder-width apart. Press without locking your knees.'],
-            ['Hip Abductor', 2, '12–15', 'Outer hips and glutes. Press your knees outwards.'],
-            ['Seated Row', 2, '10–12', 'Back. Use a neutral vertical grip and pull towards your abdomen.'],
-            ['Chest Press', 2, '10–12', 'Chest and triceps. Press forwards at chest height.'],
-            ['Back Extension', 2, '12', 'Back. Extend with control without overextending.']
-        ]
-    },
-    {
-        id: 'full-c', title: 'Full Body C', subtitle: 'Arms and core · 7 exercises', exercises: [
-            ['Leg Press', 2, '10–12', 'Quads and glutes. Place your feet shoulder-width apart on the platform.'],
-            ['Leg Extension', 2, '12', 'Quads. Extend your legs forwards and upwards.'],
-            ['Lat Pulldown', 2, '10–12', 'Back. Use a narrow neutral grip and pull towards your upper chest in front of your body.'],
-            ['Chest Press', 2, '10–12', 'Chest and triceps. Press forwards at chest height.'],
-            ['Seated Row', 2, '12', 'Back. Use a vertical neutral grip and pull towards your abdomen.'],
-            ['Triceps Pushdown', 2, '12', 'Triceps. Use a rope grip, keep elbows close to your body and push downwards.'],
-            ['Abdominal Crunch', 2, '12–15', 'Abs. Curl your upper body forwards with control.']
-        ]
-    }
-];
-// Each of the 18 exercise cards has an image; repeated exercises reuse one source URL.
-// Uploaded images override these defaults without changing the shared source.
-const exerciseImageSources = {
-    "chest-press": "https://tokai-catv.co.jp/assets/img/column/exercise2410_3.jpg",
-    "lat-pulldown-wide": "https://legionathletics.com/wp-content/uploads/2022/01/Wide-Grip-Lat-Pulldown-1.jpg",
-    "leg-press": "https://www.atpress.ne.jp/attachments/jZgfnSXBbY29F0yLizZr.jpg",
-    "seated-leg-curl": "https://www.institute.cl/store/1/PORTADAS%20EJERCICIOS/Captura%20de%20pantalla%202023-11-09%20191449.png",
-    "hip-adductor": "https://cdn.motra.com/assets/ba5beb3c40/mediumThumbnail.jpg",
-    "abdominal-crunch": "https://assets.media-platform.com/tarzan/dist/images/2019/10/02/191002_773_43-w1280.jpg",
-    "hip-abductor": "https://s3.amazonaws.com/prod.skimble/assets/2423103/image_iphone.jpg",
-    "seated-row": "https://www.funsportzentrum.de/images/Newsletter2026/2026-03-26-Fitundgsund-Maerz/Bilder_Artikel_Neue_Ger%C3%A4te/Compound_Row_2-yx.jpg",
-    "back-extension": "https://www.johnsonfitness.com/Content/product_images/V-KEY-SL-52-K1_5.png",
-    "leg-extension": "https://institute.cl/store/1/PORTADAS%20EJERCICIOS/Captura%20de%20pantalla%202023-11-09%20191536.png",
-    "lat-pulldown-neutral": "https://hips.hearstapps.com/hmg-prod/images/mh-3-8-eb-swole-6408f3d22ab8a.png?crop=0.502xw%3A1.00xh%3B0.213xw%2C0&resize=1200%3A%2A",
-    "triceps-pushdown": "https://www.natima.cz/user/articles/images/nejlepsi-cviky-na-triceps--jak-budovat-silne-a-tvarovane-paze.jpg"
-};
-const fullBodyImageKeys = {
-    "full-a": ["chest-press", "lat-pulldown-wide", "leg-press", "seated-leg-curl", "hip-adductor", "abdominal-crunch"],
-    "full-b": ["leg-press", "hip-abductor", "seated-row", "chest-press", "back-extension"],
-    "full-c": ["leg-press", "leg-extension", "lat-pulldown-neutral", "chest-press", "seated-row", "triceps-pushdown", "abdominal-crunch"]
-};
-const applyDefaultImages = (box) => {
-    const imageKeys = fullBodyImageKeys[box.id];
-    if (!imageKeys) {
-        return box;
-    }
-    box.exercises.forEach((item, index) => {
-        if ((!item.image || Object.values(exerciseImageSources).includes(item.image) || /^\/api\/training-images\/(?:chest|latwide|legpress|legcurl|adductor|crunch|abductor|row|back|extension|latnarrow|pushdown)(?:\?|$)/.test(item.image)) && !item.imageRemoved && imageKeys[index]) {
-            item.image = `/api/training-images/${imageKeys[index]}`;
-            item.imageKey = imageKeys[index];
-        }
-    });
-    return box;
-};
-const makeExercise = (entry) => ({
-    name: entry[0],
-    sets: entry[1],
-    reps: entry[2],
-    kg: 0,
-    description: entry[3],
-    image: '',
-    type: 'strength',
-    minutes: 0
-});
-const defaults = () => ({
-    full: fullBody.map(box => applyDefaultImages({...box, exercises: box.exercises.map(makeExercise)})),
-    custom: []
-});
-const getPrograms = () => {
-    const saved = read(PROGRAM_KEY, null);
-    const initial = defaults();
-    if (saved && typeof saved === 'object') {
-        if (Array.isArray(saved.full)) {
-            const existing = saved.full.filter(x => ['full-a', 'full-b', 'full-c'].includes(x.id));
-            initial.full = initial.full.map(box => applyDefaultImages(existing.find(x => x.id === box.id) || box));
-            initial.full.push(...saved.full.filter(x => !['full-a', 'full-b', 'full-c'].includes(x.id)));
-        }
-        if (Array.isArray(saved.custom)) initial.custom = structuredClone(saved.custom);
-    }
-    return initial;
-};
 
 function renderTraining() {
     const root = document.querySelector('#training-days');
@@ -114,8 +20,20 @@ function renderTraining() {
     const tabs = document.querySelector('#training-program-tabs');
     const addBox = document.querySelector('#training-add-box');
     const saveButton = document.querySelector('#save-workouts');
-    let active = 'full';
-    let programs = getPrograms();
+    const settings = structuredClone(readTrainingProgrammes());
+    const {groups} = settings;
+    groups.forEach(group => {
+        group.programmes = group.programmes.filter(programme => programme?.id);
+        group.programmes.forEach(programme => {
+            programme.exercises ??= [];
+            programme.exercises.forEach(item => {
+                if (!item.image?.startsWith('/TrainingImages/')) item.image = '';
+                delete item.imageKey;
+            });
+        });
+    });
+    let active = groups[0]?.id ?? null;
+    const currentGroup = () => groups.find(group => group.id === active);
     const history = () => read(HISTORY_KEY, {});
     const renderProgress = () => {
         const done = read(DONE_KEY, {});
@@ -157,17 +75,15 @@ function renderTraining() {
         const topic = document.querySelector('#training-progress-topic');
         const select = document.querySelector('#training-progress-exercise');
         if (!category || !topic || !select) return;
-        const previousCategory = category.value || 'full';
+        const previousCategory = category.value || active;
         const previousTopic = topic.value;
         const previous = select.value;
         const snapshots = Object.values(history()).filter(x => x && Array.isArray(x.exercises));
-        const groups = [
-            ['full', 'Full Body'], ['custom', 'My other programmes']
-        ];
-        category.replaceChildren(...groups.filter(([key]) => programs[key]?.length).map(([key, title]) => new Option(title, key)));
-        category.value = groups.some(([key]) => key === previousCategory && programs[key]?.length)
-            ? previousCategory : category.options[0]?.value || '';
-        const boxes = programs[category.value] || [];
+        const available = groups.filter(group => group.programmes.length);
+        category.replaceChildren(...available.map(group => new Option(group.name, group.id)));
+        const group = available.find(item => item.id === previousCategory) || available[0];
+        category.value = group?.id ?? '';
+        const boxes = group?.programmes ?? [];
         topic.replaceChildren(...boxes.map(box => new Option(box.title, box.id)));
         if (boxes.some(box => box.id === previousTopic)) topic.value = previousTopic;
         const box = boxes.find(item => item.id === topic.value);
@@ -270,20 +186,21 @@ function renderTraining() {
     });
     document.querySelector('#training-progress-exercise')?.addEventListener('change', renderProgress);
 
-    const selectProgram = document.querySelector('#training-program-tabs');
-    const addProgram = document.querySelector('#training-add-program');
+    const renameGroup = document.querySelector('#training-rename-group');
+    const dashboardGroup = document.querySelector('#training-dashboard-group');
     let saveVersion = 0;
-    const persist = async () => {
+    const persist = async (successMessage = '✓ Training programmes saved.') => {
         const version = ++saveVersion;
         setText('#save-message', 'Saving training programme…');
-        const saved = await write(PROGRAM_KEY, programs);
+        const saved = await write(PROGRAM_KEY, settings);
         if (version !== saveVersion) return;
-        setText('#save-message', saved ? '✓ Training programme saved to SQLite.' : 'Could not save the training programme.');
+        setText('#save-message', saved ? successMessage : 'Could not save the training programme.');
     };
     const collect = () => {
-        if (active === 'progress') return;
+        const group = currentGroup();
+        if (!group) return;
         root.querySelectorAll('[data-box-id]').forEach(section => {
-            const box = programs[active]?.find(x => x.id === section.dataset.boxId);
+            const box = group.programmes.find(x => x.id === section.dataset.boxId);
             if (!box) return;
             box.title = section.querySelector('[data-title]').value.trim() || 'New programme';
             box.subtitle = section.querySelector('[data-subtitle]').value.trim();
@@ -298,30 +215,118 @@ function renderTraining() {
             });
         });
     };
-    const draw = () => {
-        selectProgram.querySelectorAll('[data-program]').forEach(button => {
-            const selected = button.dataset.program === active;
-            button.classList.toggle('active', selected);
-            button.setAttribute('aria-selected', String(selected));
+    const imageDialog = document.querySelector('#training-image-dialog');
+    const imageGallery = imageDialog.querySelector('[data-image-gallery]');
+    const imageStatus = imageDialog.querySelector('[data-image-status]');
+    const imageInput = imageDialog.querySelector('[data-image-file]');
+    const pickImage = imageDialog.querySelector('[data-pick-image]');
+    const uploadImage = imageDialog.querySelector('[data-upload-image]');
+    const closeImage = imageDialog.querySelector('[data-close-image]');
+    let imageTarget;
+    let imageBusy = false;
+
+    const runImageAction = async action => {
+        imageBusy = true;
+        pickImage.disabled = uploadImage.disabled = closeImage.disabled = true;
+        try {
+            await action();
+        } finally {
+            imageBusy = false;
+            pickImage.disabled = uploadImage.disabled = closeImage.disabled = false;
+        }
+    };
+    const setExerciseImage = image => {
+        imageTarget.image = image.url;
+        imageTarget.imageRemoved = false;
+        imageDialog.close();
+        persist();
+        draw();
+    };
+
+    closeImage.addEventListener('click', () => imageDialog.close());
+    imageDialog.addEventListener('cancel', event => {
+        if (imageBusy) event.preventDefault();
+    });
+    pickImage.addEventListener('click', () => runImageAction(async () => {
+        imageGallery.replaceChildren();
+        imageStatus.textContent = 'Loading pictures…';
+        try {
+            const response = await fetch('/api/training-images', {cache: 'no-store'});
+            if (!response.ok) throw new Error();
+            const images = await response.json();
+            imageStatus.textContent = images.length ? '' : 'No pictures are available yet.';
+            imageGallery.innerHTML = images.map(image => `
+                <button type="button" class="btn secondary">
+                    <img src="${esc(image.url)}" alt="" loading="lazy">
+                    <span>${esc(image.name)}</span>
+                </button>`).join('');
+            [...imageGallery.children].forEach((button, index) => {
+                button.addEventListener('click', () => {
+                    if (!imageBusy) setExerciseImage(images[index]);
+                });
+            });
+            imageGallery.querySelector('button')?.focus();
+        } catch {
+            imageStatus.textContent = 'Could not load pictures. Try again.';
+        }
+    }));
+    uploadImage.addEventListener('click', () => imageInput.click());
+    imageInput.addEventListener('change', () => {
+        const file = imageInput.files?.[0];
+        imageInput.value = '';
+        if (!file) return;
+        if (!file.size || file.size > 8_000_000) {
+            imageStatus.textContent = 'Choose a JPG, PNG or WebP image no larger than 8 MB.';
+            return;
+        }
+
+        runImageAction(async () => {
+            imageStatus.textContent = 'Uploading picture…';
+            try {
+                const payload = new FormData();
+                payload.append('file', file);
+                const response = await fetch('/api/training-images', {method: 'POST', body: payload});
+                if (response.status === 400 || response.status === 413) {
+                    imageStatus.textContent = 'Choose a JPG, PNG or WebP image no larger than 8 MB.';
+                    return;
+                }
+                if (!response.ok) throw new Error();
+                setExerciseImage(await response.json());
+            } catch {
+                imageStatus.textContent = 'Could not upload the picture. Try again.';
+            }
         });
+    });
+    const draw = () => {
+        tabs.innerHTML = [...groups, {id: 'progress', name: 'Training progress'}].map(group => {
+            const selected = group.id === active;
+            return `<button type="button" class="btn secondary${selected ? ' active' : ''}" role="tab" data-program="${esc(group.id)}" aria-selected="${selected}">${esc(group.name)}</button>`;
+        }).join('');
         const progressMode = active === 'progress';
         document.querySelector('#training-progress').hidden = !progressMode;
         root.hidden = progressMode;
-        document.querySelector('.training-program-actions').hidden = progressMode;
-        document.querySelector('.training-footer').hidden = progressMode;
+        const group = currentGroup();
+        document.querySelector('.training-program-actions').hidden = !group;
+        document.querySelector('.training-footer').hidden = !group;
         if (progressMode) {
             renderProgress();
             return;
         }
+        if (!group) {
+            root.innerHTML = '<p class="muted">Create a programme group to get started.</p>';
+            return;
+        }
+        const programmes = group.programmes;
+        dashboardGroup.setAttribute('aria-pressed', String(group.id === settings.dashboardGroupId));
         const done = read(DONE_KEY, {});
-        root.innerHTML = programs[active].map((box, index) => {
+        root.innerHTML = programmes.map((box, index) => {
             const date = localDate();
             const doneKey = `${date}:${box.id}`;
             const rows = box.exercises.map((x, i) => {
                 const cardio = x.type === 'cardio';
                 return `<article class="training-exercise-card" data-exercise-index="${i}">
                     <div class="training-exercise-media">${x.image ? `<img src="${esc(x.image)}" alt="${esc(x.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.opacity=0.25;this.title='Image could not be loaded'"><span class="training-image-empty" hidden>Image could not be loaded – upload your own image</span>` : '<div class="training-image-empty">No image</div>'}
-                        <label class="training-image-upload">${x.image ? 'Change image' : '+ Add image'}<input type="file" accept="image/jpeg,image/png,image/webp" data-image-upload hidden></label>
+                        <button type="button" class="training-image-upload" data-image-picker>${x.image ? 'Change image' : '+ Add image'}</button>
                         ${x.image ? '<button type="button" class="training-image-remove" data-image-remove>Remove image</button>' : ''}</div>
                     <div class="training-exercise-content"><div class="training-exercise-heading"><input data-field="name" aria-label="Exercise name" value="${esc(x.name || '')}"><div class="training-exercise-tools"><button type="button" class="btn secondary" data-exercise-move="up" title="Move up" ${i === 0 ? 'disabled' : ''}>↑</button><button type="button" class="btn secondary" data-exercise-move="down" title="Move down" ${i === box.exercises.length - 1 ? 'disabled' : ''}>↓</button><button type="button" class="btn danger" data-remove-exercise aria-label="Delete exercise">×</button></div></div>
                         <textarea data-field="description" rows="2" placeholder="Brief exercise description">${esc(x.description || '')}</textarea>
@@ -331,14 +336,14 @@ function renderTraining() {
                         <label class="training-strength-field">Kg<input data-field="kg" type="number" min="0" step="0.5" value="${Number(x.kg) || 0}"></label>
                         <label class="training-cardio-field">Minutter<input data-field="minutes" type="number" min="0" step="1" value="${Number(x.minutes) || 0}"></label></div></div></article>`;
             }).join('');
-            return `<section class="panel training-edit-box" data-box-id="${esc(box.id)}"><div class="training-title"><div class="training-box-heading"><label>Name<input data-title value="${esc(box.title)}"></label><label>Focus / description<input data-subtitle value="${esc(box.subtitle || '')}"></label></div><div class="training-box-controls"><button type="button" class="btn secondary" data-move="up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" class="btn secondary" data-move="down" ${index === programs[active].length - 1 ? 'disabled' : ''}>↓</button><button type="button" class="btn danger" data-remove-box>Delete programme</button><label><input class="check" type="checkbox" data-done="${doneKey}" ${done[doneKey] ? 'checked' : ''}> Completed</label></div></div><div class="training-exercise-list">${rows}</div><button type="button" class="btn secondary" data-add-exercise>+ Add exercise / cardio</button></section>`;
+            return `<section class="panel training-edit-box" data-box-id="${esc(box.id)}"><div class="training-title"><div class="training-box-heading"><label>Name<input data-title value="${esc(box.title)}"></label><label>Focus / description<input data-subtitle value="${esc(box.subtitle || '')}"></label></div><div class="training-box-controls"><button type="button" class="btn secondary" data-move="up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" class="btn secondary" data-move="down" ${index === programmes.length - 1 ? 'disabled' : ''}>↓</button><button type="button" class="btn danger" data-remove-box>Delete programme</button><label><input class="check" type="checkbox" data-done="${doneKey}" ${done[doneKey] ? 'checked' : ''}> Completed</label></div></div><div class="training-exercise-list">${rows}</div><button type="button" class="btn secondary" data-add-exercise>+ Add exercise / cardio</button></section>`;
         }).join('') || '<p class="muted">No programmes yet. Press + Add programme.</p>';
         root.querySelectorAll('[data-box-id]').forEach(section => {
             const id = section.dataset.boxId;
-            const find = () => programs[active].findIndex(box => box.id === id);
+            const find = () => programmes.findIndex(box => box.id === id);
             section.querySelector('[data-add-exercise]').addEventListener('click', () => {
                 collect();
-                programs[active][find()].exercises.push({
+                programmes[find()].exercises.push({
                     ...exercise('New exercise'),
                     description: '',
                     image: '',
@@ -350,7 +355,7 @@ function renderTraining() {
             });
             section.querySelectorAll('[data-exercise-move]').forEach(button => button.addEventListener('click', () => {
                 collect();
-                const list = programs[active][find()].exercises;
+                const list = programmes[find()].exercises;
                 const index = Number(button.closest('[data-exercise-index]').dataset.exerciseIndex);
                 const other = index + (button.dataset.exerciseMove === 'up' ? -1 : 1);
                 if (other < 0 || other >= list.length) return;
@@ -366,54 +371,22 @@ function renderTraining() {
             }));
             section.querySelectorAll('[data-remove-exercise]').forEach(button => button.addEventListener('click', () => {
                 collect();
-                programs[active][find()].exercises.splice(Number(button.closest('[data-exercise-index]').dataset.exerciseIndex), 1);
+                programmes[find()].exercises.splice(Number(button.closest('[data-exercise-index]').dataset.exerciseIndex), 1);
                 persist();
                 draw();
             }));
-            section.querySelectorAll('[data-image-upload]').forEach(input => input.addEventListener('change', async () => {
-                const file = input.files?.[0];
-                if (!file) return;
-                if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 8 * 1024 * 1024) {
-                    alert('Choose a JPG, PNG or WebP image no larger than 8 MB.');
-                    return;
-                }
-                const img = new Image();
-                const url = URL.createObjectURL(file);
-                try {
-                    await new Promise((resolve, reject) => {
-                        img.onload = resolve;
-                        img.onerror = reject;
-                        img.src = url;
-                    });
-                    const canvas = document.createElement('canvas');
-                    const scale = Math.min(1, 520 / Math.max(img.naturalWidth, img.naturalHeight));
-                    canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
-                    canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
-                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                    const data = canvas.toDataURL('image/webp', .75);
-                    collect();
-                    const selectedExercise = programs[active][find()].exercises[Number(input.closest('[data-exercise-index]').dataset.exerciseIndex)];
-                    const imageKey = `user-${crypto.randomUUID()}`;
-                    const blob = await (await fetch(data)).blob();
-                    const payload = new FormData();
-                    payload.append('file', blob, 'exercise.webp');
-                    const upload = await fetch(`/api/training-images/${imageKey}`, {method: 'POST', body: payload});
-                    if (!upload.ok) throw new Error('Could not save the image to SQLite.');
-                    selectedExercise.image = `/api/training-images/${imageKey}`;
-                    selectedExercise.imageKey = imageKey;
-                    selectedExercise.imageRemoved = false;
-                    await persist();
-                    draw();
-                } catch (error) {
-                    console.error(error);
-                    alert('Image could not be loaded.');
-                } finally {
-                    URL.revokeObjectURL(url);
-                }
+            section.querySelectorAll('[data-image-picker]').forEach(button => button.addEventListener('click', () => {
+                collect();
+                const index = Number(button.closest('[data-exercise-index]').dataset.exerciseIndex);
+                imageTarget = programmes[find()].exercises[index];
+                imageStatus.textContent = '';
+                imageGallery.replaceChildren();
+                imageInput.value = '';
+                imageDialog.showModal();
             }));
             section.querySelectorAll('[data-image-remove]').forEach(button => button.addEventListener('click', () => {
                 collect();
-                const selectedExercise = programs[active][find()].exercises[Number(button.closest('[data-exercise-index]').dataset.exerciseIndex)];
+                const selectedExercise = programmes[find()].exercises[Number(button.closest('[data-exercise-index]').dataset.exerciseIndex)];
                 selectedExercise.image = '';
                 selectedExercise.imageRemoved = true;
                 persist();
@@ -422,15 +395,15 @@ function renderTraining() {
             section.querySelector('[data-remove-box]').addEventListener('click', () => {
                 if (!confirm('Delete this training programme and its exercises?')) return;
                 collect();
-                programs[active].splice(find(), 1);
+                programmes.splice(find(), 1);
                 persist();
                 draw();
             });
             section.querySelectorAll('[data-move]').forEach(button => button.addEventListener('click', () => {
                 collect();
                 const index = find(), other = index + (button.dataset.move === 'up' ? -1 : 1);
-                if (other < 0 || other >= programs[active].length) return;
-                [programs[active][index], programs[active][other]] = [programs[active][other], programs[active][index]];
+                if (other < 0 || other >= programmes.length) return;
+                [programmes[index], programmes[other]] = [programmes[other], programmes[index]];
                 persist();
                 draw();
             }));
@@ -440,55 +413,79 @@ function renderTraining() {
             }));
             section.querySelectorAll('[data-done]').forEach(input => input.addEventListener('change', () => {
                 collect();
-                const all = read(DONE_KEY, {});
-                all[input.dataset.done] = input.checked;
-                write(DONE_KEY, all);
-                const snapshots = history();
-                if (input.checked) {
-                    const box = programs[active].find(x => x.id === id);
-                    snapshots[input.dataset.done] = {
-                        date: input.dataset.done.slice(0, 10),
-                        boxId: id,
-                        title: box?.title || '',
-                        exercises: structuredClone(box?.exercises || []).map(({image, ...rest}) => rest)
-                    };
-                } else {
-                    delete snapshots[input.dataset.done];
-                }
-                write(HISTORY_KEY, snapshots);
+                const programme = programmes.find(item => item.id === id);
+                setProgrammeCompleted(input.dataset.done, programme, input.checked);
                 renderProgress();
             }));
         });
     };
-    selectProgram.querySelectorAll('[data-program]').forEach(button => button.addEventListener('click', () => {
-        if (active !== 'progress') {
+    tabs.addEventListener('click', event => {
+        const button = event.target.closest('[data-program]');
+        if (!button || button.dataset.program === active) return;
+        if (currentGroup()) {
             collect();
             persist();
         }
         active = button.dataset.program;
-        if (!['full', 'custom', 'progress'].includes(active)) active = 'full';
         draw();
-    }));
-    const createProgram = () => {
-        if (active !== 'progress') collect();
-        if (active === 'progress') active = 'custom';
-        programs[active].push({
-            id: `custom-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+        tabs.querySelector('[aria-selected="true"]')?.focus();
+    });
+
+    addBox.addEventListener('click', () => {
+        collect();
+        currentGroup().programmes.push({
+            id: crypto.randomUUID(),
             title: 'New programme',
             subtitle: '',
             exercises: []
         });
         persist();
         draw();
+    });
+
+    const groupDialog = document.querySelector('#training-group-dialog');
+    const groupForm = groupDialog.querySelector('form');
+    const groupName = groupForm.elements.groupName;
+    let groupToRename;
+    const openGroupDialog = (group = null) => {
+        groupToRename = group;
+        groupDialog.querySelector('h2').textContent = group ? 'Rename programme group' : 'New programme group';
+        groupName.value = group?.name ?? '';
+        groupName.setCustomValidity('');
+        groupDialog.showModal();
+        groupName.select();
     };
-    addBox.addEventListener('click', createProgram);
-    addProgram?.addEventListener('click', () => {
-        if (active !== 'progress') {
-            collect();
-            persist();
+    document.querySelector('#training-add-group').addEventListener('click', () => openGroupDialog());
+    renameGroup.addEventListener('click', () => openGroupDialog(currentGroup()));
+    groupDialog.querySelector('[data-cancel-group]').addEventListener('click', () => groupDialog.close());
+    groupName.addEventListener('input', () => groupName.setCustomValidity(''));
+    groupForm.addEventListener('submit', event => {
+        event.preventDefault();
+        const name = groupName.value.trim();
+        if (!name) {
+            groupName.setCustomValidity('Enter a group name.');
+            groupName.reportValidity();
+            return;
         }
-        active = 'custom';
-        createProgram();
+        collect();
+        if (groupToRename) {
+            groupToRename.name = name;
+        } else {
+            const group = {id: crypto.randomUUID(), name, programmes: []};
+            groups.push(group);
+            active = group.id;
+        }
+        groupDialog.close();
+        persist();
+        draw();
+    });
+
+    dashboardGroup.addEventListener('click', () => {
+        collect();
+        const group = currentGroup();
+        settings.dashboardGroupId = group.id;
+        dashboardGroup.setAttribute('aria-pressed', 'true');
+        persist(`“${group.name}” will appear on the dashboard.`);
     });
     saveButton.addEventListener('click', () => {
         collect();
@@ -496,10 +493,6 @@ function renderTraining() {
     });
     draw();
     renderProgress();
-    // Store the initial A/B/C program and its image URLs in momentum.db.
-    if (!read(PROGRAM_KEY, null)) {
-        persist();
-    }
 }
 
 export {renderTraining};

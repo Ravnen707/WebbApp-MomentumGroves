@@ -1,8 +1,8 @@
 import {initializeData, showDataError} from './core/storage.js';
 import {localDate} from './core/utils.js';
-import {drawChart, renderCalorieBalance, renderHome} from './home/dashboard.js?v=20261118-fibre-diary';
+import {drawChart, renderCalorieBalance, renderHome} from './home/dashboard.js?v=20261119-training-groups';
 import {renderFood} from './food/food-diary.js';
-import {renderTraining} from './tracking/training-programs.js?v=20261118-iso-weeks';
+import {renderTraining} from './tracking/training-programs.js?v=20261119-training-groups';
 import {renderCalculator} from './tracking/nutrition-targets.js?v=20261118-empty-calculator';
 import './food/meal-editor.js';
 
