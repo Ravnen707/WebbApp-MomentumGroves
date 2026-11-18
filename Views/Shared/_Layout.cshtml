@@ -10,7 +10,10 @@
 <body>
 <div class="app-shell">
     <aside class="sidebar">
-        <a class="brand" asp-controller="Home" asp-action="Index">☀ Momentum Groves</a>
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <img src="~/Logo/MomentumGrovesLogo.png" asp-append-version="true"
+                 alt="Momentum Groves dashboard" width="1536" height="1024"/>
+        </a>
         <nav aria-label="Main menu">
             <a asp-controller="Home" asp-action="Index">Dashboard</a>
             <a asp-controller="Food" asp-action="Index">Food Diary</a>
@@ -34,7 +37,7 @@
 </div>
 @await Html.PartialAsync("Modals/_DatabaseInitializationModal")
 <script src="~/js/modals/database-initialization.js" asp-append-version="true" defer></script>
-<script type="module" src="~/js/app.js?v=20261118-iso-weeks"></script>
+<script type="module" src="~/js/app.js?v=20261119-training-groups"></script>
 @await RenderSectionAsync("Scripts", required: false)
 <script>
     (() => {

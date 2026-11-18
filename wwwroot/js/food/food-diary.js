@@ -3,7 +3,7 @@ import {fmt, esc, setText, setHTML, localDate} from "../core/utils.js";
 import {isCheatDay, setCheatDay} from "../tracking/cheat-days.js";
 import {isSickDay, fiberActive, fiberKnown, fiberComplete, setSickDay} from "../tracking/sick-days.js";
 import {updateZoneDisplay, getGoals, setProgress} from "../tracking/nutrition-targets.js?v=20261118-empty-calculator";
-import {drawChart, renderCalorieBalance} from "../home/dashboard.js?v=20261118-fibre-diary";
+import {drawChart, renderCalorieBalance} from "../home/dashboard.js?v=20261119-training-groups";
 import {setupDrinks} from "./drinks.js";
 import {setupMealCopy} from "./meal-copy.js";
 import {setupFoodSearch} from "./food-search.js?v=20261101-food-nutrition";

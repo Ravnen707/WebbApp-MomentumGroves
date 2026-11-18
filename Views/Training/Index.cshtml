@@ -2,22 +2,43 @@
 <div class="heading">
     <div><p class="eyebrow">TRAINING</p>
         <h1>Your training programmes</h1>
-        <p class="muted">Full Body A, B and C · edit exercises, images and training values.</p></div>
+        <p class="muted">Create programmes and track your training progress.</p></div>
 </div>
-<div id="training-program-tabs" class="training-program-tabs" role="tablist" aria-label="Training programme">
-    <button type="button" class="btn secondary active" role="tab" data-program="full" aria-selected="true">Full Body
-    </button>
-    <button type="button" class="btn secondary" role="tab" data-program="custom" aria-selected="false">My other programmes
-    </button>
-    <button type="button" class="btn secondary" role="tab" data-program="progress" aria-selected="false">
-        Training progress
-    </button>
-    <button type="button" class="btn secondary" id="training-add-program">+ New programme group</button>
+<div class="training-program-tabs">
+    <div id="training-program-tabs" class="training-program-tabs" role="tablist" aria-label="Programme groups"></div>
+    <button type="button" class="btn secondary" id="training-add-group">+ New programme group</button>
 </div>
 <div class="training-program-actions">
+    <button type="button" id="training-rename-group" class="btn secondary">Rename group</button>
+    <button type="button" id="training-dashboard-group" class="btn secondary" aria-pressed="false">Show this group on dashboard</button>
     <button type="button" id="training-add-box" class="btn secondary">+ Add programme</button>
 </div>
 <div id="training-days" class="training-stack"></div>
+<dialog id="training-group-dialog" class="drink-dialog" aria-labelledby="training-group-heading">
+    <form class="dialog-inner">
+        <h2 id="training-group-heading"></h2>
+        <label>Group name<input name="groupName" required maxlength="80"></label>
+        <div class="modal-actions">
+            <button type="button" class="btn secondary" data-cancel-group>Cancel</button>
+            <button type="submit" class="btn">Save group</button>
+        </div>
+    </form>
+</dialog>
+<dialog id="training-image-dialog" class="drink-dialog" aria-labelledby="training-image-heading">
+    <div class="dialog-inner">
+        <div class="section-head">
+            <h2 id="training-image-heading">Exercise picture</h2>
+            <button type="button" class="btn secondary" data-close-image aria-label="Close">×</button>
+        </div>
+        <div class="training-image-actions">
+            <button type="button" class="btn secondary" data-pick-image>Pick from program</button>
+            <button type="button" class="btn" data-upload-image>Upload picture</button>
+            <input type="file" accept="image/jpeg,image/png,image/webp" data-image-file hidden>
+        </div>
+        <p class="muted" data-image-status role="status"></p>
+        <div class="training-image-gallery" data-image-gallery></div>
+    </div>
+</dialog>
 <div class="training-footer">
     <button id="save-workouts" class="btn">Save training programme</button>
     <span class="muted" id="save-message" role="status"></span></div>
