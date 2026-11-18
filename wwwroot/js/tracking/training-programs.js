@@ -121,7 +121,8 @@ function renderTraining() {
         const done = read(DONE_KEY, {});
         const records = Object.entries(done).filter(([key, value]) => value && /^\d{4}-\d{2}-\d{2}:/.test(key));
         const dates = [...new Set(records.map(([key]) => key.slice(0, 10)))];
-        const today = new Date(`${localDate()}T12:00:00`);
+        const todayKey = localDate();
+        const today = new Date(`${todayKey}T12:00:00`);
         const monthAgo = new Date(today);
         monthAgo.setDate(today.getDate() - 29);
         const monthly = dates.filter(date => new Date(`${date}T12:00:00`) >= monthAgo && new Date(`${date}T12:00:00`) <= today).length;
@@ -133,24 +134,25 @@ function renderTraining() {
             [records.length, 'Completed workouts', 'check-circle']
         ];
         stats.innerHTML = statsData.map(([value, label]) => `<div class="training-stat"><strong>${value}</strong><span>${label}</span></div>`).join('');
+        const currentMonday = monday(todayKey);
         const weekly = [];
         for (let index = 7; index >= 0; index--) {
-            const end = new Date(today);
-            end.setDate(today.getDate() - index * 7);
-            const start = new Date(end);
-            start.setDate(end.getDate() - 6);
+            const start = shift(currentMonday, -index * 7);
+            const end = shift(start, 6);
+            // The Thursday determines the ISO week-year. UTC keeps the week number independent of DST.
+            const thursday = new Date(shift(start, 3));
+            const yearStart = Date.UTC(thursday.getUTCFullYear(), 0, 1);
+            const weekNumber = 1 + Math.floor((thursday.getTime() - yearStart) / (7 * 86400000));
             weekly.push({
-                label: `${start.getDate()}/${start.getMonth() + 1}`,
-                count: dates.filter(date => {
-                    const value = new Date(`${date}T12:00:00`);
-                    return value >= start && value <= end;
-                }).length
+                label: `W-${weekNumber}`,
+                range: `${start} to ${end}`,
+                count: dates.filter(date => date >= start && date <= end && date <= todayKey).length
             });
         }
         const weeks = document.querySelector('#training-progress-weeks');
         if (!weeks) return;
         const maxCount = Math.max(3, ...weekly.map(x => x.count));
-        weeks.innerHTML = `<div class="training-chart-y"><span>${maxCount}</span><span>${Math.round(maxCount / 2)}</span><span>0</span></div><div class="training-chart-plot"><div class="training-chart-grid"></div>${weekly.map(x => `<div class="training-chart-column"><strong>${x.count}</strong><div class="training-chart-bar" style="height:${x.count / maxCount * 100}%" title="${x.count} training days"></div><small>${x.label}</small></div>`).join('')}</div>`;
+        weeks.innerHTML = `<div class="training-chart-y"><span>${maxCount}</span><span>${Math.round(maxCount / 2)}</span><span>0</span></div><div class="training-chart-plot"><div class="training-chart-grid"></div>${weekly.map(x => `<div class="training-chart-column" title="${x.range} · ${x.count} training days"><strong>${x.count}</strong><div class="training-chart-bar" style="height:${x.count / maxCount * 100}%"></div><small>${x.label}</small></div>`).join('')}</div>`;
         const category = document.querySelector('#training-progress-category');
         const topic = document.querySelector('#training-progress-topic');
         const select = document.querySelector('#training-progress-exercise');
