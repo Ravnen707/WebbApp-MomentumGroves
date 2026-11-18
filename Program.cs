@@ -22,8 +22,6 @@ builder.Services.AddHttpClient("openfoodfacts", client =>
         "MomentumGroves/0.1 (personal nutrition diary; contact: local development)");
 });
 builder.Services.AddHttpClient();
-builder.Services.AddSingleton<MomentumGroves.Repository.RouteRepository>();
-builder.Services.AddSingleton<MomentumGroves.Service.RouteService>();
 var app = builder.Build();
 // Capture file existence before any other application service can create a database.
 _ = app.Services.GetRequiredService<MomentumGroves.Service.DatabaseInitializationService>();

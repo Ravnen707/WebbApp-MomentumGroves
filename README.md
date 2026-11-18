@@ -30,7 +30,7 @@ MomentumGroves is intended to become more than a personal logbook. Its design di
 ### Current development priorities — in order
 
 1. **Android step counting:** collect daily steps from supported Android sensors, show daily/weekly history and goals, synchronize with the web app, and handle permissions, device restarts, and duplicate readings. Background collection depends on Android restrictions and hardware.
-2. **GPS activity tracking:** start, pause, resume, and stop a walk; record elapsed time, distance, and a route trace; store and synchronize completed sessions. Reuse existing web map capabilities where practical. Background location requires explicit permissions and appropriate foreground-service behavior.
+2. **GPS activity tracking:** start, pause, resume, and stop a walk; record elapsed time, distance, and a route trace; store and synchronize completed sessions. Background location requires explicit permissions and appropriate foreground-service behavior.
 3. **Achievements:** add a shared server-side achievement engine for food goals, steps, walking distance, training, weight milestones, and streaks. Support progress, unlock dates, XP/levels, hidden achievements, and eligible historical data without awarding duplicates.
 4. **Achievement-powered game:** introduce a lightweight web/mobile game using ordinary UI elements, icons, cards, and progress bars rather than an elaborate sprite-based game. Achievements and healthy routines may award in-game resources or unlock upgrades; the game must remain playable without exercise.
 
@@ -43,7 +43,6 @@ These are **planned milestones**, not claims that step tracking, GPS tracking, a
 - **Optional health-to-game integration:** a future account setting could enable or disable game rewards tied to personal health goals and weekly activity.
 - **Personalization and accounts:** individual goals, preferences, achievements, and game progress may eventually be tied to user accounts.
 - **A coherent identity:** use the MomentumGroves theme throughout the web and mobile experience, without requiring a complex game engine.
-- **Scope review:** existing features such as route planning may be revisited or reorganized if the product's eventual audience and purpose change. No removal is planned as part of the four milestones.
 
 Achievement design should encourage sustainable habits. Avoid rewarding extreme calorie restriction, excessive exercise, or rapid weight loss. Rest days, illness, and the existing Sick Day/Cheat Day behaviors need deliberate handling; in-game rewards should never determine whether a person is 'allowed' to eat.
 
@@ -67,7 +66,6 @@ The supplied project and documentation include these areas:
 - **Nutrition targets and history:** daily nutrition tracking, seven-day views, and sick-day/cheat-day controls. Sick days are intended to be excluded from target evaluation; cheat days remain in the seven-day intake balance.
 - **Body metrics and weight tracking:** dedicated views for body measurements and weight history.
 - **Training:** dedicated training tracking view.
-- **Route planning:** Leaflet/OpenStreetMap-based map and saved-route workflow, with route suggestions through an external routing service when configured. Route planning is separate from the planned GPS activity recorder.
 - **Administration:** an administration view for the web app.
 
 The latest JavaScript refactoring discussed for this project has not been fully browser-tested; feature presence should not be interpreted as a verification that every control works.
@@ -155,7 +153,7 @@ The installed SDK must support `net10.0`. This web repository does **not** requi
 
 1. In the repository root (beside `Program.cs`), copy `.env.example` to a new file named `.env`.
 2. Keep `.env` local: it is ignored by Git.
-3. Fill in only the external-service keys you intend to use; leave optional keys empty otherwise.
+3. Set `MobileSync__Key` if you use mobile food synchronization.
 4. Do not put real keys into `.env.example`, README files, source code, or Git commits.
 
 `Program.cs` calls `DotEnvLoader.Load(...)` for the root `.env` file, so **this application does load `.env`** when started from the repository root. If you run it with a different working directory, check that the file is being found.
@@ -188,7 +186,6 @@ dotnet run --project .\MomentumGroves.csproj
 2. Open the custom food library and add a temporary test food; this confirms `food_and_recipes.db` and its tables work.
 3. Save an application setting or other app-state entry to confirm `momentum.db` works.
 4. If Frida is missing, use **Go to Admin to make FridaDb** and install the dataset; then test Frida food search.
-5. Configure your own routing API key if you want route generation.
 6. Run the automated tests under [Testing](#testing).
 7. For Android transfers, follow [Android companion and synchronization](#android-companion-and-synchronization).
 
@@ -249,17 +246,11 @@ The repository includes `.env.example`. Create a local `.env` at the **project r
 
 | Setting | Where to put it | Purpose |
 |---|---|---|
-| `ORS_API_KEY` | `.env` | OpenRouteService API key for route generation |
-| `Tracestrack__ApiKey` | `.env` | Optional Tracestrack tile service key |
-| `Routes__NominatimSearchUrl` | `.env` | Geocoding endpoint; template provides a default |
-| `Routes__OrsBaseUrl` | `.env` | OpenRouteService base URL; template provides a default |
-| `Routes__OsmTileUrl` | `.env` | OpenStreetMap tile URL template |
-| `Routes__TracestrackTileUrl` | `.env` | Tracestrack tile URL template |
 | `MobileSync__Key` | Local environment or `.env` | Private shared key used by the web sync endpoint; must match the mobile app |
 
-The last setting is **not present in the supplied `.env.example`**; add it only if you intend to use mobile synchronization. The web sync service reads the configuration key `MobileSync:Key` (double underscores map to colons in environment-variable configuration).
+The mobile sync setting is optional. The web sync service reads the configuration key `MobileSync:Key` (double underscores map to colons in environment-variable configuration).
 
-**Where to get/connect services:** Obtain your own OpenRouteService key from the provider if you want ORS route generation. Tracestrack is optional and requires its own provider access if used. Open Food Facts is used for product lookup and depends on internet access and available product data. The map uses Leaflet and external map/geocoding services; follow provider usage limits and attribution requirements.
+Open Food Facts is used for product lookup and depends on internet access and available product data.
 
 Do not expose a development sync endpoint or private keys on the public internet.
 
@@ -312,7 +303,7 @@ The repository contains a separate **NUnit** test project:
 tests/MomentumGroves.Tests/MomentumGroves.Tests.csproj
 ```
 
-It targets **.NET 10** and references the web project. Tests cover service areas including food handling, recipes/library, Frida updates, mobile food sync, routes, app state, training images, and a body-metrics controller.
+It targets **.NET 10** and references the web project. Tests cover service areas including food handling, recipes/library, Frida updates, mobile food sync, app state, training images, and a body-metrics controller.
 
 Run the tests from the repository root:
 
