@@ -1,3 +1,4 @@
+import {ingredientRow, nutritionSummary} from "./ingredient-row.js";
 import {FOOD_KEY, write} from "../core/storage.js";
 import {parseDecimal, fmt, setText} from "../core/utils.js";
 import {food} from "./food-diary.js?v=20261101-food-nutrition";
@@ -27,6 +28,7 @@ function setupFoodSearch(picker, refresh) {
     let editingId = null;
     let selectedRecipe = null;
     let selectedFoodPer100 = null;
+    let selectedUnit = 'g';
     let customizedRecipeIngredients = null;
     const round2 = value => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
     const number = key => parseDecimal(form.elements.namedItem(key).value);
@@ -68,6 +70,7 @@ function setupFoodSearch(picker, refresh) {
             : currentMode === 'recipe'
                 ? {
                     name, grams, source: currentSource, entryMode: 'recipe',
+                    recipeFinishedWeight: selectedRecipe.recipeFinishedWeight,
                     recipeIngredients: selectedRecipe.recipeIngredients.map(ingredient => ({...ingredient})),
                     ...Object.fromEntries(fields.map(key => [key, per100g[key]]))
                 }
@@ -77,7 +80,7 @@ function setupFoodSearch(picker, refresh) {
                         ...Object.fromEntries(fields.map(key => [key, per100g[key]]))
                     }
                     : {
-                        name, grams, per100g, source: currentSource, entryMode: 'search',
+                        name, grams, unit: selectedUnit, per100g, source: currentSource, entryMode: 'search',
                         ...Object.fromEntries(fields.map(key => [key, per100g[key] === null ? null : per100g[key] * grams / 100]))
                     };
     }
@@ -184,46 +187,29 @@ function setupFoodSearch(picker, refresh) {
     function renderSummary() {
         list.replaceChildren();
         for (const [index, item] of ingredients.entries()) {
-            const row = document.createElement('div');
-            row.className = 'food-ingredient-row';
-            const details = document.createElement('div');
-            details.className = 'food-ingredient-details';
-            const name = document.createElement('strong');
-            name.textContent = item.name;
-            const info = document.createElement('small');
-            info.textContent = `${fmt(item.kcal)} kcal · P ${fmt(item.protein)} g · C ${fmt(item.carbs)} g · F ${fmt(item.fat)} g`;
-            details.append(name, info);
-            const amount = document.createElement('input');
-            amount.type = 'text';
-            amount.inputMode = 'decimal';
-            amount.min = '0.001';
-            amount.step = 'any';
-            amount.value = item.grams;
-            amount.className = 'food-row-amount';
-            amount.setAttribute('aria-label', `Amount ${item.name} in grams`);
-            amount.addEventListener('change', () => {
-                const grams = parseDecimal(amount.value);
-                if (!(grams > 0)) {
-                    amount.value = item.grams;
-                    return;
-                }
-                const oldGrams = item.grams;
-                for (const key of fields) {
-                    if (item[key] != null) item[key] = Number(item[key]) * grams / oldGrams;
-                }
-                item.grams = grams;
-                if (item.per100g) item.per100g = {...item.per100g};
-                renderSummary();
-            });
-            const unit = document.createElement('span');
-            unit.textContent = 'g';
-            const remove = document.createElement('button');
-            remove.type = 'button';
-            remove.className = 'btn danger';
-            remove.textContent = 'Remove';
-            remove.addEventListener('click', () => {
+            const {row, amount, nutrition} = ingredientRow(item, () => {
                 ingredients.splice(index, 1);
                 renderSummary();
+            });
+            amount.addEventListener('input', () => {
+                const grams = parseDecimal(amount.value);
+                const valid = Number.isFinite(grams) && grams > 0;
+                amount.setCustomValidity(valid ? '' : 'Enter an amount greater than 0.');
+                if (!valid) return;
+
+                const ratio = grams / item.grams;
+                for (const key of fields) {
+                    if (item[key] != null) item[key] = Number(item[key]) * ratio;
+                }
+                if (item.entryMode === 'recipe-custom') {
+                    item.ingredientItems = item.ingredientItems.map(part => ({
+                        ...part,
+                        grams: part.grams * ratio,
+                        ...Object.fromEntries(fields.map(key => [key, part[key] == null ? null : part[key] * ratio]))
+                    }));
+                }
+                item.grams = grams;
+                nutrition.textContent = nutritionSummary(item);
             });
             if (item.entryMode === 'recipe' || item.entryMode === 'recipe-custom') {
                 const edit = document.createElement('button');
@@ -235,9 +221,7 @@ function setupFoodSearch(picker, refresh) {
                     renderSummary();
                     choose(item);
                 });
-                row.append(details, amount, unit, edit, remove);
-            } else {
-                row.append(details, amount, unit, remove);
+                row.insertBefore(edit, row.lastElementChild);
             }
             list.append(row);
         }
@@ -246,6 +230,7 @@ function setupFoodSearch(picker, refresh) {
 
 
     function choose(item) {
+        selectedUnit = item.unit || 'g';
         form.hidden = false;
         form.elements.namedItem('name').value = item.name ?? '';
         form.elements.namedItem('grams').value = item.grams ?? 100;
@@ -478,6 +463,7 @@ function setupFoodSearch(picker, refresh) {
                                 grams: item.finishedWeight,
                                 source: 'My Recipes',
                                 entryMode: 'recipe',
+                                recipeFinishedWeight: item.finishedWeight,
                                 recipeIngredients: item.ingredients,
                                 kcal: item.kcal,
                                 protein: item.protein,
@@ -496,7 +482,7 @@ function setupFoodSearch(picker, refresh) {
                                 return;
                             }
                             choose({
-                                name: item.name, grams: 100, source: 'My Foods', entryMode: 'search',
+                                name: item.name, grams: 100, unit: item.unit, source: 'My Foods', entryMode: 'search',
                                 per100g: nutrition
                             });
                         } else {
@@ -520,6 +506,7 @@ function setupFoodSearch(picker, refresh) {
             warning.textContent = 'Add the selected food to the list before saving.';
             return;
         }
+        if ([...list.querySelectorAll('input')].some(input => !input.reportValidity())) return;
         const all = [...ingredients];
         if (!all.length) {
             warning.textContent = 'Add at least one ingredient before saving the meal.';

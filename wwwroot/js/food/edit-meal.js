@@ -1,3 +1,5 @@
+import {ingredientRow, nutritionSummary} from "./ingredient-row.js";
+
 (() => {
     'use strict';
 
@@ -7,7 +9,6 @@
     }
 
     const form = document.querySelector('#edit-meal-form');
-    const panel = document.querySelector('#edit-meal-ingredients-panel');
     const ingredientList = document.querySelector('#edit-meal-ingredient-list');
     const message = document.querySelector('#edit-meal-message');
     const nutrientKeys = ['kcal', 'protein', 'carbs', 'fat', 'fiber'];
@@ -22,7 +23,6 @@
     let save = null;
     let ingredientItems = [];
     let editingIngredients = false;
-    let changingTotals = false;
     let totalBasis = null;
 
     const close = () => dialog.close();
@@ -41,7 +41,7 @@
     }
 
     function ingredientTotals() {
-        const grams = ingredientItems.reduce((sum, item) => sum + Number(item.grams), 0);
+        const grams = ingredientItems.reduce((sum, item) => sum + Number(item.grams) * (item.diaryWeightFactor ?? 1), 0);
         const totals = {grams};
         for (const key of nutrientKeys) {
             const known = ingredientItems.some(item => ingredientPer100(item, key) != null);
@@ -57,7 +57,6 @@
         for (const key of [...requiredKeys, 'fiber']) {
             input(key).value = totals[key] == null ? '' : round(totals[key]);
         }
-        totalBasis = {...totals};
     }
 
     function updateFromIngredients() {
@@ -70,30 +69,52 @@
 
     function renderIngredients() {
         ingredientList.replaceChildren();
-        for (const ingredient of ingredientItems) {
-            const row = document.createElement('label');
-            row.className = 'edit-meal-ingredient';
-            const name = document.createElement('span');
-            name.textContent = ingredient.name;
-            const amount = document.createElement('input');
-            amount.type = 'text';
-            amount.inputMode = 'decimal';
-            amount.value = ingredient.grams;
-            amount.setAttribute('aria-label', `Amount for ${ingredient.name}`);
-            const unit = document.createElement('span');
-            unit.textContent = ingredient.unit || 'g';
+        const items = ingredientItems.length ? ingredientItems : [{
+            ...original, unit: original.type === 'drink' ? 'ml' : 'g'
+        }];
+        for (const [index, ingredient] of items.entries()) {
+            const nutritionFor = grams => Object.fromEntries(nutrientKeys.map(key => {
+                const per100 = ingredientPer100(ingredient, key);
+                return [key, per100 == null ? null : per100 * grams / 100];
+            }));
+            const remove = ingredientItems.length > 1 ? () => {
+                ingredientItems.splice(index, 1);
+                updateFromIngredients();
+                renderIngredients();
+            } : null;
+            const {row, amount, nutrition} = ingredientRow({
+                ...ingredient, ...(ingredientItems.length ? nutritionFor(ingredient.grams) : totalBasis)
+            }, remove);
             amount.addEventListener('input', () => {
                 const value = parseDecimal(amount.value);
-                if (!Number.isFinite(value) || value <= 0) {
-                    amount.setCustomValidity('Enter an amount greater than 0.');
-                    message.textContent = 'All ingredients must have a valid amount.';
-                    return;
+                const valid = Number.isFinite(value) && value > 0;
+                amount.setCustomValidity(valid ? '' : 'Enter an amount greater than 0.');
+                if (!valid) return;
+
+                if (ingredientItems.length) {
+                    ingredient.grams = value;
+                    updateFromIngredients();
+                    nutrition.textContent = nutritionSummary(nutritionFor(value));
+                } else {
+                    input('grams').value = value;
+                    for (const key of nutrientKeys) {
+                        const baseline = totalBasis[key];
+                        input(key).value = baseline == null ? '' : round(baseline * value / totalBasis.grams);
+                    }
+                    nutrition.textContent = nutritionSummary(Object.fromEntries(nutrientKeys.map(key =>
+                        [key, input(key).value === '' ? null : parseDecimal(input(key).value)])));
                 }
-                amount.setCustomValidity('');
-                ingredient.grams = value;
-                updateFromIngredients();
+                message.textContent = '';
             });
-            row.append(name, amount, unit);
+            if (!ingredientItems.length) {
+                for (const key of nutrientKeys) {
+                    input(key).oninput = () => {
+                        totalBasis = Object.fromEntries([...requiredKeys, 'fiber'].map(field =>
+                            [field, input(field).value === '' ? null : parseDecimal(input(field).value)]));
+                        nutrition.textContent = nutritionSummary(totalBasis);
+                    };
+                }
+            }
             ingredientList.append(row);
         }
     }
@@ -102,66 +123,49 @@
         original = item;
         save = callback;
         editingIngredients = false;
-        changingTotals = false;
         form.reset();
         for (const key of ['name', 'notes', 'ingredients', ...requiredKeys, 'fiber']) {
             input(key).value = item[key] ?? '';
         }
-        ingredientItems = Array.isArray(item.ingredientItems)
+        for (const key of nutrientKeys) input(key).oninput = null;
+        ingredientItems = item.type !== 'drink' && Array.isArray(item.ingredientItems)
             ? item.ingredientItems.flatMap(entry => {
                 // A recipe added as one item retains its original ingredient list.
                 // Expose those ingredients individually, just like recipe customization in the create modal.
+                if (entry.entryMode === 'recipe-custom' && entry.ingredientItems?.length) {
+                    return entry.ingredientItems.map(part => ({...part, per100g: {...part.per100g}}));
+                }
                 if ((entry.entryMode === 'recipe' || entry.entryMode === 'recipe-custom')
                     && Array.isArray(entry.recipeIngredients) && entry.recipeIngredients.length) {
-                    const baseWeight = entry.recipeIngredients.reduce((sum, part) => sum + Number(part.amount || 0), 0);
-                    const ratio = baseWeight > 0 ? Number(entry.grams) / baseWeight : 1;
+                    const baseWeight = entry.recipeIngredients.reduce((sum, part) => sum + Number(part.amount), 0);
+                    const baseKcal = entry.recipeIngredients.reduce((sum, part) => sum + Number(part.kcal) * Number(part.amount) / 100, 0);
+                    const portion = entry.recipeFinishedWeight > 0
+                        ? Number(entry.grams) / entry.recipeFinishedWeight
+                        : baseKcal > 0 && entry.kcal > 0
+                            ? Number(entry.kcal) / baseKcal
+                            : baseWeight > 0 ? Number(entry.grams) / baseWeight : 1;
+                    const portionWeight = baseWeight * portion;
                     return entry.recipeIngredients.map(part => ({
                         name: part.name,
                         unit: part.unit || 'g',
-                        grams: round(Number(part.amount || 0) * ratio),
+                        grams: Number(part.amount) * portion,
+                        diaryWeightFactor: portionWeight > 0 ? Number(entry.grams) / portionWeight : 1,
                         per100g: Object.fromEntries(nutrientKeys.map(key => [key, part[key] == null ? null : Number(part[key])]))
                     }));
                 }
-                return [{...entry, per100g: entry.per100g ? {...entry.per100g} : undefined}];
+                return [{...entry, per100g: Object.fromEntries(nutrientKeys.map(key =>
+                    [key, ingredientPer100(entry, key)]))}];
             })
             : [];
-        panel.hidden = ingredientItems.length === 0 || item.type === 'drink';
-        if (!panel.hidden) {
-            renderIngredients();
-        } else {
-            ingredientList.replaceChildren();
-        }
         totalBasis = Object.fromEntries([...requiredKeys, 'fiber'].map(key => [key, item[key]]));
-        const drink = item.type === 'drink';
-        document.querySelector('#edit-amount-label').firstChild.textContent = drink ? 'Amount (ml)' : 'Amount (g)';
-        document.querySelector('#edit-meal-hint').textContent = drink
-            ? 'Total nutritional values for the selected amount in ml.'
-            : 'Total nutritional values for the selected amount in grams. You can also edit the totals manually.';
+        for (const key of nutrientKeys) input(key).readOnly = ingredientItems.length > 0;
+        input('ingredients').readOnly = ingredientItems.length > 0;
+        document.querySelector('#edit-meal-details').open = false;
+        renderIngredients();
         message.textContent = '';
         dialog.showModal();
         input('name').focus();
     };
-
-    input('grams').addEventListener('input', () => {
-        const grams = parseDecimal(input('grams').value);
-        const previous = Number(totalBasis?.grams);
-        if (!(grams > 0) || !(previous > 0)) {
-            return;
-        }
-        // Changing the total quantity scales the displayed totals without rewriting individual ingredients.
-        for (const key of nutrientKeys) {
-            const value = totalBasis[key];
-            input(key).value = value == null ? '' : round(Number(value) * grams / previous);
-        }
-        changingTotals = true;
-        message.textContent = '';
-    });
-
-    for (const key of nutrientKeys) {
-        input(key).addEventListener('input', () => {
-            changingTotals = true;
-        });
-    }
 
     form.addEventListener('submit', event => {
         event.preventDefault();
@@ -194,18 +198,19 @@
         };
         if (original.type === 'drink') {
             updated.ml = values.grams;
-            updated.per100ml = Object.fromEntries(nutrientKeys.filter(key => key !== 'fiber')
-                .map(key => [key, round(values[key] * 100 / values.grams)]));
+            updated.per100ml = Object.fromEntries(nutrientKeys.map(key => [key,
+                values[key] == null ? null : round(values[key] * 100 / values.grams)]));
         } else {
             updated.per100g = Object.fromEntries(nutrientKeys.map(key => [key,
                 values[key] == null ? null : round(values[key] * 100 / values.grams)]));
-            if (ingredientItems.length) {
-                if (editingIngredients && changingTotals) {
-                    // The total fields take precedence if both ingredient amounts and totals were edited.
-                    updated.ingredientItems = ingredientItems.map(item => ({...item}));
-                } else if (editingIngredients) {
-                    updated.ingredientItems = ingredientItems.map(item => ({...item}));
-                }
+            if (editingIngredients) {
+                updated.ingredientItems = ingredientItems.map(item => ({
+                    ...item,
+                    ...Object.fromEntries(nutrientKeys.map(key => {
+                        const per100 = ingredientPer100(item, key);
+                        return [key, per100 == null ? null : round(per100 * item.grams / 100)];
+                    }))
+                }));
             }
         }
         save(updated);

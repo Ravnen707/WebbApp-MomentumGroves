@@ -1,3 +1,5 @@
+import {nutritionSummary} from "./ingredient-row.js";
+
 (() => {
     const $ = (selector, root = document) => root.querySelector(selector);
     const el = (tag, text, className) => {
@@ -181,7 +183,16 @@
                 const food = foods.find(x => x.id === item.foodId);
                 if (!food) continue;
                 const row = el('div', undefined, 'library-item');
-                const label = el('strong', food.name);
+                const details = el('div');
+                const nutrition = el('small');
+                details.append(el('strong', food.name), nutrition);
+                const showNutrition = () => {
+                    nutrition.textContent = item.amount > 0
+                        ? nutritionSummary(Object.fromEntries(['kcal', 'protein', 'carbs', 'fat', 'fiber'].map(key =>
+                            [key, food[key] == null ? null : food[key] * item.amount / 100])), fmt)
+                        : '';
+                };
+                showNutrition();
                 const input = el('input');
                 input.type = 'text';
                 input.inputMode = 'decimal';
@@ -191,6 +202,7 @@
                 input.setAttribute('aria-label', `Amount ${food.name} (${food.unit})`);
                 input.oninput = () => {
                     item.amount = number(input.value);
+                    showNutrition();
                     preview();
                 };
                 const unit = el('span', food.unit, 'muted');
@@ -202,7 +214,7 @@
                     renderSearch();
                 };
                 row.classList.add('library-ingredient-row');
-                row.append(label, input, unit, remove);
+                row.append(details, input, unit, remove);
                 ingredientsRoot.append(row);
             }
             if (!ingredients.length) ingredientsRoot.append(el('p', 'No ingredients selected.', 'muted'));

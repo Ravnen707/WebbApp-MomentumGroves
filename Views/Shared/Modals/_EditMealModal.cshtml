@@ -5,28 +5,25 @@
         </div>
         <form id="edit-meal-form">
             <label>Name / description<input name="name" required maxlength="200"></label>
-            <section id="edit-meal-ingredients-panel" class="edit-meal-ingredients-panel" hidden>
-                <p class="muted tiny">Adjust ingredient amounts for this entry. Saved recipes and foods are unaffected.</p>
-                <div id="edit-meal-ingredient-list" class="edit-meal-ingredient-list"></div>
-            </section>
-            <h3 class="edit-meal-total-heading">Total amount and nutrition</h3>
-            <div class="form-grid">
-                <label id="edit-amount-label">Amount (g)<input name="grams" type="text" inputmode="decimal" min="0.001"
-                                                               step="any" required></label>
-                <label>Calories (kcal)<input name="kcal" type="text" inputmode="decimal" min="0" step="any"
+            <div id="edit-meal-ingredient-list" class="food-ingredient-list"></div>
+            <input name="grams" type="hidden">
+            <details id="edit-meal-details">
+                <summary>Nutrition totals and details</summary>
+                <div class="form-grid">
+                    <label>Calories (kcal)<input name="kcal" type="text" inputmode="decimal" min="0" step="any"
+                                                 required></label>
+                    <label>Protein (g)<input name="protein" type="text" inputmode="decimal" min="0" step="any"
                                              required></label>
-                <label>Protein (g)<input name="protein" type="text" inputmode="decimal" min="0" step="any"
-                                         required></label>
-                <label>Carbohydrates (g)<input name="carbs" type="text" inputmode="decimal" min="0" step="any"
-                                             required></label>
-                <label>Fat (g)<input name="fat" type="text" inputmode="decimal" min="0" step="any" required></label>
-                <label>Fibre (g)<input name="fiber" type="text" inputmode="decimal" min="0" step="any"
-                                           placeholder="Optional"></label>
-            </div>
-            <label>Ingredients / contents (text, optional)<textarea name="ingredients" rows="3"
-                                                                     placeholder="e.g. chicken 150 g, pasta 100 g"></textarea></label>
-            <label>Notes<textarea name="notes" rows="3"></textarea></label>
-            <p class="muted tiny" id="edit-meal-hint">Nutritional values are totals for the specified amount.</p>
+                    <label>Carbohydrates (g)<input name="carbs" type="text" inputmode="decimal" min="0" step="any"
+                                                 required></label>
+                    <label>Fat (g)<input name="fat" type="text" inputmode="decimal" min="0" step="any" required></label>
+                    <label>Fibre (g)<input name="fiber" type="text" inputmode="decimal" min="0" step="any"
+                                               placeholder="Optional"></label>
+                </div>
+                <label>Ingredients / contents (text, optional)<textarea name="ingredients" rows="3"
+                                                                         placeholder="e.g. chicken 150 g, pasta 100 g"></textarea></label>
+                <label>Notes<textarea name="notes" rows="3"></textarea></label>
+            </details>
             <p class="muted tiny" id="edit-meal-message" role="status"></p>
             <div class="modal-actions">
                 <button type="button" class="btn secondary" id="cancel-edit-meal">Cancel</button>

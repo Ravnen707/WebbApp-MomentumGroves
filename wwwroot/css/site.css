@@ -1130,12 +1130,12 @@ body:has(#food-date) .two-col {
     padding-top: 16px;
 }
 
-#food-dialog .food-ingredient-list {
+.food-ingredient-list {
     display: grid;
     gap: 8px;
 }
 
-#food-dialog .food-ingredient-row {
+.food-ingredient-row {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -1145,18 +1145,18 @@ body:has(#food-date) .two-col {
     padding: 10px;
 }
 
-#food-dialog .food-ingredient-details {
+.food-ingredient-details {
     display: grid;
     gap: 4px;
     flex: 1;
     min-width: 0;
 }
 
-#food-dialog .food-ingredient-details small {
+.food-ingredient-details small {
     color: var(--muted);
 }
 
-#food-dialog .food-ingredient-row .btn {
+.food-ingredient-row .btn {
     padding: 7px 11px;
 }
 
@@ -1197,11 +1197,11 @@ body:has(#food-date) .two-col {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    #food-dialog .food-ingredient-row {
+    .food-ingredient-row {
         flex-wrap: wrap;
     }
 
-    #food-dialog .food-ingredient-details {
+    .food-ingredient-details {
         flex-basis: 100%;
     }
 }
@@ -1444,7 +1444,7 @@ body:has(#food-date) .two-col {
     gap: 9px;
 }
 
-.library-ingredient-row > strong {
+.library-ingredient-row > div {
     flex: 1;
     min-width: 0;
 }
@@ -1541,19 +1541,19 @@ body:has(#food-date) .two-col {
     gap: 8px;
 }
 
-#food-dialog .food-ingredient-list {
+.food-ingredient-list {
     gap: 6px;
 }
 
-#food-dialog .food-ingredient-row {
+.food-ingredient-row {
     padding: 8px 10px;
 }
 
-#food-dialog .food-ingredient-details small {
+.food-ingredient-details small {
     font-size: 12px;
 }
 
-#food-dialog .food-row-amount {
+.food-ingredient-row .food-row-amount {
     width: 90px;
     min-width: 0;
 }
@@ -1603,7 +1603,7 @@ body:has(#food-date) .two-col {
         padding: 12px 14px;
     }
 
-    #food-dialog .food-row-amount {
+    .food-ingredient-row .food-row-amount {
         width: 75px;
     }
 }
