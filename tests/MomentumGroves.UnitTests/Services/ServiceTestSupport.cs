@@ -68,7 +68,7 @@ public abstract class DatabaseServiceTests
 
 public sealed class TestEnvironment : IWebHostEnvironment
 {
-    public string ApplicationName { get; set; } = "MomentumGroves.Tests";
+    public string ApplicationName { get; set; } = "MomentumGroves.UnitTests";
     public string EnvironmentName { get; set; } = "Development";
     public string ContentRootPath { get; set; } = "";
     public string WebRootPath { get; set; } = "";
