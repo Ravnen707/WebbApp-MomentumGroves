@@ -95,7 +95,7 @@ function setupFoodSearch(picker, refresh) {
         const values = customizedRecipeIngredients || [];
         const grams = values.reduce((total, ingredient) => total + ingredient.grams, 0);
         const totals = Object.fromEntries(fields.map(key => [key,
-            key === 'fiber' && values.some(ingredient => ingredient.per100g[key] == null)
+            key === 'fiber' && !values.some(ingredient => ingredient.per100g[key] != null)
                 ? null
                 : values.reduce((total, ingredient) => total + (ingredient.per100g[key] || 0) * ingredient.grams / 100, 0)
         ]));

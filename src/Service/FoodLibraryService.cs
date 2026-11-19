@@ -288,10 +288,8 @@ public sealed class FoodLibraryService
             {
                 var (name, weight, items) = pair.Value;
 
-                double? total(Func<RecipeIngredientDetail, double?> selector) => items.Count > 0
-                    ? items.Any(x => selector(x) is null)
-                        ? null
-                        : items.Sum(x => selector(x)!.Value * x.Amount / 100)
+                double? total(Func<RecipeIngredientDetail, double?> selector) => items.Any(x => selector(x).HasValue)
+                    ? items.Sum(x => (selector(x) ?? 0) * x.Amount / 100)
                     : null;
 
                 return new LibraryRecipe(pair.Key, name, weight, items, total(x => x.Kcal), total(x => x.Protein),
