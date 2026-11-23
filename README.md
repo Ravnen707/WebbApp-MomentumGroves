@@ -1,6 +1,6 @@
 # MomentumGroves
 
-MomentumGroves is a personal health, nutrition, and activity tracker for logging meals, managing recipes, recording workouts, and tracking weight over time.
+MomentumGroves is a personal health tracker for logging meals, workouts, and weight over time.
 
 This repository contains the **ASP.NET Core MVC (.NET 10)** web app, which stores data locally in **SQLite**. The **.NET MAUI Android** companion lives in a separate repository.
 
@@ -8,6 +8,7 @@ This repository contains the **ASP.NET Core MVC (.NET 10)** web app, which store
 
 ## Table of contents
 
+- [Motivation and why I built this](#motivation-and-why-i-built-this)
 - [Project vision and roadmap](#project-vision-and-roadmap)
 - [Overview and features](#overview-and-features)
 - [Technology and project structure](#technology-and-project-structure)
@@ -19,6 +20,18 @@ This repository contains the **ASP.NET Core MVC (.NET 10)** web app, which store
 - [Publishing safely](#publishing-safely)
 - [Security and privacy](#security-and-privacy)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## Motivation and why I built this
+
+One morning I got up, stepped on the scale, and saw 117 kg. I remember thinking, *It's about time I did something about this.* I'm 188 cm tall, and what worried me that morning was how I felt in my own body. I was already dealing with some physical issues, and I knew carrying extra weight probably wasn't making things any easier. I wanted to lose weight and feel better, and I needed a way to keep going once that first burst of motivation wore off.
+
+I know how easily I fall out of the habit of using tracking apps. I'll get into a routine, then find that some feature I want to use is behind a paywall. Once I can't keep track the way I wanted to, opening the app starts to feel like a chore. So I started building something around the way I actually live. I wanted to log what I eat and see how it adds up against what I need each day. I wanted my own recipes and my own food database, a graph that shows how my weight has changed over time, and a way to see whether I've kept up with training and how many weeks in a row I've managed it. Now when I catch myself thinking, *I wish the app did this one little thing,* I get to sit down and make it.
+
+Keeping my own log helps me stay honest. If I leave out a meal or tick off a workout I skipped, the numbers I look back at won't match what I actually did. I built the app to see how I'm doing, so there's little point in entering anything other than what happened.
+
+I also have a lot of fun building it. When I'm between jobs or going through a stretch where I don't get to code much, it gives me a reason to keep my skills current. I can learn something like Playwright by working on an app I know inside out, and I have something personal to show when I apply for jobs. Some days I sit down because I want to see how my training or weight is coming along. Other days I sit down because I can't wait to add something I've been thinking about. I think that's why I have such a hard time leaving it alone. I get to make something I enjoy, learn as I go, and use it to take better care of myself.
 
 ---
 
