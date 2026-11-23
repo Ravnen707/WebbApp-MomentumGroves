@@ -69,4 +69,92 @@ public class Tests : PageTest
         await Expect(ranges).ToBeHiddenAsync();
         await Expect(openRanges).ToBeVisibleAsync();
     }
+
+    /// <summary>
+    /// Testing To navigate to My Recipes => Create a recipe => Save it. Removes it in another test or it cannot be
+    /// observed otherwise it works
+    /// </summary>
+    [Test]
+    public async Task DashboardShowsNutritinRangesAndLetsTheUserCloseThem()
+    {
+        var baseUrl = Environment.GetEnvironmentVariable("MOMENTUM_GROVES_BASE_URL") ?? "http://localhost:5000";
+        await Page.GotoAsync(baseUrl);
+
+        // Making sure page is loaded in.
+        await Expect(Page.GetByRole(AriaRole.Heading, new()
+        {
+            Name = "Your daily overview"
+        })).ToBeVisibleAsync();
+
+        // Readable and better named functionality names
+        await ClickMenuAsync("Food Library");
+        await ClickLinkAsync("My Recipes");
+        await WriteDialogAsync("Recipe name", "Test");
+        await WriteDialogAsync("Find an ingredient in My Foods", "olie", AriaRole.Searchbox);
+        await ClickButtonAsync("Ekstra Jomfru Olivenolie (per 100 g)");
+        await WriteDialogAsync("Meal weight (g)", "200");
+        await ClickButtonAsync("Save recipe");
+
+        await VerifyStatusAsync("Recipe saved.");
+    }
+
+
+    /* Past this comment is all helper classes used for testing. will be moved to a helper later*/
+    
+    /// <summary>
+    /// To remove repeated code. and make test a bit more readable
+    /// </summary>
+    /// <param name="dialogName"></param>
+    private async Task ClickDialogAsync(string dialogName)
+    {
+        await Page.GetByRole(AriaRole.Dialog, new()
+        {
+            Name = dialogName
+        }).ClickAsync();
+    }
+
+    private async Task ClickButtonAsync(string buttonName)
+    {
+        await Page.GetByRole(AriaRole.Button, new()
+        {
+            Name = buttonName
+        }).ClickAsync();
+    }
+    
+    /*private async Task WritedialogAsync(string fieldName, string value)
+    {
+        await Page.GetByRole(AriaRole.Textbox, new()
+        {
+            Name = fieldName
+        }).FillAsync(value);
+    }*/
+
+    private async Task ClickMenuAsync(string text)
+    {
+        await Page.GetByText(text, new()
+        {
+            Exact = true
+        }).ClickAsync();
+    }
+
+    private async Task ClickLinkAsync(string link)
+    {
+        await Page.GetByRole(AriaRole.Link, new()
+        {
+            Name = link
+        }).ClickAsync();
+    }
+
+    private async Task WriteDialogAsync(string fieldName, string value, AriaRole role = AriaRole.Textbox)
+    {
+        await Page.GetByRole(role, new()
+        {
+            Name = fieldName
+        }).FillAsync(value);
+    }
+    
+    private async Task VerifyStatusAsync(string message)
+    {
+        await Expect(Page.GetByRole(AriaRole.Status)).ToHaveTextAsync(message);
+    }
 }
