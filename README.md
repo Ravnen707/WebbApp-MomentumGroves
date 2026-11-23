@@ -1,5 +1,10 @@
 # MomentumGroves
 
+MomentumGroves is a personal project for tracking meals, workouts, and weight over time. Open the English README for the story behind it, its features, and the programming languages, frameworks, and tools I use. You’ll also find what I’m learning, how to get started, and what’s planned next.
+
+<details>
+<summary><strong>English README</strong></summary>
+
 MomentumGroves is a personal health tracker for logging meals, workouts, and weight over time.
 
 This repository contains the **ASP.NET Core MVC (.NET 10)** web app, which stores data locally in **SQLite**. The **.NET MAUI Android** companion lives in a separate repository.
@@ -25,7 +30,7 @@ This repository contains the **ASP.NET Core MVC (.NET 10)** web app, which store
 
 ## Motivation and why I built this
 
-One morning I got up, stepped on the scale, and saw 117 kg. I remember thinking, *It's about time I did something about this.* I'm 188 cm tall, and what worried me that morning was how I felt in my own body. I was already dealing with some physical issues, and I knew carrying extra weight probably wasn't making things any easier. I wanted to lose weight and feel better, and I needed a way to keep going once that first burst of motivation wore off.
+I started MomentumGroves because I wanted to lose weight and feel better. I weighed 117 kg and was already dealing with some physical issues that the extra weight wasn't helping. I wanted a way to track my progress and build habits I could stick with.
 
 I know how easily I fall out of the habit of using tracking apps. I'll get into a routine, then find that some feature I want to use is behind a paywall. Once I can't keep track the way I wanted to, opening the app starts to feel like a chore. So I started building something around the way I actually live. I wanted to log what I eat and see how it adds up against what I need each day. I wanted my own recipes and my own food database, a graph that shows how my weight has changed over time, and a way to see whether I've kept up with training and how many weeks in a row I've managed it. Now when I catch myself thinking, *I wish the app did this one little thing,* I get to sit down and make it.
 
@@ -407,5 +412,426 @@ You can also select the unit test project in your IDE's test runner.
 ---
 
 *Repository-owner notes, if present, are separate from this public setup guide.*
+
+</details>
+
+</details>
+
+MomentumGroves er mit personlige projekt til at registrere måltider, træning og vægt over tid. Åbn den danske README for at læse om historien bag projektet, appens funktioner og de programmeringssprog, frameworks og værktøjer, jeg bruger. Du kan også læse om, hvad jeg lærer undervejs, hvordan du kommer i gang, og hvad jeg har planer om at bygge videre på.
+
+<details>
+<summary><strong>Dansk README</strong></summary>
+
+MomentumGroves er et personligt værktøj til at registrere måltider, træning og vægt over tid.
+
+Dette repository indeholder webappen, som er bygget med **ASP.NET Core MVC (.NET 10)** og gemmer data lokalt i **SQLite**. Den tilhørende **.NET MAUI-app til Android** ligger i sit eget repository.
+
+> **Udvikling og brug af AI.** Jeg bygger og vedligeholder MomentumGroves som mit eget læringsprojekt. Jeg bruger OpenAI Codex til at lave udkast til kodens grundstruktur. Jeg gennemgår al kode, retter den efter behov og implementerer selv funktionalitet, når grundstrukturen ikke rækker. Projektet giver mig praktisk erfaring med at bygge funktioner i ASP.NET Core MVC og automatisere browseren med Playwright og NUnit.
+
+## Indholdsfortegnelse
+
+- [Min motivation, og hvorfor jeg byggede appen](#da-motivation)
+- [Projektets vision og udviklingsplan](#da-vision)
+- [Overblik og funktioner](#da-funktioner)
+- [Teknologi og projektstruktur](#da-teknologi)
+- [Fork og opsætning af webappen](#da-opsaetning)
+- [SQLite-databaser og startdata](#da-databaser)
+- [Konfiguration og eksterne tjenester](#da-konfiguration)
+- [Android-app og synkronisering](#da-android)
+- [Test](#da-test)
+- [Sikker publicering](#da-publicering)
+- [Sikkerhed og privatliv](#da-sikkerhed)
+- [Fejlfinding](#da-fejlfinding)
+
+---
+
+<a id="da-motivation"></a>
+
+## Min motivation, og hvorfor jeg byggede appen
+
+Jeg startede MomentumGroves, fordi jeg ville tabe mig og få det bedre. Jeg vejede 117 kg og døjede allerede med nogle fysiske problemer, som de ekstra kilo ikke gjorde lettere. Jeg ville have en måde at følge mine fremskridt på og få nogle vaner, jeg kunne holde fast i.
+
+Jeg ved, hvor let jeg falder ud af vanen med at bruge apps til at registrere min mad og træning. Jeg kommer ind i en rytme, og så opdager jeg, at en funktion, jeg gerne vil bruge, er bag en betalingsmur. Når jeg ikke længere kan følge med på den måde, jeg havde tænkt mig, begynder det at føles som en pligt at åbne appen. Derfor begyndte jeg at bygge noget, der passede til min egen hverdag. Jeg ville kunne registrere, hvad jeg spiser, og se, hvordan det passer med det, jeg har brug for hver dag. Jeg ville have mine egne opskrifter, min egen database med madvarer, en graf over min vægt og en måde at se, om jeg havde holdt fast i træningen, og hvor mange uger i træk det var lykkedes. Når jeg nu tænker, *Gid appen lige kunne den her ene lille ting,* kan jeg sætte mig ned og lave den.
+
+At føre min egen log hjælper mig også med at være ærlig over for mig selv. Hvis jeg udelader et måltid eller sætter kryds ved en træning, jeg sprang over, passer de tal, jeg senere kigger på, ikke med det, jeg faktisk gjorde. Jeg byggede appen for at se, hvordan det går, så der er ikke meget ved at skrive andet ind end det, der skete.
+
+Jeg synes også, det er sjovt at bygge appen. Når jeg er mellem jobs eller har en periode, hvor jeg ikke får kodet så meget, giver den mig en grund til at holde mine færdigheder ved lige. Jeg kan lære noget som Playwright ved at arbejde på en app, jeg kender ud og ind, og jeg har noget personligt at vise frem, når jeg søger job. Nogle dage sætter jeg mig, fordi jeg vil se, hvordan det går med træningen eller vægten. Andre dage er det, fordi jeg næsten ikke kan vente med at tilføje noget, jeg har gået og tænkt på. Det er nok derfor, jeg har så svært ved at lade projektet ligge. Jeg får lov til at bygge noget, jeg synes er sjovt, lære undervejs og bruge det til at passe bedre på mig selv.
+
+---
+
+<a id="da-vision"></a>
+<details>
+<summary><strong>Projektets vision og udviklingsplan</strong></summary>
+
+På sigt skal MomentumGroves kunne mere end at fungere som min personlige logbog. Jeg vil gerne give webappen og mobilappen et fælles, genkendeligt udtryk. Mobilappen skal gradvist overtage webappens visuelle stil i et kompakt layout, der fungerer godt på en touchskærm. På længere sigt kunne andre også få glæde af appen. Konti, understøttelse af flere brugere og offentlig drift er mulige fremtidige funktioner.
+
+### Nuværende udviklingsprioriteter i rækkefølge
+
+1. **Skridttælling på Android** — Registrér daglige skridt fra understøttede sensorer, vis historik og mål for dage og uger, og synkronisér med webappen. Løsningen skal håndtere tilladelser, genstart af enheden og dubletter. Registrering i baggrunden afhænger af Androids begrænsninger og telefonens hardware.
+2. **Registrering af aktivitet med GPS** — Start, sæt på pause, genoptag og afslut en gåtur. Registrér tid, afstand og rute, og gem og synkronisér afsluttede ture. Lokationsregistrering i baggrunden kræver udtrykkelige tilladelser og korrekt brug af en Android-foreground service.
+3. **Præstationer** — Tilføj fælles serverlogik for præstationer knyttet til kostmål, skridt, gangdistance, træning, vægtmål og sammenhængende perioder. Understøt fremskridt, datoer for oplåsning, XP, niveauer, skjulte præstationer og relevante historiske data. Hver præstation skal kun tildeles én gang.
+4. **Spil med belønninger for præstationer** — Lav et enkelt spil til web og mobil med almindelige grænsefladeelementer, ikoner, kort og statusbjælker. Præstationer og sunde rutiner kan give ressourcer eller låse op for opgraderinger. Spillet skal kunne spilles uden motion.
+
+Skridttælling, GPS, præstationer og spillet er **planlagte milepæle**.
+
+### Retning på længere sigt
+
+- **Belønninger med en funktion** — Præstationer kan låse op for spilgenstande, opgraderinger, opgaver eller valgfrie funktioner.
+- **Flere måder at gøre fremskridt på** — Kostvaner alene skal kunne give fremskridt. Gåture, træning og andre aktiviteter giver flere muligheder.
+- **Valgfri kobling mellem sundhed og spil** — En fremtidig kontoindstilling kan slå spilbelønninger knyttet til personlige sundhedsmål og ugentlig aktivitet til eller fra.
+- **Personlige indstillinger og konti** — Individuelle mål, præferencer, præstationer og fremskridt i spillet kan med tiden knyttes til brugerkonti.
+- **Et fælles udtryk** — Brug MomentumGroves' visuelle tema på web og mobil med en enkel teknisk løsning.
+
+Præstationerne skal understøtte vaner, man kan holde fast i. Ekstrem kalorierestriktion, overdreven træning og hurtigt vægttab skal ikke belønnes. Hviledage, sygdom og de nuværende funktioner for **Sick Day** og **Cheat Day** skal håndteres med omtanke. Belønninger i spillet skal aldrig afgøre, om nogen har lov til at spise.
+
+</details>
+
+---
+
+<a id="da-funktioner"></a>
+<details>
+<summary><strong>Overblik og funktioner</strong></summary>
+
+<details>
+<summary><strong>Funktioner i webappen</strong></summary>
+
+- **Fælles datovælger** — Brug **Selected date** øverst til højre til at åbne en tidligere dag. Datoen følger med, når du skifter mellem **Dashboard**, **Food Diary**, **Training** og **Weight Progress** i samme browserfane. Vælg **Today** for at vende tilbage til dags dato.
+- **Dashboard** — Se måltider og næringsindtag for den valgte dato. Grafen og balancen for de seneste syv dage slutter på den dato.
+- **Maddagbog** — Tilføj, ret eller slet måltider og drikkevarer for den valgte dato, kopiér et tidligere måltid, og markér dagen som en sygedag eller cheat day. Tilpas portionsstørrelsen eller de enkelte ingredienser i dagbogen, mens den gemte opskrift bevares.
+- **Eget madbibliotek** — Administrér madvarer med næringsværdier pr. 100 g eller 100 ml. Biblioteket viser de nyeste først, henter 10 ad gangen og søger i hele biblioteket.
+- **Opskrifter** — Sammensæt egne madvarer med ingrediensmængder og en justerbar vægt for det samlede måltid. Vælg derefter de gemte opskrifter i maddagbogen.
+- **Drikkevarer** — Søg i Open Food Facts, indtast en mængde i ml, og gennemgå eller ret næringsværdierne, inden du gemmer.
+- **Ernæringsmål** — **Health & Nutrition Calculator** fastsætter de daglige mål. Sygedage udelades fra vurderingen af målene og fra syvdagesbalancen. Cheat days tæller med i balancen.
+- **Vægtudvikling** — Registrér eller ret en vejning, eller markér den valgte dato som en dag uden vejning. Se vægthistorik, udvikling og mål.
+- **Træning** — Administrér programgrupper, vælg en gruppe til dashboardet, og se din træningshistorik. Et afkrydsningsfelt viser, om programmet er gennemført i den valgte uge fra mandag til søndag. Når du sætter kryds, gemmes den valgte dato i træningshistorikken. Vælger du eksempelvis søndag på en mandag, tæller træningen med i den foregående uge. Gennemførte programmer forbliver afkrydset i deres uge, også efter en genstart.
+- **Admin** — Installér og opdatér DTU Fridas fødevaredatabase.
+
+</details>
+
+<details>
+<summary><strong>Funktioner i Android-appen</strong></summary>
+
+- Opret og ret egne madvarer offline med kalorier, protein, kulhydrat, fedt og valgfri kostfibre.
+- Scan en stregkode med kameraet, slå næringsværdier op i Open Food Facts, og gennemgå eller redigér dem, inden du gemmer. Kameraunderstøttelse, tilladelser og produktdækning varierer.
+- Brug g eller ml som måleenhed.
+- Behold ventende poster på telefonen, indtil modtagelsen er bekræftet.
+- Overfør poster til computeren via et privat Wi-Fi-netværk, du har tillid til.
+- **Planlagt** — Tilpas mobilappens navigation, udseende og funktionslayout til webappens stil og den mindre skærm.
+- Fjern poster fra telefonen, når modtagelsen er bekræftet. Behold de øvrige til næste forsøg.
+
+Android-appen opbevarer madvarer midlertidigt, indtil de er overført.
+
+</details>
+
+</details>
+
+---
+
+<a id="da-teknologi"></a>
+<details>
+<summary><strong>Teknologi og projektstruktur</strong></summary>
+
+| Område | Teknologi |
+|---|---|
+| Webplatform | **.NET 10**, ASP.NET Core MVC (`Microsoft.NET.Sdk.Web`) |
+| Frontend | Razor `.cshtml`, JavaScript, HTML og CSS |
+| Databaselagring | SQLite via `Microsoft.Data.Sqlite` (pakkeversion 8.0.22 i projektet) |
+| Import af regneark | `ExcelDataReader` 3.7.0 |
+| Testværktøjer | NUnit til .NET-test og Playwright til browserautomatisering |
+| Udviklingsmiljø | En IDE eller kodeeditor med understøttelse af .NET 10, for eksempel Rider, Visual Studio eller VS Code |
+
+```text
+MomentumGroves/
+├── MomentumGroves.sln
+├── MomentumGroves.csproj
+├── Program.cs
+├── .env.example
+├── src/
+│   ├── Controllers/       # HTTP-endpoints for MVC og API
+│   ├── DTO/               # Datatyper til overførsel via API'et
+│   ├── Models/            # Appens modeller
+│   ├── Service/           # Forretningslogik
+│   ├── Repository/        # Dataadgang
+│   ├── Helper/            # Hjælpefunktioner og konvertere
+│   └── Data/              # Lokale SQLite-filer uden for Git
+├── Views/                 # Razor-visninger og partial views
+├── wwwroot/               # Statiske CSS- og JS-filer samt øvrige ressourcer
+└── tests/
+    ├── MomentumGroves.UnitTests/
+    └── MomentumGroves.PlaywrightTests/
+```
+
+Mobilappen har sit eget GitHub-repository og egne DTO-definitioner. De to apps kommunikerer med JSON via et API. C#-namespaces kan være forskellige, så længe JSON-kontrakterne forbliver kompatible.
+
+---
+
+</details>
+
+---
+
+<a id="da-opsaetning"></a>
+<details>
+<summary><strong>Fork og opsætning af webappen</strong></summary>
+
+Vejledningen gælder en **ny fork eller klon**. Personlige databaser og virkelige API-nøgler følger ikke med repositoryet.
+
+### Trin 1 — Installér forudsætningerne
+
+1. Installér **.NET 10 SDK**. Du skal bruge SDK'et ud over runtime.
+2. Installér en IDE eller kodeeditor med understøttelse af .NET 10.
+3. Installér **Git**, hvis du vil oprette en fork og klone den.
+4. Opret en fork af webprojektet på GitHub, og klon den til en lokal mappe.
+5. Åbn `MomentumGroves.sln` i din IDE, eller åbn projektets rodmappe i din kodeeditor.
+
+Det installerede SDK skal understøtte `net10.0`. Webprojektet kræver ingen MAUI/Android-workload.
+
+### Trin 2 — Opret lokal konfiguration
+
+1. Kopiér `.env.example` i projektets rodmappe ved siden af `Program.cs` til en ny fil ved navn `.env`.
+2. Behold `.env` lokalt. Git ignorerer filen.
+3. Angiv `MobileSync__Key`, hvis du vil synkronisere madvarer fra mobilen.
+4. Hold virkelige nøgler ude af `.env.example`, README-filer, kildekode og Git-commits.
+
+`Program.cs` kalder `DotEnvLoader.Load(...)` og indlæser `.env`, når appen startes fra projektets rodmappe. Hvis du starter appen fra en anden arbejdsmappe, så kontrollér, at filen bliver fundet.
+
+### Trin 3 — Automatisk opsætning af databaser
+
+Personlige databasefiler følger ikke med repositoryet. Ved opstart tjekker MomentumGroves, om de nødvendige databasefiler findes.
+
+- Hvis `momentum.db` eller `food_and_recipes.db` mangler, vises dialogen **Database initialization**. Klik på **Yes, initialize** for at oprette de manglende lokale databaser og deres tabeller.
+- Hvis `frida.db` mangler efter den lokale opsætning, viser dialogen knappen **Go to Admin to make FridaDb**. Klik på den for at åbne Frida-installationen.
+- Klik på **Check for updates** i Admin, og vælg derefter **Yes, install**. Appen henter DTU Fridas datasæt og opretter og udfylder automatisk `frida.db`.
+- Hvis kun Frida mangler, bliver du sendt til Admin. De øvrige databaser kræver ingen ny opsætning.
+- Hvis alle tre databaser allerede findes, afsluttes opstartstjekket uden at vise en dialog eller statusmeddelelse.
+
+Databaserne ligger i `src/Data/`. Opsætningen bevarer eksisterende databasefiler og deres indhold. Du behøver hverken en SQLite-server eller et separat værktøj til at oprette databaserne.
+
+### Trin 4 — Start webappen
+
+Start **MomentumGroves** med kør- eller debugkommandoen i dit udviklingsmiljø. Åbn den lokale adresse, der vises i outputtet. Gendan projektets NuGet-afhængigheder, hvis udviklingsmiljøet ikke gør det automatisk.
+
+Du kan også bruge følgende kommando i projektets rodmappe.
+
+```powershell
+dotnet run --project .\MomentumGroves.csproj
+```
+
+### Trin 5 — Kontrollér installationen
+
+1. Kontrollér, at forsiden åbner, og gennemfør databaseopsætningen, hvis dialogen vises.
+2. Åbn madbiblioteket, og tilføj en midlertidig madvare for at kontrollere, at `food_and_recipes.db` og dens tabeller fungerer.
+3. Gem en indstilling eller en anden post i appen for at kontrollere, at `momentum.db` fungerer.
+4. Hvis Frida mangler, skal du bruge **Go to Admin to make FridaDb** og installere datasættet. Prøv derefter at søge efter en madvare i Frida.
+5. Følg [Android-app og synkronisering](#da-android), hvis du vil overføre data fra Android.
+
+---
+
+</details>
+
+---
+
+<a id="da-databaser"></a>
+<details>
+<summary><strong>SQLite-databaser og startdata</strong></summary>
+
+Repositoryet indeholder ingen personlige `.db`-filer. Appen håndterer opsætningen af alle tre databaser.
+
+| Filnavn | Formål | Sådan oprettes databasen |
+|---|---|---|
+| `food_and_recipes.db` | Egne madvarer, opskrifter, ingredienser og kobling til mobilimport | Dialogen **Database initialization** opretter databasen og dens tabeller, hvis den mangler |
+| `momentum.db` | Appens tilstand og gemte registreringer | Dialogen **Database initialization** opretter databasen og dens tabeller, hvis den mangler |
+| `frida.db` | DTU Fridas referencedata om fødevarers sammensætning | Oprettes og udfyldes separat via **Admin → Check for updates → Yes, install** |
+
+### Opsætning ved første start
+
+1. Start MomentumGroves.
+2. Hvis en af de lokale databaser mangler, skal du klikke på **Yes, initialize** i opsætningsdialogen.
+3. Når den lokale opsætning er færdig, skal du klikke på **Go to Admin to make FridaDb**, hvis Frida endnu ikke er installeret.
+4. Installér Frida via opdateringsfunktionen i Admin.
+
+Den lokale opsætning opretter kun manglende lokale databaser. Frida installeres separat gennem Admin. Hvis alle databaser allerede findes, vises der ingen besked ved opstartstjekket.
+
+### Installation af Frida-data
+
+1. Start webappen.
+2. Åbn siden **Admin** (`/Admin`) i din lokale webapp.
+3. Klik på **Check for updates** for at finde det nyeste tilgængelige datasæt fra DTU Frida.
+4. Vælg **Yes, install**, når du bliver bedt om det. Appen downloader datasættet og opretter og udfylder automatisk `src/Data/frida.db`, hvis filen mangler.
+5. Kontrollér, at Admin viser den installerede version og antallet af fødevarer, og prøv at søge efter en madvare i Frida.
+
+Du bruger samme funktion i Admin ved første installation og ved senere opdateringer. Installationen kræver internetadgang.
+
+### Databasefilnavne og versioner
+
+Brug filnavnene ovenfor til en standardinstallation. Services og repositories henviser til dem i koden. `frida.db` er ikke en påkrævet fil ved build af `MomentumGroves.csproj`, så projektet skal kunne bygges, selvom filen mangler. Hvis du omdøber en database, skal du opdatere alle tilsvarende stier i kildekoden og projektkonfigurationen. SQLite er indbygget og kræver ingen separat databaseserver. Versionen af SQLite-pakken til .NET står i `.csproj`-filen.
+
+### Beskyttelse af lokale data
+
+`.gitignore` udelukker `.db`-filer, SQLite-journaler, tilhørende filer og sikkerhedskopier. Hold dine lokale databaser private, tag en sikkerhedskopi, før du ændrer databaseskemaet, og hold personlige databasefiler ude af Git.
+
+</details>
+
+---
+
+<a id="da-konfiguration"></a>
+<details>
+<summary><strong>Konfiguration og eksterne tjenester</strong></summary>
+
+Repositoryet indeholder `.env.example`. Opret en lokal `.env` i **projektets rodmappe**, og angiv følgende værdi efter behov.
+
+| Indstilling | Hvor den angives | Formål |
+|---|---|---|
+| `MobileSync__Key` | Lokalt miljø eller `.env` | Delt privat nøgle til webappens synkroniseringsendpoint. Nøglen skal matche mobilappens |
+
+Mobilsynkronisering er valgfri. Webappens synkroniseringstjeneste læser konfigurationsnøglen `MobileSync:Key`. Dobbelt underscore i miljøvariabler oversættes til kolon ved indlæsning af konfigurationen.
+
+Appen bruger Open Food Facts til produktopslag, som kræver internetadgang og tilgængelige produktdata.
+
+Hold udviklingens synkroniseringsendpoint og private nøgler væk fra det offentlige internet.
+
+---
+
+</details>
+
+---
+
+<a id="da-android"></a>
+<details>
+<summary><strong>Android-app og synkronisering</strong></summary>
+
+**Android-appen ligger i et separat projekt og repository.** Opret en fork eller klon, og byg mobilappen separat, hvis du vil registrere madvarer fra mobilen eller scanne stregkoder. Se mobilappens egen README for oplysninger om Android SDK, MAUI-workload, signering og installation.
+
+Sådan forbinder du de to apps på et **privat Wi-Fi-netværk, du har tillid til**.
+
+1. Sørg for, at computeren og telefonen er på samme lokale netværk og kan nå hinanden.
+2. Vælg en lang, privat synkroniseringsnøgle. Sæt den som `MobileSync__Key` i webappen, og angiv **samme nøgle** i mobilappen.
+3. Start webappen med en lytteadresse, der kan tilgås på netværket. Du kan eksempelvis bruge PowerShell i webprojektets rodmappe.
+
+   ```powershell
+   $env:ASPNETCORE_URLS='http://0.0.0.0:5000'
+   $env:MobileSync__Key='REPLACE_WITH_A_PRIVATE_RANDOM_KEY'
+   dotnet run --no-launch-profile --project .\MomentumGroves.csproj
+   ```
+
+4. Kør `ipconfig` på computeren for at finde dens aktuelle IPv4-adresse på lokalnetværket.
+5. Åbn skærmen til synkronisering af madvarer i Android-appen, og angiv computerens adresse som `http://YOUR-PC-IP:5000`.
+6. Indtast den tilsvarende synkroniseringsnøgle, og brug appens funktion til at overføre til computeren.
+7. Kontrollér, at de importerede madvarer vises i webappens madbibliotek, inden du sletter noget manuelt.
+
+Webappens endpoint er `POST /api/mobile/foods/import`. Nøglen sendes i headeren `X-Momentum-Sync-Key`. På telefonen henviser `localhost` til selve telefonen. Eksemplet bruger **ukrypteret HTTP**. Brug derfor kun et privat netværk, og undgå port forwarding og offentlige firewallregler. Hvis Windows Firewall blokerer port 5000, skal du kun åbne den for **private netværk**.
+
+Importen springer eksisterende madvarenavne over og kvitterer for behandlede poster, så madvarerne på computeren bevares. Sørg for, at DTO'ernes JSON-felter fortsat er kompatible, når du ændrer et af de to repositories.
+
+---
+
+</details>
+
+---
+
+<a id="da-test"></a>
+<details>
+<summary><strong>Test</strong></summary>
+
+Løsningen indeholder to testprojekter.
+
+- **MomentumGroves.UnitTests** bruger NUnit til at teste appens services og controllers.
+- **MomentumGroves.PlaywrightTests** bruges til at lære browserautomatisering ved at arbejde med webappen gennem dens brugergrænseflade.
+
+Kør følgende kommando fra repositoryets rodmappe for at køre unit test-projektet.
+
+```powershell
+dotnet test .\tests\MomentumGroves.UnitTests\MomentumGroves.UnitTests.csproj
+```
+
+Du kan også vælge unit test-projektet i din IDE's testværktøj.
+
+---
+
+</details>
+
+---
+
+<a id="da-publicering"></a>
+<details>
+<summary><strong>Sikker publicering</strong></summary>
+
+- **Brug Git til at udgive kildekoden**. `.gitignore` gælder for Git og beskytter dig ikke, hvis du manuelt uploader en ZIP-fil eller hele din arbejdsmappe til GitHub.
+- Hold `.env`, API-nøgler, private synkroniseringsnøgler, signeringsmateriale, personlige SQLite-databaser, sikkerhedskopier, eksporter og downloadede private datasæt ude af dine commits.
+- Commit kun `.env.example` med pladsholdere. Gennemgå eventuelle `appsettings.json`-filer, kildekode, tests og CSV- eller JSON-referencefiler, før du gør repositoryet offentligt.
+- Opbevar personlige eksporter i `exports/` eller `private/`, uanset filtype.
+- Gennemgå, hvad Git er ved at publicere, inden du laver et commit.
+
+  ```powershell
+  git status --short
+  git add .
+  git diff --cached --name-only
+  git diff --cached
+  ```
+
+- Hvis Git allerede sporer en privat fil, skal du fjerne den fra Git-indekset med `git rm --cached -- path/to/file` og derefter committe ændringen. Filen bevares lokalt.
+- Hvis en hemmelighed eller et privat datasæt tidligere er blevet committet, ligger det fortsat i Git-historikken, selvom du fjerner det fra det nyeste commit. Ryd op i historikken før publicering, udskift eksponerede nøgler, og husk, at eksisterende kloner og forks kan have kopier.
+- Synkroniseringsnøglerne i automatiserede tests er testdata og må ikke bruges ved rigtig drift.
+- En ny klon indeholder ingen SQLite-`.db`-filer. Brug opsætningsdialogen ved første start, og følg derefter linket til Admin for at installere DTU Frida. Appen opretter databaserne for dig.
+
+---
+
+</details>
+
+---
+
+<a id="da-sikkerhed"></a>
+<details>
+<summary><strong>Sikkerhed og privatliv</strong></summary>
+
+<details>
+<summary><strong>Sikkerhed for netværk og repository</strong></summary>
+
+- Synkroniseringen bruger **HTTP uden transportkryptering**. Nøglen sendes over lokalnetværket, så brug kun private netværk, du har tillid til.
+- Åbn om nødvendigt TCP-port 5000 i Windows Firewall, kun for **private** netværk.
+- Hold offentlige firewallregler og port forwarding slået fra.
+- Hold legitimationsoplysninger, `.env`, personlige databaser, Android-signaturnøgler og maskinspecifikke hemmeligheder ude af Git.
+- En `.gitignore` kan forhindre utilsigtede tilføjelser. Hemmeligheder, der allerede ligger i Git-historikken, skal fjernes særskilt.
+- Gennemgå sikkerhed, login og beskyttelse af private data, inden du gør projektet tilgængeligt på det offentlige internet.
+
+</details>
+
+</details>
+
+---
+
+<a id="da-fejlfinding"></a>
+<details>
+<summary><strong>Fejlfinding</strong></summary>
+
+<details>
+<summary><strong>Webappen eller databasen starter ikke</strong></summary>
+
+- Kontrollér, at .NET 10 SDK er installeret.
+- Start webprojektet fra den rigtige rodmappe.
+- Kontrollér, at `src/Data/` findes, og at appen kan skrive til mappen.
+- Hvis en lokal database mangler, skal du bruge dialogen **Database initialization** og klikke på **Yes, initialize**.
+- Hvis `frida.db` mangler, eller søgning i Frida ikke giver resultater, skal du bruge **Go to Admin to make FridaDb** eller åbne Admin direkte. Klik på **Check for updates**, og installér datasættet gennem appen.
+- Hvis databasens statustjek fejler, skal du klikke på **Retry check** i dialogen og undersøge appens fejlmeddelelse, hvis fejlen fortsætter.
+- Læs appens fejlmeddelelse, inden du sletter eller erstatter en database.
+
+</details>
+
+<details>
+<summary><strong>Android kan ikke overføre madvarer</strong></summary>
+
+- Kontrollér, at webappen kører og lytter på port 5000.
+- Kontrollér, at telefonen og computeren kan nå hinanden på det samme private netværk.
+- Kontrollér computerens aktuelle IPv4-adresse, og at nøglerne matcher.
+- Kontrollér Windows Firewall-reglen for private netværk.
+- Brug computerens lokale IP-adresse på telefonen.
+- Behold ventende poster på mobilen, mens du undersøger en mislykket overførsel.
+
+</details>
+
+---
+
+*Eventuelle noter til repositoryets ejer ligger separat fra denne offentlige opsætningsvejledning.*
+
+</details>
 
 </details>
