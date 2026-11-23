@@ -1,10 +1,15 @@
 ﻿using Microsoft.Playwright;
+using MomentumGroves.PlaywrightTests.Helper;
 
 namespace MomentumGroves.PlaywrightTests;
 
 [TestFixture]
 public class Tests : PageTest
 {
+    /// <summary>
+    /// This test is used with comments to better understand Playwright. This is the first test.
+    /// 
+    /// </summary>
     [Test]
     public async Task DashboardShowsNutritionRangesAndLetsTheUserCloseThem()
     {
@@ -87,66 +92,14 @@ public class Tests : PageTest
         })).ToBeVisibleAsync();
 
         // Readable and better named functionality names
-        await ClickMenuAsync("Food Library");
-        await ClickLinkAsync("My Recipes");
-        await WriteDialogAsync("Recipe name", "Test");
-        await WriteDialogAsync("Find an ingredient in My Foods", "olie", AriaRole.Searchbox);
-        await ClickButtonAsync("Ekstra Jomfru Olivenolie (per 100 g)");
-        await WriteDialogAsync("Meal weight (g)", "200");
-        await ClickButtonAsync("Save recipe");
+        await PlaywrightMethodsHelper.ClickMenuAsync(Page, "Food Library");
+        await PlaywrightMethodsHelper.ClickLinkAsync(Page, "My Recipes");
+        await PlaywrightMethodsHelper.WriteDialogAsync(Page, "Recipe name", "Test");
+        await PlaywrightMethodsHelper.WriteDialogAsync(Page, "Find an ingredient in My Foods", "olie", AriaRole.Searchbox);
+        await PlaywrightMethodsHelper.ClickButtonAsync(Page, "Ekstra Jomfru Olivenolie (per 100 g)");
+        await PlaywrightMethodsHelper.WriteDialogAsync(Page, "Meal weight (g)", "200");
+        await PlaywrightMethodsHelper.ClickButtonAsync(Page, "Save recipe");
 
-        await VerifyStatusAsync("Recipe saved.");
-    }
-
-
-    /* Past this comment is all helper classes used for testing. will be moved to a helper later*/
-    
-    /// <summary>
-    /// To remove repeated code. and make test a bit more readable
-    /// </summary>
-    /// <param name="dialogName"></param>
-    private async Task ClickDialogAsync(string dialogName)
-    {
-        await Page.GetByRole(AriaRole.Dialog, new()
-        {
-            Name = dialogName
-        }).ClickAsync();
-    }
-
-    private async Task ClickButtonAsync(string buttonName)
-    {
-        await Page.GetByRole(AriaRole.Button, new()
-        {
-            Name = buttonName
-        }).ClickAsync();
-    }
-
-    private async Task ClickMenuAsync(string text)
-    {
-        await Page.GetByText(text, new()
-        {
-            Exact = true
-        }).ClickAsync();
-    }
-
-    private async Task ClickLinkAsync(string link)
-    {
-        await Page.GetByRole(AriaRole.Link, new()
-        {
-            Name = link
-        }).ClickAsync();
-    }
-
-    private async Task WriteDialogAsync(string fieldName, string value, AriaRole role = AriaRole.Textbox)
-    {
-        await Page.GetByRole(role, new()
-        {
-            Name = fieldName
-        }).FillAsync(value);
-    }
-    
-    private async Task VerifyStatusAsync(string message)
-    {
-        await Expect(Page.GetByRole(AriaRole.Status)).ToHaveTextAsync(message);
+        await PlaywrightMethodsHelper.VerifyStatusAsync(Page, "Recipe saved.");
     }
 }
