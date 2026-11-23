@@ -120,14 +120,6 @@ public class Tests : PageTest
             Name = buttonName
         }).ClickAsync();
     }
-    
-    /*private async Task WritedialogAsync(string fieldName, string value)
-    {
-        await Page.GetByRole(AriaRole.Textbox, new()
-        {
-            Name = fieldName
-        }).FillAsync(value);
-    }*/
 
     private async Task ClickMenuAsync(string text)
     {
