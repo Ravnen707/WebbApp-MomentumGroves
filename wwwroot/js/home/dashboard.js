@@ -3,7 +3,8 @@ import {
     readTrainingProgrammes,
     setProgrammeCompleted
 } from "../core/training-storage.js?v=weekly-completions";
-import {fmt, esc, setText, setHTML, localDate, monday, shift} from "../core/utils.js";
+import {fmt, esc, setText, setHTML, monday, shift} from "../core/utils.js";
+import {selectedDate} from "../core/selected-date.js";
 import {isCheatDay} from "../tracking/cheat-days.js";
 import {isSickDay, fiberActive, fiberKnown, fiberComplete} from "../tracking/sick-days.js";
 import {
@@ -12,7 +13,7 @@ import {
     getGoals,
     setProgress
 } from "../tracking/nutrition-targets.js?v=20261118-empty-calculator";
-import {food, totals} from "../food/food-diary.js";
+import {food, totals} from "../food/food-diary.js?v=selected-date";
 
 function drawChart() {
     const root = document.querySelector('#week-chart');
@@ -29,8 +30,8 @@ function drawChart() {
         fiber: {name: 'fibre', unit: 'g'}
     };
     const definition = definitions[metric];
-    const today = localDate();
-    const dates = Array.from({length: 7}, (_, index) => shift(today, index - 6));
+    const day = selectedDate();
+    const dates = Array.from({length: 7}, (_, index) => shift(day, index - 6));
     const goal = Math.max(0, Number(getGoals()[metric]) || 0);
     const values = dates.map(date => metric === 'fiber' && (!fiberActive(date) || !fiberComplete(date)) ? null : totals(date)[metric]);
     const max = Math.max(goal, ...values.filter(v => v !== null), 1) * 1.12;
@@ -65,7 +66,8 @@ function renderCalorieBalance() {
     const key = metrics[select.value] ? select.value : 'kcal';
     const metric = metrics[key];
     const goal = Number(getGoals()[key]);
-    const dates = Array.from({length: 7}, (_, i) => shift(localDate(), i - 6));
+    const day = selectedDate();
+    const dates = Array.from({length: 7}, (_, i) => shift(day, i - 6));
     const entries = food();
     const sickCount = dates.filter(isSickDay).length;
     const cheatCount = dates.filter(date => isCheatDay(date) && !isSickDay(date)).length;
@@ -136,11 +138,13 @@ function renderCalorieBalance() {
     zoneElements[zoneIndex]?.classList.add('balance-zone-active');
 }
 
-let trainingWeekTimer;
-
-function renderHomeWorkouts() {
-    const today = localDate();
-    const completed = completedProgrammesThisWeek(today);
+function renderHomeWorkouts(date) {
+    const weekStart = monday(date);
+    const formatDay = day => new Date(day + 'T12:00:00').toLocaleDateString('en-GB', {
+        day: 'numeric', month: 'short', year: 'numeric'
+    });
+    setText('#home-training-week', `Training week · ${formatDay(weekStart)} to ${formatDay(shift(weekStart, 6))}`);
+    const completed = completedProgrammesThisWeek(date);
     const {groups, dashboardGroupId} = readTrainingProgrammes();
     const dashboardGroup = groups.find(group => group.id === dashboardGroupId);
     const programmes = dashboardGroup?.programmes.filter(programme => programme?.id) ?? [];
@@ -151,41 +155,38 @@ function renderHomeWorkouts() {
         ? '<div class="empty">This group has no programmes yet.</div>'
         : '<div class="empty">Choose a programme group on the Training page to show it here.</div>'));
     document.querySelectorAll('#home-workouts [data-done]').forEach((input, index) => input.addEventListener('change', () => {
-        setProgrammeCompleted(programmes[index], input.checked);
+        setProgrammeCompleted(programmes[index], input.checked, date);
     }));
-    const nextMonday = new Date(shift(monday(today), 7) + 'T00:00:00');
-    clearTimeout(trainingWeekTimer);
-    trainingWeekTimer = setTimeout(renderHomeWorkouts, nextMonday.getTime() - Date.now());
 }
 
 function renderHome() {
     if (!document.querySelector('#kcal-stat')) return;
-    const today = localDate();
-    const t = totals(today), g = getGoals();
+    const date = selectedDate();
+    const t = totals(date), g = getGoals();
     const hasTargets = g.kcal > 0;
-    const needsFibre = hasTargets && !fiberComplete(today);
+    const needsFibre = hasTargets && !fiberComplete(date);
     for (const key of ['kcal', 'protein', 'carbs', 'fat', 'fiber']) {
         const unit = key === 'kcal' ? 'kcal' : 'g', delta = g[key] - t[key];
         const incomplete = key === 'fiber' && needsFibre;
-        const intake = incomplete && !fiberKnown(today) ? '–' : fmt(t[key]);
+        const intake = incomplete && !fiberKnown(date) ? '–' : fmt(t[key]);
         setHTML(`#${key}-stat`, hasTargets ? `${intake} <small>/ ${fmt(g[key])} ${unit}</small>` : '0<small>/0</small>');
-        setProgress(`#${key}-bar`, t[key], g[key], today, key);
-        updateZoneDisplay(key, t[key], g[key], today, 'home');
+        setProgress(`#${key}-bar`, t[key], g[key], date, key);
+        updateZoneDisplay(key, t[key], g[key], date, 'home');
         if (incomplete) setText('#fiber-zone', intake === '–' ? '' : 'Partial intake');
         const stat = document.querySelector(`#${key}-stat`);
-        if (stat) stat.classList.toggle('cheat-over', hasTargets && !incomplete && isCheatDay(today) && t[key] > g[key]);
-        setText(`#${key}-remaining`, !hasTargets || incomplete ? '' : isSickDay(today) ? 'Sick day – target assessment paused' : isCheatDay(today) ? 'Cheat day – included in balance' : `${fmt(Math.abs(delta))} ${unit} ${delta >= 0 ? 'remaining' : 'above target'}`);
+        if (stat) stat.classList.toggle('cheat-over', hasTargets && !incomplete && isCheatDay(date) && t[key] > g[key]);
+        setText(`#${key}-remaining`, !hasTargets || incomplete ? '' : isSickDay(date) ? 'Sick day – target assessment paused' : isCheatDay(date) ? 'Cheat day – included in balance' : `${fmt(Math.abs(delta))} ${unit} ${delta >= 0 ? 'remaining' : 'above target'}`);
     }
     const fibreDiaryLink = document.querySelector('#fiber-diary-link');
     if (fibreDiaryLink) fibreDiaryLink.hidden = !needsFibre;
     const homeSick = document.querySelector('#home-sick-status');
-    if (homeSick) homeSick.hidden = !isSickDay(localDate());
+    if (homeSick) homeSick.hidden = !isSickDay(date);
     const homeCheat = document.querySelector('#home-cheat-status');
-    if (homeCheat) homeCheat.hidden = !isCheatDay(localDate());
-    document.querySelector('.stats.stats-four')?.classList.toggle('cheat-day-stats', isCheatDay(localDate()) && !isSickDay(localDate()));
-    renderHomeWorkouts();
-    const items = food().filter(x => x.date === localDate()).slice(-5).reverse();
-    setHTML('#home-meals', items.length ? items.map(x => `<div class="meal-row"><div><strong>${esc(x.name)}</strong><small>${fmt(x.grams)} ${x.type === 'drink' ? 'ml' : 'g'} · ${fmt(x.protein)} g protein · ${fmt(x.carbs || 0)} g carbohydrates</small></div><span class="tag">${fmt(x.kcal)} kcal</span></div>`).join('') : '<div class="empty">No meals logged today.</div>');
+    if (homeCheat) homeCheat.hidden = !isCheatDay(date);
+    document.querySelector('.stats.stats-four')?.classList.toggle('cheat-day-stats', isCheatDay(date) && !isSickDay(date));
+    renderHomeWorkouts(date);
+    const items = food().filter(x => x.date === date).slice(-5).reverse();
+    setHTML('#home-meals', items.length ? items.map(x => `<div class="meal-row"><div><strong>${esc(x.name)}</strong><small>${fmt(x.grams)} ${x.type === 'drink' ? 'ml' : 'g'} · ${fmt(x.protein)} g protein · ${fmt(x.carbs || 0)} g carbohydrates</small></div><span class="tag">${fmt(x.kcal)} kcal</span></div>`).join('') : '<div class="empty">No meals logged for this date.</div>');
     drawChart();
     renderCalorieBalance();
 }

@@ -1,5 +1,6 @@
 import {read, write, DONE_KEY} from "../core/storage.js";
 import {esc, setText, localDate, shift, monday} from "../core/utils.js";
+import {selectedDate} from "../core/selected-date.js";
 import {PROGRAM_KEY, HISTORY_KEY, completedProgrammesThisWeek, readTrainingProgrammes, setProgrammeCompleted} from "../core/training-storage.js?v=weekly-completions";
 
 const exercise = name => ({
@@ -318,7 +319,7 @@ function renderTraining() {
         }
         const programmes = group.programmes;
         dashboardGroup.setAttribute('aria-pressed', String(group.id === settings.dashboardGroupId));
-        const completed = completedProgrammesThisWeek();
+        const completed = completedProgrammesThisWeek(selectedDate());
         root.innerHTML = programmes.map((box, index) => {
             const rows = box.exercises.map((x, i) => {
                 const cardio = x.type === 'cardio';
@@ -412,7 +413,7 @@ function renderTraining() {
             section.querySelectorAll('[data-done]').forEach(input => input.addEventListener('change', () => {
                 collect();
                 const programme = programmes.find(item => item.id === id);
-                setProgrammeCompleted(programme, input.checked);
+                setProgrammeCompleted(programme, input.checked, selectedDate());
                 renderProgress();
             }));
         });
@@ -488,6 +489,12 @@ function renderTraining() {
     saveButton.addEventListener('click', () => {
         collect();
         persist();
+    });
+    document.addEventListener('momentum-date-change', () => {
+        const completed = completedProgrammesThisWeek(selectedDate());
+        root.querySelectorAll('[data-box-id]').forEach(section => {
+            section.querySelector('[data-done]').checked = completed.has(section.dataset.boxId);
+        });
     });
     draw();
     renderProgress();

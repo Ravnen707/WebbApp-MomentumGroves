@@ -31,13 +31,17 @@
         <p class="sidebar-note">Data is stored locally in SQLite.</p>
     </aside>
     <main class="content">
-        <div class="topbar"><span id="today"></span></div>
+        <div class="topbar">
+            <label for="selected-date">Selected date</label>
+            <input type="date" id="selected-date" max="9999-12-31" required/>
+            <button type="button" class="btn secondary" id="select-today">Today</button>
+        </div>
         @RenderBody()
     </main>
 </div>
 @await Html.PartialAsync("Modals/_DatabaseInitializationModal")
 <script src="~/js/modals/database-initialization.js" asp-append-version="true" defer></script>
-<script type="module" src="~/js/app.js?v=weekly-completions"></script>
+<script type="module" src="~/js/app.js?v=selected-date"></script>
 @await RenderSectionAsync("Scripts", required: false)
 <script>
     (() => {

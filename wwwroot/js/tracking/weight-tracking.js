@@ -1,3 +1,6 @@
+import {selectDate, selectedDate} from '../core/selected-date.js';
+import {localDate} from '../core/utils.js';
+
 (() => {
     'use strict';
     const HISTORY_KEY = 'sunhed.weight-history.v1';
@@ -6,7 +9,7 @@
     const form = document.querySelector('#weight-form');
     if (!form) return;
     const byId = id => document.getElementById(id);
-    const localDate = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const dateInput = form.elements.namedItem('date');
     const daysBetween = (a, b) => (Date.parse(b + 'T12:00:00Z') - Date.parse(a + 'T12:00:00Z')) / 86400000;
     const fmt = n => Number(n).toLocaleString('en-GB', {maximumFractionDigits: 2});
     const displayDate = d => new Date(d + 'T12:00:00').toLocaleDateString('en-GB', {
@@ -241,11 +244,7 @@
             button.className = 'btn secondary';
             button.textContent = 'Edit';
             button.addEventListener('click', () => {
-                form.elements.namedItem('date').value = date;
-                form.elements.namedItem('status').value = entry.status;
-                form.querySelector(`input[value="${entry.status}"]`).checked = true;
-                form.elements.namedItem('weight').value = entry.status === 'weighed' ? entry.weight : '';
-                toggleWeight();
+                selectDate(date);
                 form.scrollIntoView({behavior: 'smooth', block: 'center'});
             });
             actionCell.append(button);
@@ -284,6 +283,15 @@
         byId('weight-input-wrap').hidden = !weighed;
         form.elements.namedItem('weight').required = weighed;
         form.elements.namedItem('weight').disabled = !weighed;
+    }
+
+    function showSelectedEntry() {
+        const date = selectedDate();
+        const entry = history[date];
+        dateInput.value = date;
+        form.elements.namedItem('status').value = entry?.status === 'skipped' ? 'skipped' : 'weighed';
+        form.elements.namedItem('weight').value = entry?.status === 'weighed' ? entry.weight : '';
+        toggleWeight();
     }
 
     // Saves a JSON value through the existing SQLite API and reports server errors.
@@ -325,6 +333,7 @@
                 milestones: Array.isArray(savedGoals.milestones) ? savedGoals.milestones : []
             } : {mode: 'final', milestones: []};
             history = state[HISTORY_KEY] && typeof state[HISTORY_KEY] === 'object' && !Array.isArray(state[HISTORY_KEY]) ? state[HISTORY_KEY] : {};
+            showSelectedEntry();
             render();
         } catch (error) {
             byId('weight-message').textContent = `Could not load data: ${error.message}`;
@@ -332,7 +341,12 @@
         }
     }
 
-    form.elements.namedItem('date').value = localDate();
+    dateInput.value = selectedDate();
+    dateInput.addEventListener('change', () => {
+        if (dateInput.value && dateInput.validity.valid) selectDate(dateInput.value);
+        else dateInput.value = selectedDate();
+    });
+    document.addEventListener('momentum-date-change', showSelectedEntry);
     form.querySelectorAll('input[name="status"]').forEach(radio => radio.addEventListener('change', toggleWeight));
     form.addEventListener('submit', event => {
         event.preventDefault();
@@ -354,6 +368,7 @@
         const date = form.elements.namedItem('date').value;
         if (!history[date] || !confirm(`Delete entry for ${displayDate(date)}?`)) return;
         queueUpdate(() => updateEntry(date, null)).then(() => {
+            if (selectedDate() === date) showSelectedEntry();
             byId('weight-message').textContent = 'Entry deleted.';
         }).catch(error => {
             byId('weight-message').textContent = `Could not delete: ${error.message}`;

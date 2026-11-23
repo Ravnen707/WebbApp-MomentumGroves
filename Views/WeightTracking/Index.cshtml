@@ -1,7 +1,7 @@
 @{ ViewData["Title"] = "Weight Progress"; }
 
 @section Scripts {
-  <script src="~/js/tracking/weight-tracking.js" asp-append-version="true" defer></script>
+  <script type="module" src="~/js/tracking/weight-tracking.js" asp-append-version="true"></script>
 }
 
 <link rel="stylesheet" href="~/css/weight-tracking.css" asp-append-version="true"/>
@@ -42,7 +42,7 @@
   <section class="panel">
     <h2>Log weight</h2>
     <form id="weight-form">
-      <label>Date <input type="date" name="date" required/></label>
+      <label>Date <input type="date" name="date" max="9999-12-31" required/></label>
       <div class="weight-choice">
         <label><input type="radio" name="status" value="weighed" checked/> Weighed</label>
         <label><input type="radio" name="status" value="skipped"/> Not weighed</label>

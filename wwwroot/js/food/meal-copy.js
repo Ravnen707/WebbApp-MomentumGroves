@@ -1,5 +1,5 @@
-import { fmt, localDate, shift } from "../core/utils.js";
-import { food } from "./food-diary.js?v=20261101-food-nutrition";
+import { fmt, shift } from "../core/utils.js";
+import { food } from "./food-diary.js?v=selected-date";
 
     function setupMealCopy(picker) {
         const dialog = document.querySelector('#copy-meal-dialog');
@@ -10,8 +10,6 @@ import { food } from "./food-diary.js?v=20261101-food-nutrition";
         if (!dialog || !date || !select || !button) {
             return;
         }
-        date.value = shift(localDate(), -1);
-
         function options() {
             const items = food().filter(item => item.date === date.value && item.type !== 'drink');
             select.replaceChildren();
@@ -29,6 +27,7 @@ import { food } from "./food-diary.js?v=20261101-food-nutrition";
 
         date.addEventListener('change', options);
         document.querySelector('#open-copy-meal').addEventListener('click', () => {
+            date.value = shift(picker.value, -1);
             message.textContent = '';
             options();
             dialog.showModal();
@@ -44,7 +43,6 @@ import { food } from "./food-diary.js?v=20261101-food-nutrition";
             dialog.close();
             window.momentumOpenFoodModal?.(item);
         });
-        options();
     }
 
 

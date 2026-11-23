@@ -1,11 +1,11 @@
 import {FOOD_KEY, read, write} from "../core/storage.js";
-import {fmt, esc, setText, setHTML, localDate} from "../core/utils.js";
+import {fmt, esc, setText, setHTML} from "../core/utils.js";
+import {selectDate, selectedDate} from "../core/selected-date.js";
 import {isCheatDay, setCheatDay} from "../tracking/cheat-days.js";
 import {isSickDay, fiberActive, fiberKnown, fiberComplete, setSickDay} from "../tracking/sick-days.js";
 import {updateZoneDisplay, getGoals, setProgress} from "../tracking/nutrition-targets.js?v=20261118-empty-calculator";
-import {drawChart, renderCalorieBalance} from "../home/dashboard.js?v=20261119-training-groups";
 import {setupDrinks} from "./drinks.js";
-import {setupMealCopy} from "./meal-copy.js";
+import {setupMealCopy} from "./meal-copy.js?v=selected-date";
 import {setupFoodSearch} from "./food-search.js?v=20261101-food-nutrition";
 
 const food = () => {
@@ -20,9 +20,8 @@ const totals = date => food().filter(item => item.date === date).reduce((result,
 function renderFood() {
     const picker = document.querySelector('#food-date');
     if (!picker) return;
-    picker.value = localDate();
-
     function update() {
+        picker.value = selectedDate();
         const t = totals(picker.value), g = getGoals(), items = food().filter(x => x.date === picker.value);
         const sick = isSickDay(picker.value);
         const cheat = isCheatDay(picker.value);
@@ -63,8 +62,6 @@ function renderFood() {
             const item = food().find(x => String(x.id) === btn.dataset.edit);
             if (item && window.momentumOpenMealEditor) window.momentumOpenMealEditor(item, update);
         }));
-        drawChart();
-        renderCalorieBalance();
     }
 
     const sickToggle = document.querySelector('#sick-day');
@@ -78,7 +75,12 @@ function renderFood() {
         update();
     });
     window.momentumRefreshFood = update;
-    picker.addEventListener('change', update);
+    picker.addEventListener('change', () => {
+        if (picker.value && picker.validity.valid) selectDate(picker.value);
+        else picker.value = selectedDate();
+    });
+    document.addEventListener('momentum-date-change', update);
+    picker.value = selectedDate();
     setupFoodSearch(picker, update);
     setupDrinks(picker, update);
     setupMealCopy(picker);

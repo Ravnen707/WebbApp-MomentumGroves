@@ -4,8 +4,8 @@
     <h1>Your daily overview</h1>
     <p class="muted">Your targets are calculated from your personal profile.</p></div>
   <a class="btn" asp-controller="BodyMetrics" asp-action="Index">Adjust my targets →</a></div>
-<p id="home-sick-status" class="home-sick-status" hidden>🩺 Today is marked as a sick day. Your entries are shown, but nutrition targets are not assessed. <a asp-controller="Food" asp-action="Index">Open food diary</a></p>
-<p id="home-cheat-status" class="home-cheat-status" hidden>★ Today is marked as a cheat day. Your entries still count towards the 7-day balance. <a asp-controller="Food" asp-action="Index">Open food diary</a></p>
+<p id="home-sick-status" class="home-sick-status" hidden>🩺 This date is marked as a sick day. Your entries are shown, but nutrition targets are not assessed. <a asp-controller="Food" asp-action="Index">Open food diary</a></p>
+<p id="home-cheat-status" class="home-cheat-status" hidden>★ This date is marked as a cheat day. Your entries still count towards the 7-day balance. <a asp-controller="Food" asp-action="Index">Open food diary</a></p>
 <div class="stats stats-four dashboard-nutrition">
   <section class="panel">
     <div class="statlabel">CALORIES</div>
@@ -62,6 +62,7 @@
 <section class="panel section-gap workout-wide">
   <div class="section-head"><h2>Training programmes</h2><a asp-controller="Training" asp-action="Index">Training program →</a>
   </div>
+  <p class="muted tiny" id="home-training-week"></p>
   <div id="home-workouts" class="workout-horizontal"></div>
 </section>
 <section class="panel calorie-balance-panel section-gap" aria-labelledby="balance-heading">
@@ -120,8 +121,7 @@
   <p id="week-chart-goal" class="muted tiny" aria-live="polite">The dashed line shows your daily target.</p></section>
 <section class="panel section-gap meals-launch">
   <div class="section-head">
-    <div><h2>Today's recent meals</h2>
-      <p class="muted tiny">View your latest entries from the dashboard.</p></div>
+    <h2>Meals for the selected date</h2>
     <button type="button" class="btn secondary" data-open-meals>View meals →</button>
   </div>
 </section>

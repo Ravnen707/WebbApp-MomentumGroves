@@ -88,10 +88,17 @@ nav a:hover, nav a.active {
 }
 
 .topbar {
-    text-align: right;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
     color: var(--muted);
-    text-transform: capitalize;
     margin-bottom: 18px
+}
+
+.topbar input {
+    width: auto;
 }
 
 .heading {

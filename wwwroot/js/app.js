@@ -1,18 +1,12 @@
 import {initializeData, showDataError} from './core/storage.js';
-import {localDate} from './core/utils.js';
-import {drawChart, renderCalorieBalance, renderHome} from './home/dashboard.js?v=weekly-completions';
-import {renderFood} from './food/food-diary.js';
-import {renderTraining} from './tracking/training-programs.js?v=weekly-completions';
+import {setupDatePicker} from './core/selected-date.js';
+import {drawChart, renderCalorieBalance, renderHome} from './home/dashboard.js?v=selected-date';
+import {renderFood} from './food/food-diary.js?v=selected-date';
+import {renderTraining} from './tracking/training-programs.js?v=selected-date';
 import {renderCalculator} from './tracking/nutrition-targets.js?v=20261118-empty-calculator';
 import './food/meal-editor.js';
 
 function setupNavigation() {
-    const today = document.querySelector('#today');
-    if (today) {
-        today.textContent = new Date().toLocaleDateString('en-GB', {
-            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-        });
-    }
     document.querySelectorAll('nav a').forEach(link => {
         if (link.pathname === location.pathname) {
             link.classList.add('active');
@@ -34,6 +28,12 @@ function setupInfoDialogs() {
 
 async function start() {
     setupNavigation();
+    setupDatePicker();
+    if (document.querySelector('#home-workouts, #food-date, #training-days, #weight-form')) {
+        window.addEventListener('pageshow', event => {
+            if (event.persisted) location.reload();
+        });
+    }
     try {
         await initializeData();
     } catch (error) {
@@ -45,6 +45,7 @@ async function start() {
         document.querySelector('#week-chart-metric')?.addEventListener('change', drawChart);
         document.querySelector('#balance-metric')?.addEventListener('change', renderCalorieBalance);
         renderHome();
+        document.addEventListener('momentum-date-change', renderHome);
         renderFood();
         setupInfoDialogs();
         renderTraining();
