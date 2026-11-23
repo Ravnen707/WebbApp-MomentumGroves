@@ -5,8 +5,8 @@ namespace MomentumGroves.Service;
 public sealed class TrainingImageService(IWebHostEnvironment environment)
 {
     public const int MaxUploadBytes = 8_000_000;
-    private readonly string _directory = Path.Combine(
-        environment.WebRootPath ?? Path.Combine(environment.ContentRootPath, "wwwroot"), "TrainingImages");
+    private readonly string _directory = Path.Combine(environment.WebRootPath ?? Path.Combine
+        (environment.ContentRootPath, "wwwroot"), "TrainingImages");
 
     public IReadOnlyList<TrainingPicture> List()
     {
