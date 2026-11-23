@@ -61,4 +61,5 @@ public sealed record LibraryRecipe(
     double? Protein,
     double? Carbs,
     double? Fat,
-    double? Fiber);
+    double? Fiber,
+    DateTimeOffset CreatedUtc);

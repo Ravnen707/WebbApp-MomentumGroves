@@ -23,7 +23,9 @@ public sealed class FoodLibraryService
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             _connectionString = new SqliteConnectionStringBuilder { DataSource = path }.ToString();
             using var connection = Open();
+            using var transaction = connection.BeginTransaction();
             using var command = connection.CreateCommand();
+            command.Transaction = transaction;
             command.CommandText = """
                                   CREATE TABLE IF NOT EXISTS CustomFoods (
                                       Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,7 +35,8 @@ public sealed class FoodLibraryService
                                   );
                                   CREATE TABLE IF NOT EXISTS Recipes (
                                       Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                      Name TEXT NOT NULL, FinishedWeight REAL NULL
+                                      Name TEXT NOT NULL, FinishedWeight REAL NULL,
+                                      CreatedUtc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
                                   );
                                   CREATE TABLE IF NOT EXISTS RecipeIngredients (
                                       RecipeId INTEGER NOT NULL REFERENCES Recipes(Id) ON DELETE CASCADE,
@@ -43,6 +46,19 @@ public sealed class FoodLibraryService
                                   );
                                   """;
             command.ExecuteNonQuery();
+
+            command.CommandText = "SELECT 1 FROM pragma_table_info('Recipes') WHERE name = 'CreatedUtc'";
+            if (command.ExecuteScalar() is null)
+            {
+                // Midnight on 1 October 2026 in Copenhagen was 22:00 UTC the previous day.
+                command.CommandText = """
+                                      ALTER TABLE Recipes ADD COLUMN CreatedUtc TEXT NOT NULL
+                                          DEFAULT '2026-09-30T22:00:00.000Z'
+                                      """;
+                command.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
         }
         catch (Exception exception)
         {
@@ -262,18 +278,20 @@ public sealed class FoodLibraryService
             using var command = connection.CreateCommand();
             command.CommandText = """
                                   SELECT r.Id, r.Name, r.FinishedWeight, i.FoodId, f.Name, f.Unit, i.Amount,
-                                         f.Kcal, f.Protein, f.Carbs, f.Fat, f.Fiber
+                                         f.Kcal, f.Protein, f.Carbs, f.Fat, f.Fiber, r.CreatedUtc
                                   FROM Recipes r LEFT JOIN RecipeIngredients i ON i.RecipeId=r.Id
                                   LEFT JOIN CustomFoods f ON f.Id=i.FoodId ORDER BY r.Name, f.Name
                                   """;
             using var reader = command.ExecuteReader();
-            var recipes = new Dictionary<long, (string Name, double? Weight, List<RecipeIngredientDetail> Items)>();
+            var recipes = new Dictionary<long, (string Name, double? Weight, DateTimeOffset CreatedUtc,
+                List<RecipeIngredientDetail> Items)>();
             while (reader.Read())
             {
                 var id = reader.GetInt64(0);
                 if (!recipes.ContainsKey(id))
                 {
-                    recipes[id] = (reader.GetString(1), reader.IsDBNull(2) ? null : reader.GetDouble(2), new());
+                    recipes[id] = (reader.GetString(1), reader.IsDBNull(2) ? null : reader.GetDouble(2),
+                        reader.GetDateTimeOffset(12), new());
                 }
 
                 if (!reader.IsDBNull(3))
@@ -286,14 +304,14 @@ public sealed class FoodLibraryService
 
             return recipes.Select(pair =>
             {
-                var (name, weight, items) = pair.Value;
+                var (name, weight, createdUtc, items) = pair.Value;
 
                 double? total(Func<RecipeIngredientDetail, double?> selector) => items.Any(x => selector(x).HasValue)
                     ? items.Sum(x => (selector(x) ?? 0) * x.Amount / 100)
                     : null;
 
                 return new LibraryRecipe(pair.Key, name, weight, items, total(x => x.Kcal), total(x => x.Protein),
-                    total(x => x.Carbs), total(x => x.Fat), total(x => x.Fiber));
+                    total(x => x.Carbs), total(x => x.Fat), total(x => x.Fiber), createdUtc);
             }).ToList();
         }
         catch (Exception exception) when (exception is not (ArgumentException or KeyNotFoundException))
@@ -326,7 +344,10 @@ public sealed class FoodLibraryService
             command.Transaction = transaction;
             command.CommandText = id.HasValue
                 ? "UPDATE Recipes SET Name=$name, FinishedWeight=$weight WHERE Id=$id"
-                : "INSERT INTO Recipes(Name,FinishedWeight) VALUES($name,$weight)";
+                : """
+                  INSERT INTO Recipes(Name, FinishedWeight, CreatedUtc)
+                  VALUES($name, $weight, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+                  """;
             Add(command, "$id", id);
             Add(command, "$name", recipe.Name.Trim());
             Add(command, "$weight", recipe.FinishedWeight);

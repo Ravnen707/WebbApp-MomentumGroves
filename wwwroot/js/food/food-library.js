@@ -161,6 +161,11 @@ import {nutritionSummary} from "./ingredient-row.js";
     }
 
     if (recipePage) {
+        const recipeDate = new Intl.DateTimeFormat('da-DK', {
+            timeZone: 'Europe/Copenhagen',
+            dateStyle: 'short',
+            timeStyle: 'short'
+        });
         const form = $('#library-recipe-form');
         const ingredientsRoot = $('#library-recipe-ingredients');
         const search = $('#library-recipe-search');
@@ -289,6 +294,11 @@ import {nutritionSummary} from "./ingredient-row.js";
                 const row = el('div', undefined, 'library-item');
                 const info = el('div');
                 info.append(el('strong', recipe.name), el('small', recipe.finishedWeight ? `${fmt(recipe.finishedWeight)} g meal · ${fmt(recipe.kcal)} kcal total · P ${fmt(recipe.protein)} · C ${fmt(recipe.carbs)} · F ${fmt(recipe.fat)}` : 'Waiting for finished weight'));
+                const created = el('time', recipeDate.format(new Date(recipe.createdUtc)));
+                created.dateTime = recipe.createdUtc;
+                const creationDetails = el('small', 'Created ');
+                creationDetails.append(created, ' Copenhagen time');
+                info.append(creationDetails);
                 const editButton = el('button', 'Edit', 'btn secondary');
                 editButton.type = 'button';
                 editButton.onclick = () => edit(recipe);
