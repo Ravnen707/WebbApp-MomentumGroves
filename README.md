@@ -1,10 +1,10 @@
 # MomentumGroves
 
-MomentumGroves is a personal health, nutrition, and activity companion designed to make everyday progress easier to track and easier to understand. It combines food logging, recipes, body metrics, and activity tools in one place. The long-term roadmap is described below.
+MomentumGroves is a personal health, nutrition, and activity tracker for logging meals, managing recipes, recording workouts, and tracking weight over time.
 
-The project currently consists of an **ASP.NET Core MVC (.NET 10)** web application using **SQLite**. The **.NET MAUI Android** companion is maintained in a separate GitHub repository. It is currently a personal project, not a finished public health platform and unsure if it will ever be anything more then for myself and any other who wants to use this.
+This repository contains the **ASP.NET Core MVC (.NET 10)** web app, which stores data locally in **SQLite**. The **.NET MAUI Android** companion lives in a separate repository.
 
-> This guide describes the project and the setup supported by the supplied documentation and source snapshot. It does not guarantee that every feature has been tested in a clean installation.
+> **Development and AI assistance.** I build and maintain MomentumGroves as a personal learning project. I use OpenAI Codex to draft code scaffolding. I review all code, revise it where needed, and implement functionality myself when the scaffold falls short. The project gives me hands-on practice building features with ASP.NET Core MVC and writing browser automation with Playwright and NUnit.
 
 ## Table of contents
 
@@ -17,6 +17,7 @@ The project currently consists of an **ASP.NET Core MVC (.NET 10)** web applicat
 - [Android companion and synchronization](#android-companion-and-synchronization)
 - [Testing](#testing)
 - [Publishing safely](#publishing-safely)
+- [Security and privacy](#security-and-privacy)
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -57,18 +58,16 @@ Achievement design should encourage sustainable habits. Avoid rewarding extreme 
 <details>
 <summary><strong>Web application features</strong></summary>
 
-The supplied project and documentation include these areas:
-
-- **Food diary:** register meals, view calories and macronutrients, copy previous meals into the entry form, and edit existing entries. Recipe logging supports proportional portion scaling and a separate per-ingredient customization workflow; customized entries should not alter the saved recipe.
-- **Custom food library:** manage custom foods with nutrition values per 100 g or 100 ml. The newer library workflow is designed for newest-first, server-side pagination (10 items at a time), with search across the full database.
-- **Recipes:** combine custom foods with ingredient quantities and a configurable meal weight; select recipes for diary entry.
-- **Drinks:** search products through Open Food Facts, enter quantities in ml, review or edit nutritional values, and explicitly save a drink. Product selection alone does not save it.
-- **Nutrition targets and history:** daily nutrition tracking, seven-day views, and sick-day/cheat-day controls. Sick days are intended to be excluded from target evaluation; cheat days remain in the seven-day intake balance.
-- **Body metrics and weight tracking:** dedicated views for body measurements and weight history.
-- **Training:** dedicated training tracking view.
-- **Administration:** an administration view for the web app.
-
-The latest JavaScript refactoring discussed for this project has not been fully browser-tested; feature presence should not be interpreted as a verification that every control works.
+- **Shared date picker** — Use **Selected date** at the top right to open a past day. The date follows you between Dashboard, Food Diary, Training, and Weight Progress in the same browser tab. Select **Today** to return to the current day.
+- **Dashboard** — View meals and nutrition for the selected date. The seven-day nutrition chart and balance end on that date.
+- **Food Diary** — Add, edit, or delete meals and drinks for the selected date, copy an earlier meal, and mark the day as a sick day or cheat day. Scale a recipe portion or customize its ingredients for a diary entry while keeping the saved recipe intact.
+- **Custom food library** — Manage foods with nutrition values per 100 g or 100 ml. The library lists the newest entries first, loads 10 items at a time, and searches across the full library.
+- **Recipes** — Combine custom foods with ingredient quantities and a configurable meal weight, then select saved recipes in the Food Diary.
+- **Drinks** — Search Open Food Facts, enter a quantity in ml, and review or edit the nutritional values before saving.
+- **Nutrition targets** — The Health & Nutrition Calculator sets daily targets. Sick days are excluded from target assessment and the seven-day balance. Cheat days still count toward the balance.
+- **Weight Progress** — Log or correct a weigh-in or mark the selected date as not weighed. Review weight history, trends, and goals.
+- **Training** — Manage programme groups, select a group for the Dashboard, and review training history. A checkbox shows whether the programme was completed during the selected Monday-to-Sunday week. Checking it saves the selected date to training history. For example, selecting Sunday on a Monday logs the workout in the previous week. Completed programmes stay checked for their week after restarting the app.
+- **Admin** — Install and update the DTU Frida food composition database.
 
 </details>
 
@@ -101,8 +100,7 @@ The Android app is a temporary staging area, not a long-term backup of successfu
 | Frontend | Razor `.cshtml`, JavaScript, HTML, CSS |
 | Storage | SQLite via `Microsoft.Data.Sqlite` (package 8.0.22 in the inspected project) |
 | Spreadsheet import | `ExcelDataReader` 3.7.0 |
-| Automated tests | **NUnit** 3.14.0, NUnit3TestAdapter 4.5.0, Microsoft.NET.Test.Sdk 17.8.0 |
-| Coverage | `coverlet.collector` 6.0.0 |
+| Testing tools | NUnit for .NET tests and Playwright for browser automation |
 | Development environment | Any .NET 10-compatible IDE or code editor (such as Rider, Visual Studio, or VS Code) |
 
 ```text
@@ -122,7 +120,8 @@ MomentumGroves/
 ├── Views/                 # Razor views and partials
 ├── wwwroot/               # Static CSS, JS, and assets
 └── tests/
-    └── MomentumGroves.Tests/
+    ├── MomentumGroves.UnitTests/
+    └── MomentumGroves.PlaywrightTests/
 ```
 
 The mobile application has its own GitHub repository and its own DTO definitions. Both apps communicate using JSON over an API; their C# namespaces do not have to match, but their JSON contracts must remain compatible.
@@ -186,8 +185,7 @@ dotnet run --project .\MomentumGroves.csproj
 2. Open the custom food library and add a temporary test food; this confirms `food_and_recipes.db` and its tables work.
 3. Save an application setting or other app-state entry to confirm `momentum.db` works.
 4. If Frida is missing, use **Go to Admin to make FridaDb** and install the dataset; then test Frida food search.
-6. Run the automated tests under [Testing](#testing).
-7. For Android transfers, follow [Android companion and synchronization](#android-companion-and-synchronization).
+5. For Android transfers, follow [Android companion and synchronization](#android-companion-and-synchronization).
 
 ---
 
@@ -224,7 +222,7 @@ Only missing local databases are initialized. The Frida dataset is **not** creat
 4. Select **Yes, install** when prompted. The application downloads the dataset and automatically creates and populates `src/Data/frida.db` if it does not exist.
 5. Confirm that Admin displays the installed version and food count, then test a Frida food search.
 
-The same Admin workflow supports both first-time installation and later updates. No database needs to be created manually. Installation requires internet access. In the verified first-install test, Admin installed DTU Frida version 6.1 and imported 1,390 foods.
+The same Admin workflow supports first-time installation and later updates. Installation requires internet access.
 
 ### Database filenames and versions
 
@@ -297,21 +295,18 @@ The import logic is designed to skip existing food names and acknowledge process
 <details>
 <summary><strong>Testing</strong></summary>
 
-The repository contains a separate **NUnit** test project:
+The solution includes two test projects.
 
-```text
-tests/MomentumGroves.Tests/MomentumGroves.Tests.csproj
-```
+- **MomentumGroves.UnitTests** uses NUnit to exercise application services and controllers.
+- **MomentumGroves.PlaywrightTests** is used to learn browser automation by interacting with the web app through its user interface.
 
-It targets **.NET 10** and references the web project. Tests cover service areas including food handling, recipes/library, Frida updates, mobile food sync, app state, training images, and a body-metrics controller.
-
-Run the tests from the repository root:
+To run the unit test project, use the following command from the repository root.
 
 ```powershell
-dotnet test .\tests\MomentumGroves.Tests\MomentumGroves.Tests.csproj
+dotnet test .\tests\MomentumGroves.UnitTests\MomentumGroves.UnitTests.csproj
 ```
 
-Or open the **Unit Tests** window in your application and run the test project. The test project includes `coverlet.collector` for coverage collection. Tests are not a guarantee that all browser interactions or external-service integrations work; test those separately.
+You can also select the unit test project in your IDE's test runner.
 
 ---
 
@@ -322,8 +317,6 @@ Or open the **Unit Tests** window in your application and run the test project. 
 <a id="publishing-safely"></a>
 <details>
 <summary><strong>Publishing safely</strong></summary>
-
-This section replaces the separate `PUBLISHING.md` document.
 
 - **Use Git to publish source**, not GitHub's manual upload of a ZIP or your entire working directory. `.gitignore` applies to Git tracking, not arbitrary uploads.
 - Do **not** commit `.env`, API keys, private sync keys, signing material, personal SQLite databases, backups, exports, or downloaded private datasets.
