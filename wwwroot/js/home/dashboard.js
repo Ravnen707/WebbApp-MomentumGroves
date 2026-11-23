@@ -1,6 +1,9 @@
-import {read, DONE_KEY} from "../core/storage.js";
-import {readTrainingProgrammes, setProgrammeCompleted} from "../core/training-storage.js";
-import {fmt, esc, setText, setHTML, localDate, shift} from "../core/utils.js";
+import {
+    completedProgrammesThisWeek,
+    readTrainingProgrammes,
+    setProgrammeCompleted
+} from "../core/training-storage.js?v=weekly-completions";
+import {fmt, esc, setText, setHTML, localDate, monday, shift} from "../core/utils.js";
 import {isCheatDay} from "../tracking/cheat-days.js";
 import {isSickDay, fiberActive, fiberKnown, fiberComplete} from "../tracking/sick-days.js";
 import {
@@ -133,6 +136,28 @@ function renderCalorieBalance() {
     zoneElements[zoneIndex]?.classList.add('balance-zone-active');
 }
 
+let trainingWeekTimer;
+
+function renderHomeWorkouts() {
+    const today = localDate();
+    const completed = completedProgrammesThisWeek(today);
+    const {groups, dashboardGroupId} = readTrainingProgrammes();
+    const dashboardGroup = groups.find(group => group.id === dashboardGroupId);
+    const programmes = dashboardGroup?.programmes.filter(programme => programme?.id) ?? [];
+    setHTML('#home-workouts', programmes.map(programme => {
+        const title = esc(programme.title || 'Training programme');
+        return `<label class="workout-tile"><span class="workout-tile-copy"><strong>${title}</strong></span><input class="check" type="checkbox" data-done="${esc(programme.id)}" ${completed.has(String(programme.id)) ? 'checked' : ''} aria-label="${title} completed"></label>`;
+    }).join('') || (dashboardGroup
+        ? '<div class="empty">This group has no programmes yet.</div>'
+        : '<div class="empty">Choose a programme group on the Training page to show it here.</div>'));
+    document.querySelectorAll('#home-workouts [data-done]').forEach((input, index) => input.addEventListener('change', () => {
+        setProgrammeCompleted(programmes[index], input.checked);
+    }));
+    const nextMonday = new Date(shift(monday(today), 7) + 'T00:00:00');
+    clearTimeout(trainingWeekTimer);
+    trainingWeekTimer = setTimeout(renderHomeWorkouts, nextMonday.getTime() - Date.now());
+}
+
 function renderHome() {
     if (!document.querySelector('#kcal-stat')) return;
     const today = localDate();
@@ -158,22 +183,9 @@ function renderHome() {
     const homeCheat = document.querySelector('#home-cheat-status');
     if (homeCheat) homeCheat.hidden = !isCheatDay(localDate());
     document.querySelector('.stats.stats-four')?.classList.toggle('cheat-day-stats', isCheatDay(localDate()) && !isSickDay(localDate()));
-    const done = read(DONE_KEY, {});
-    const {groups, dashboardGroupId} = readTrainingProgrammes();
-    const dashboardGroup = groups.find(group => group.id === dashboardGroupId);
-    const programmes = dashboardGroup?.programmes.filter(programme => programme?.id) ?? [];
-    setHTML('#home-workouts', programmes.map(programme => {
-        const key = `${today}:${programme.id}`;
-        const title = esc(programme.title || 'Training programme');
-        return `<label class="workout-tile"><span class="workout-tile-copy"><strong>${title}</strong></span><input class="check" type="checkbox" data-done="${esc(key)}" ${done[key] ? 'checked' : ''} aria-label="${title} completed"></label>`;
-    }).join('') || (dashboardGroup
-        ? '<div class="empty">This group has no programmes yet.</div>'
-        : '<div class="empty">Choose a programme group on the Training page to show it here.</div>'));
+    renderHomeWorkouts();
     const items = food().filter(x => x.date === localDate()).slice(-5).reverse();
     setHTML('#home-meals', items.length ? items.map(x => `<div class="meal-row"><div><strong>${esc(x.name)}</strong><small>${fmt(x.grams)} ${x.type === 'drink' ? 'ml' : 'g'} · ${fmt(x.protein)} g protein · ${fmt(x.carbs || 0)} g carbohydrates</small></div><span class="tag">${fmt(x.kcal)} kcal</span></div>`).join('') : '<div class="empty">No meals logged today.</div>');
-    document.querySelectorAll('#home-workouts [data-done]').forEach((input, index) => input.addEventListener('change', () => {
-        setProgrammeCompleted(input.dataset.done, programmes[index], input.checked);
-    }));
     drawChart();
     renderCalorieBalance();
 }

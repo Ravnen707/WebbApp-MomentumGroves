@@ -1,6 +1,6 @@
 import {read, write, DONE_KEY} from "../core/storage.js";
 import {esc, setText, localDate, shift, monday} from "../core/utils.js";
-import {PROGRAM_KEY, HISTORY_KEY, readTrainingProgrammes, setProgrammeCompleted} from "../core/training-storage.js";
+import {PROGRAM_KEY, HISTORY_KEY, completedProgrammesThisWeek, readTrainingProgrammes, setProgrammeCompleted} from "../core/training-storage.js?v=weekly-completions";
 
 const exercise = name => ({
     name,
@@ -318,10 +318,8 @@ function renderTraining() {
         }
         const programmes = group.programmes;
         dashboardGroup.setAttribute('aria-pressed', String(group.id === settings.dashboardGroupId));
-        const done = read(DONE_KEY, {});
+        const completed = completedProgrammesThisWeek();
         root.innerHTML = programmes.map((box, index) => {
-            const date = localDate();
-            const doneKey = `${date}:${box.id}`;
             const rows = box.exercises.map((x, i) => {
                 const cardio = x.type === 'cardio';
                 return `<article class="training-exercise-card" data-exercise-index="${i}">
@@ -336,7 +334,7 @@ function renderTraining() {
                         <label class="training-strength-field">Kg<input data-field="kg" type="number" min="0" step="0.5" value="${Number(x.kg) || 0}"></label>
                         <label class="training-cardio-field">Minutter<input data-field="minutes" type="number" min="0" step="1" value="${Number(x.minutes) || 0}"></label></div></div></article>`;
             }).join('');
-            return `<section class="panel training-edit-box" data-box-id="${esc(box.id)}"><div class="training-title"><div class="training-box-heading"><label>Name<input data-title value="${esc(box.title)}"></label><label>Focus / description<input data-subtitle value="${esc(box.subtitle || '')}"></label></div><div class="training-box-controls"><button type="button" class="btn secondary" data-move="up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" class="btn secondary" data-move="down" ${index === programmes.length - 1 ? 'disabled' : ''}>↓</button><button type="button" class="btn danger" data-remove-box>Delete programme</button><label><input class="check" type="checkbox" data-done="${doneKey}" ${done[doneKey] ? 'checked' : ''}> Completed</label></div></div><div class="training-exercise-list">${rows}</div><button type="button" class="btn secondary" data-add-exercise>+ Add exercise / cardio</button></section>`;
+            return `<section class="panel training-edit-box" data-box-id="${esc(box.id)}"><div class="training-title"><div class="training-box-heading"><label>Name<input data-title value="${esc(box.title)}"></label><label>Focus / description<input data-subtitle value="${esc(box.subtitle || '')}"></label></div><div class="training-box-controls"><button type="button" class="btn secondary" data-move="up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" class="btn secondary" data-move="down" ${index === programmes.length - 1 ? 'disabled' : ''}>↓</button><button type="button" class="btn danger" data-remove-box>Delete programme</button><label><input class="check" type="checkbox" data-done ${completed.has(String(box.id)) ? 'checked' : ''}> Completed</label></div></div><div class="training-exercise-list">${rows}</div><button type="button" class="btn secondary" data-add-exercise>+ Add exercise / cardio</button></section>`;
         }).join('') || '<p class="muted">No programmes yet. Press + Add programme.</p>';
         root.querySelectorAll('[data-box-id]').forEach(section => {
             const id = section.dataset.boxId;
@@ -414,7 +412,7 @@ function renderTraining() {
             section.querySelectorAll('[data-done]').forEach(input => input.addEventListener('change', () => {
                 collect();
                 const programme = programmes.find(item => item.id === id);
-                setProgrammeCompleted(input.dataset.done, programme, input.checked);
+                setProgrammeCompleted(programme, input.checked);
                 renderProgress();
             }));
         });
