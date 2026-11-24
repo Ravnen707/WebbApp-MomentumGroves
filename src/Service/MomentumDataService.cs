@@ -1,4 +1,4 @@
-using Microsoft.Data.Sqlite;
+using MomentumGroves.Data;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -7,7 +7,7 @@ namespace MomentumGroves.Service;
 public sealed partial class MomentumDataService
 {
     private readonly ILogger<MomentumDataService> _logger;
-    private readonly string _connectionString;
+    private readonly PersonalDatabase _database;
 
     private static readonly HashSet<string> AllowedKeys = new(StringComparer.Ordinal)
     {
@@ -21,24 +21,17 @@ public sealed partial class MomentumDataService
     };
 
     public MomentumDataService(IWebHostEnvironment environment, ILogger<MomentumDataService> logger)
+        : this(PersonalDatabase.Local(environment), logger)
     {
+    }
+
+    public MomentumDataService(PersonalDatabase database, ILogger<MomentumDataService> logger)
+    {
+        _database = database;
         _logger = logger;
         try
         {
-            var path = Path.Combine(environment.ContentRootPath, "src", "Data", "momentum.db");
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            _connectionString = new SqliteConnectionStringBuilder { DataSource = path }.ToString();
-            using var connection = new SqliteConnection(_connectionString);
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = """
-                                  CREATE TABLE IF NOT EXISTS AppState (
-                                      Key TEXT PRIMARY KEY NOT NULL,
-                                      JsonValue TEXT NOT NULL,
-                                      UpdatedUtc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
-                                  );
-                                  """;
-            command.ExecuteNonQuery();
+            _database.InitializeState();
         }
         catch (Exception exception)
         {
@@ -52,7 +45,7 @@ public sealed partial class MomentumDataService
         try
         {
             var result = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
-            await using var connection = new SqliteConnection(_connectionString);
+            await using var connection = _database.CreateConnection("momentum.db");
             await connection.OpenAsync(cancellationToken);
             await using var command = connection.CreateCommand();
             command.CommandText = "SELECT Key, JsonValue FROM AppState";
@@ -68,7 +61,8 @@ public sealed partial class MomentumDataService
 
             return result;
         }
-        catch (Exception exception) when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
+        catch (Exception exception) when (!(exception is OperationCanceledException &&
+                                            cancellationToken.IsCancellationRequested))
         {
             _logger.LogError(exception, "Application data operation {Operation} failed", nameof(ReadAllAsync));
             throw;
@@ -80,19 +74,21 @@ public sealed partial class MomentumDataService
         Validate(key, value);
         try
         {
-            await using var connection = new SqliteConnection(_connectionString);
+            await using var connection = _database.CreateConnection("momentum.db");
             await connection.OpenAsync(cancellationToken);
             await using var command = connection.CreateCommand();
             command.CommandText = """
                                   INSERT INTO AppState (Key, JsonValue, UpdatedUtc)
-                                  VALUES ($key, $json, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+                                  VALUES (@key, @json, @updated)
                                   ON CONFLICT(Key) DO UPDATE SET JsonValue = excluded.JsonValue, UpdatedUtc = excluded.UpdatedUtc
                                   """;
-            command.Parameters.AddWithValue("$key", key);
-            command.Parameters.AddWithValue("$json", value.GetRawText());
+            command.AddParameter("@key", key);
+            command.AddParameter("@json", value.GetRawText());
+            command.AddParameter("@updated", PersonalDatabase.UtcNow());
             await command.ExecuteNonQueryAsync(cancellationToken);
         }
-        catch (Exception exception) when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
+        catch (Exception exception) when (!(exception is OperationCanceledException &&
+                                            cancellationToken.IsCancellationRequested))
         {
             _logger.LogError(exception, "Application data operation {Operation} failed", nameof(SaveAsync));
             throw;
@@ -109,24 +105,27 @@ public sealed partial class MomentumDataService
 
         try
         {
-            await using var connection = new SqliteConnection(_connectionString);
+            await using var connection = _database.CreateConnection("momentum.db");
             await connection.OpenAsync(cancellationToken);
-            await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+            await using var transaction = await PersonalDatabase.BeginStateAsync(connection, true, cancellationToken);
             var count = 0;
             foreach (var (key, value) in values)
             {
                 await using var command = connection.CreateCommand();
-                command.Transaction = (SqliteTransaction)transaction;
-                command.CommandText = "INSERT OR IGNORE INTO AppState (Key, JsonValue) VALUES ($key, $json)";
-                command.Parameters.AddWithValue("$key", key);
-                command.Parameters.AddWithValue("$json", value.GetRawText());
+                command.Transaction = transaction;
+                command.CommandText =
+                    "INSERT INTO AppState (Key, JsonValue, UpdatedUtc) VALUES (@key, @json, @updated) ON CONFLICT(Key) DO NOTHING";
+                command.AddParameter("@key", key);
+                command.AddParameter("@json", value.GetRawText());
+                command.AddParameter("@updated", PersonalDatabase.UtcNow());
                 count += await command.ExecuteNonQueryAsync(cancellationToken);
             }
 
             await transaction.CommitAsync(cancellationToken);
             return count;
         }
-        catch (Exception exception) when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
+        catch (Exception exception) when (!(exception is OperationCanceledException &&
+                                            cancellationToken.IsCancellationRequested))
         {
             _logger.LogError(exception, "Application data operation {Operation} failed", nameof(ImportMissingAsync));
             throw;

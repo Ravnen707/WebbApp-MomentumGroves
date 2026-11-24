@@ -1,12 +1,17 @@
 # Tests
 
-`MomentumGroves.Tests` contains NUnit unit tests for the web application,
-organized by the area being tested (for example, `Controllers`).
-
-Run the test project from the repository root:
+Run the NUnit service and controller tests from the repository root.
 
 ```powershell
-dotnet test tests/MomentumGroves.Tests/MomentumGroves.Tests.csproj
+dotnet test tests/MomentumGroves.UnitTests
 ```
 
-The project is included in the solution so Rider can discover and run its tests.
+Run Playwright from the same directory after installing Chromium for the test project.
+
+```powershell
+dotnet build tests/MomentumGroves.PlaywrightTests
+pwsh tests/MomentumGroves.PlaywrightTests/bin/Debug/net10.0/playwright.ps1 install chromium
+dotnet test tests/MomentumGroves.PlaywrightTests
+```
+
+NUnit uses temporary SQLite fixtures. Playwright starts its own loopback web host on an available port with a temporary content root, SQLite databases, and a seeded ingredient. It runs in the Testing environment with the Supabase connection cleared. Both projects are included in the solution for discovery in Rider.

@@ -2,7 +2,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Microsoft.Data.Sqlite;
+using System.Data.Common;
+using MomentumGroves.Data;
 
 namespace MomentumGroves.Service;
 
@@ -21,7 +22,8 @@ public sealed partial class MomentumDataService
         /// Computes a version fingerprint from the serialized training programmes.
         /// </summary>
         /// <returns>The SHA-256 fingerprint as a hexadecimal string.</returns>
-        public string Version() => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Programmes.ToJsonString())));
+        public string Version() =>
+            Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Programmes.ToJsonString())));
     }
 
     public sealed record TrainingSave(JsonElement Programmes, Dictionary<string, decimal> OriginalWeights);
@@ -32,9 +34,9 @@ public sealed partial class MomentumDataService
     /// <returns>The resulting programmes and the outcome of each edit.</returns>
     public async Task<TrainingSyncResult> SyncTrainingAsync(List<WeightEdit> edits, CancellationToken token)
     {
-        await using var connection = new SqliteConnection(_connectionString);
+        await using var connection = _database.CreateConnection("momentum.db");
         await connection.OpenAsync(token);
-        await using var transaction = connection.BeginTransaction(deferred: edits.Count == 0);
+        await using var transaction = await PersonalDatabase.BeginStateAsync(connection, edits.Count > 0, token);
         var programmes = await ReadTrainingAsync(connection, transaction, token);
         var exercises = ExercisesById(programmes);
         var results = new List<WeightResult>();
@@ -91,13 +93,13 @@ public sealed partial class MomentumDataService
         }
 
         incoming = NormalizeTraining(incoming, null);
-        
-        await using var connection = new SqliteConnection(_connectionString);
+
+        await using var connection = _database.CreateConnection("momentum.db");
         await connection.OpenAsync(token);
-        await using var transaction = connection.BeginTransaction();
-        
+        await using var transaction = await PersonalDatabase.BeginStateAsync(connection, true, token);
+
         var current = ExercisesById(await ReadTrainingAsync(connection, transaction, token));
-        
+
         foreach (var (id, exercise) in ExercisesById(incoming))
         {
             // Keep a phone edit when the browser saves a programme without changing that weight.
@@ -116,19 +118,19 @@ public sealed partial class MomentumDataService
     /// Loads the current and legacy training documents within the supplied transaction.
     /// </summary>
     /// <returns>The normalized training document.</returns>
-    private static async Task<JsonObject> ReadTrainingAsync(SqliteConnection connection,
-        SqliteTransaction transaction, CancellationToken token)
+    private static async Task<JsonObject> ReadTrainingAsync(DbConnection connection,
+        DbTransaction transaction, CancellationToken token)
     {
         using var command = connection.CreateCommand();
-        
+
         command.Transaction = transaction;
-        command.CommandText = "SELECT Key, JsonValue FROM AppState WHERE Key IN ($current, $legacy)";
-        command.Parameters.AddWithValue("$current", TrainingKey);
-        command.Parameters.AddWithValue("$legacy", LegacyTrainingKey);
-        
+        command.CommandText = "SELECT Key, JsonValue FROM AppState WHERE Key IN (@current, @legacy)";
+        command.AddParameter("@current", TrainingKey);
+        command.AddParameter("@legacy", LegacyTrainingKey);
+
         JsonNode? current = null;
         JsonNode? legacy = null;
-        
+
         await using var reader = await command.ExecuteReaderAsync(token);
         while (await reader.ReadAsync(token))
         {
@@ -149,19 +151,20 @@ public sealed partial class MomentumDataService
     /// <summary>
     /// Inserts or replaces the current training document within the supplied transaction.
     /// </summary>
-    /// <returns>A task that completes when SQLite finishes the write.</returns>
-    private static async Task StoreTrainingAsync(SqliteConnection connection, SqliteTransaction transaction,
+    /// <returns>A task that completes when the database finishes the write.</returns>
+    private static async Task StoreTrainingAsync(DbConnection connection, DbTransaction transaction,
         JsonObject programmes, CancellationToken token)
     {
         using var command = connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = """
-                              INSERT INTO AppState (Key, JsonValue) VALUES ($key, $json)
+                              INSERT INTO AppState (Key, JsonValue, UpdatedUtc) VALUES (@key, @json, @updated)
                               ON CONFLICT(Key) DO UPDATE SET JsonValue = excluded.JsonValue,
-                                  UpdatedUtc = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+                                  UpdatedUtc = excluded.UpdatedUtc
                               """;
-        command.Parameters.AddWithValue("$key", TrainingKey);
-        command.Parameters.AddWithValue("$json", programmes.ToJsonString());
+        command.AddParameter("@key", TrainingKey);
+        command.AddParameter("@json", programmes.ToJsonString());
+        command.AddParameter("@updated", PersonalDatabase.UtcNow());
         await command.ExecuteNonQueryAsync(token);
     }
 
@@ -191,8 +194,10 @@ public sealed partial class MomentumDataService
 
             source = new JsonObject
             {
-                ["groups"] = groups, ["dashboardGroupId"] = groups.Count > 0 && 
-                                                            groups[0]?["id"]?.ToString() == "full" ? "full" : null
+                ["groups"] = groups, ["dashboardGroupId"] = groups.Count > 0 &&
+                                                            groups[0]?["id"]?.ToString() == "full"
+                    ? "full"
+                    : null
             };
         }
 
@@ -264,5 +269,7 @@ public sealed partial class MomentumDataService
     /// <returns>The weight in kilograms, or zero if the value is absent or invalid.</returns>
     private static decimal Weight(JsonObject exercise) =>
         decimal.TryParse(exercise["kg"]?.ToString(), System.Globalization.NumberStyles.Float,
-            System.Globalization.CultureInfo.InvariantCulture, out var kg) ? kg : 0;
+            System.Globalization.CultureInfo.InvariantCulture, out var kg)
+            ? kg
+            : 0;
 }

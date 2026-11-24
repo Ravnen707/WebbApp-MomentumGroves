@@ -1,4 +1,7 @@
-using Microsoft.Data.Sqlite;
+using System.Data;
+using System.Data.Common;
+using System.Globalization;
+using MomentumGroves.Data;
 using MomentumGroves.Models;
 
 namespace MomentumGroves.Service;
@@ -9,56 +12,23 @@ namespace MomentumGroves.Service;
 public sealed class FoodLibraryService
 {
     private readonly ILogger<FoodLibraryService> _logger;
-    private readonly string _connectionString;
+    private readonly PersonalDatabase _database;
 
     /// <summary>
     /// Initializes the food and recipe database.
     /// </summary>
     public FoodLibraryService(IWebHostEnvironment environment, ILogger<FoodLibraryService> logger)
+        : this(PersonalDatabase.Local(environment), logger)
     {
+    }
+
+    public FoodLibraryService(PersonalDatabase database, ILogger<FoodLibraryService> logger)
+    {
+        _database = database;
         _logger = logger;
         try
         {
-            var path = Path.Combine(environment.ContentRootPath, "src", "Data", "food_and_recipes.db");
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            _connectionString = new SqliteConnectionStringBuilder { DataSource = path }.ToString();
-            using var connection = Open();
-            using var transaction = connection.BeginTransaction();
-            using var command = connection.CreateCommand();
-            command.Transaction = transaction;
-            command.CommandText = """
-                                  CREATE TABLE IF NOT EXISTS CustomFoods (
-                                      Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                      Name TEXT NOT NULL, Unit TEXT NOT NULL CHECK(Unit IN ('g','ml')),
-                                      Kcal REAL NOT NULL, Protein REAL NOT NULL, Carbs REAL NOT NULL,
-                                      Fat REAL NOT NULL, Fiber REAL NULL
-                                  );
-                                  CREATE TABLE IF NOT EXISTS Recipes (
-                                      Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                      Name TEXT NOT NULL, FinishedWeight REAL NULL,
-                                      CreatedUtc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-                                  );
-                                  CREATE TABLE IF NOT EXISTS RecipeIngredients (
-                                      RecipeId INTEGER NOT NULL REFERENCES Recipes(Id) ON DELETE CASCADE,
-                                      FoodId INTEGER NOT NULL REFERENCES CustomFoods(Id) ON DELETE RESTRICT,
-                                      Amount REAL NOT NULL CHECK(Amount > 0),
-                                      PRIMARY KEY (RecipeId, FoodId)
-                                  );
-                                  """;
-            command.ExecuteNonQuery();
-
-            command.CommandText = "SELECT 1 FROM pragma_table_info('Recipes') WHERE name = 'CreatedUtc'";
-            if (command.ExecuteScalar() is null)
-            {
-                // Midnight on 1 October 2026 in Copenhagen was 22:00 UTC the previous day.
-                command.CommandText = """
-                                      ALTER TABLE Recipes ADD COLUMN CreatedUtc TEXT NOT NULL
-                                          DEFAULT '2026-09-30T22:00:00.000Z'
-                                      """;
-                command.ExecuteNonQuery();
-            }
-
-            transaction.Commit();
+            _database.InitializeLibrary();
         }
         catch (Exception exception)
         {
@@ -67,41 +37,13 @@ public sealed class FoodLibraryService
         }
     }
 
-    /// <summary>
-    /// Opens a database connection with foreign keys enabled.
-    /// </summary>
-    /// <returns>The result of the operation.</returns>
-    private SqliteConnection Open()
-    {
-        var connection = new SqliteConnection(_connectionString);
-        try
-        {
-            connection.Open();
-            using var pragma = connection.CreateCommand();
-            pragma.CommandText = "PRAGMA foreign_keys = ON;";
-            pragma.ExecuteNonQuery();
-            return connection;
-        }
-        catch
-        {
-            connection.Dispose();
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Adds a parameter to a SQLite command.
-    /// </summary>
-    private static void Add(SqliteCommand command, string name, object? value)
-    {
-        command.Parameters.AddWithValue(name, value ?? DBNull.Value);
-    }
+    private DbConnection Open() => _database.Open("food_and_recipes.db");
 
     /// <summary>
     /// Maps a database row to a library food.
     /// </summary>
     /// <returns>The result of the operation.</returns>
-    private static LibraryFood ReadFood(SqliteDataReader reader)
+    private static LibraryFood ReadFood(DbDataReader reader)
     {
         return new LibraryFood(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.GetDouble(3),
             reader.GetDouble(4), reader.GetDouble(5), reader.GetDouble(6),
@@ -119,8 +61,8 @@ public sealed class FoodLibraryService
             using var connection = Open();
             using var command = connection.CreateCommand();
             command.CommandText =
-                "SELECT Id, Name, Unit, Kcal, Protein, Carbs, Fat, Fiber FROM CustomFoods WHERE $query = '' OR instr(lower(Name), lower($query)) > 0 ORDER BY Name LIMIT 250";
-            Add(command, "$query", query?.Trim() ?? "");
+                $"SELECT Id, Name, Unit, Kcal, Protein, Carbs, Fat, Fiber FROM CustomFoods WHERE @query = '' OR {_database.FoodNameMatch} ORDER BY Name LIMIT 250";
+            command.AddParameter("@query", query?.Trim() ?? "");
             using var reader = command.ExecuteReader();
             var result = new List<LibraryFood>();
             while (reader.Read())
@@ -150,15 +92,15 @@ public sealed class FoodLibraryService
             using var connection = Open();
             using var count = connection.CreateCommand();
             count.CommandText =
-                "SELECT COUNT(*) FROM CustomFoods WHERE $query = '' OR instr(lower(Name), lower($query)) > 0";
-            Add(count, "$query", search);
+                $"SELECT COUNT(*) FROM CustomFoods WHERE @query = '' OR {_database.FoodNameMatch}";
+            count.AddParameter("@query", search);
             var total = Convert.ToInt32(count.ExecuteScalar());
             using var command = connection.CreateCommand();
             command.CommandText =
-                "SELECT Id, Name, Unit, Kcal, Protein, Carbs, Fat, Fiber FROM CustomFoods WHERE $query = '' OR instr(lower(Name), lower($query)) > 0 ORDER BY Id DESC LIMIT $limit OFFSET $offset";
-            Add(command, "$query", search);
-            Add(command, "$limit", pageSize);
-            Add(command, "$offset", (long)(page - 1) * pageSize);
+                $"SELECT Id, Name, Unit, Kcal, Protein, Carbs, Fat, Fiber FROM CustomFoods WHERE @query = '' OR {_database.FoodNameMatch} ORDER BY Id DESC LIMIT @limit OFFSET @offset";
+            command.AddParameter("@query", search);
+            command.AddParameter("@limit", pageSize);
+            command.AddParameter("@offset", (long)(page - 1) * pageSize);
             using var reader = command.ExecuteReader();
             var items = new List<LibraryFood>();
             while (reader.Read())
@@ -193,29 +135,24 @@ public sealed class FoodLibraryService
             using var connection = Open();
             using var command = connection.CreateCommand();
             command.CommandText = id.HasValue
-                ? "UPDATE CustomFoods SET Name=$name, Unit=$unit, Kcal=$kcal, Protein=$protein, Carbs=$carbs, Fat=$fat, Fiber=$fiber WHERE Id=$id"
-                : "INSERT INTO CustomFoods(Name,Unit,Kcal,Protein,Carbs,Fat,Fiber) VALUES($name,$unit,$kcal,$protein,$carbs,$fat,$fiber)";
-            Add(command, "$id", id);
-            Add(command, "$name", food.Name.Trim());
-            Add(command, "$unit", food.Unit);
-            Add(command, "$kcal", food.Kcal);
-            Add(command, "$protein", food.Protein);
-            Add(command, "$carbs", food.Carbs);
-            Add(command, "$fat", food.Fat);
-            Add(command, "$fiber", food.Fiber);
-            if (command.ExecuteNonQuery() != 1)
-            {
-                throw new KeyNotFoundException("The food was not found.");
-            }
-
+                ? "UPDATE CustomFoods SET Name=@name, Unit=@unit, Kcal=@kcal, Protein=@protein, Carbs=@carbs, Fat=@fat, Fiber=@fiber WHERE Id=@id"
+                : "INSERT INTO CustomFoods(Name,Unit,Kcal,Protein,Carbs,Fat,Fiber) VALUES(@name,@unit,@kcal,@protein,@carbs,@fat,@fiber) RETURNING Id";
             if (id.HasValue)
-            {
-                return id.Value;
-            }
+                command.AddParameter("@id", id.Value);
+            command.AddParameter("@name", food.Name.Trim());
+            command.AddParameter("@unit", food.Unit);
+            command.AddParameter("@kcal", food.Kcal);
+            command.AddParameter("@protein", food.Protein);
+            command.AddParameter("@carbs", food.Carbs);
+            command.AddParameter("@fat", food.Fat);
+            command.AddParameter("@fiber", food.Fiber, DbType.Double);
+            if (!id.HasValue)
+                return (long)command.ExecuteScalar()!;
 
-            using var last = connection.CreateCommand();
-            last.CommandText = "SELECT last_insert_rowid()";
-            return (long)last.ExecuteScalar()!;
+            if (command.ExecuteNonQuery() != 1)
+                throw new KeyNotFoundException("The food was not found.");
+
+            return id.Value;
         }
         catch (Exception exception) when (exception is not (ArgumentException or KeyNotFoundException))
         {
@@ -233,33 +170,27 @@ public sealed class FoodLibraryService
         {
             using var connection = Open();
             using var transaction = connection.BeginTransaction();
+            _database.LockFoodDeletion(connection, transaction);
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
 
-            command.CommandText = "SELECT 1 FROM RecipeIngredients WHERE FoodId=$id LIMIT 1";
-            Add(command, "$id", id);
+            command.CommandText = "SELECT 1 FROM RecipeIngredients WHERE FoodId=@id LIMIT 1";
+            command.AddParameter("@id", id);
             if (command.ExecuteScalar() != null)
             {
                 throw new InvalidOperationException("The food is used in a recipe and cannot be deleted.");
             }
 
-            command.CommandText = "DELETE FROM MobileFoodImports WHERE FoodId=$id";
-            // Older databases may not have the mobile import tracking table.
-            using (var table = connection.CreateCommand())
-            {
-                table.Transaction = transaction;
-                table.CommandText = "SELECT 1 FROM sqlite_master WHERE type='table' AND name='MobileFoodImports'";
-                if (table.ExecuteScalar() != null)
-                {
-                    command.ExecuteNonQuery();
-                }
-            }
+            command.CommandText = "DELETE FROM MobileFoodImports WHERE FoodId=@id";
+            if (_database.HasMobileImports(connection, transaction))
+                command.ExecuteNonQuery();
 
-            command.CommandText = "DELETE FROM CustomFoods WHERE Id=$id";
+            command.CommandText = "DELETE FROM CustomFoods WHERE Id=@id";
             command.ExecuteNonQuery();
             transaction.Commit();
         }
-        catch (Exception exception) when (exception is not (ArgumentException or KeyNotFoundException or InvalidOperationException))
+        catch (Exception exception) when (exception is not (ArgumentException or KeyNotFoundException
+                                              or InvalidOperationException))
         {
             _logger.LogError(exception, "Food library operation {Operation} failed", nameof(DeleteFood));
             throw;
@@ -291,7 +222,7 @@ public sealed class FoodLibraryService
                 if (!recipes.ContainsKey(id))
                 {
                     recipes[id] = (reader.GetString(1), reader.IsDBNull(2) ? null : reader.GetDouble(2),
-                        reader.GetDateTimeOffset(12), new());
+                        DateTimeOffset.Parse(reader.GetString(12), CultureInfo.InvariantCulture), new());
                 }
 
                 if (!reader.IsDBNull(3))
@@ -343,37 +274,36 @@ public sealed class FoodLibraryService
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = id.HasValue
-                ? "UPDATE Recipes SET Name=$name, FinishedWeight=$weight WHERE Id=$id"
+                ? "UPDATE Recipes SET Name=@name, FinishedWeight=@weight WHERE Id=@id"
                 : """
                   INSERT INTO Recipes(Name, FinishedWeight, CreatedUtc)
-                  VALUES($name, $weight, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+                  VALUES(@name, @weight, @created) RETURNING Id
                   """;
-            Add(command, "$id", id);
-            Add(command, "$name", recipe.Name.Trim());
-            Add(command, "$weight", recipe.FinishedWeight);
-            if (command.ExecuteNonQuery() != 1)
+            if (id.HasValue)
+                command.AddParameter("@id", id.Value);
+            command.AddParameter("@name", recipe.Name.Trim());
+            command.AddParameter("@weight", recipe.FinishedWeight, DbType.Double);
+            if (!id.HasValue)
+            {
+                command.AddParameter("@created", PersonalDatabase.UtcNow());
+                id = (long)command.ExecuteScalar()!;
+            }
+            else if (command.ExecuteNonQuery() != 1)
             {
                 throw new KeyNotFoundException("The recipe was not found.");
             }
 
-            if (!id.HasValue)
-            {
-                command.Parameters.Clear();
-                command.CommandText = "SELECT last_insert_rowid()";
-                id = (long)command.ExecuteScalar()!;
-            }
-
             command.Parameters.Clear();
-            command.CommandText = "DELETE FROM RecipeIngredients WHERE RecipeId=$id";
-            Add(command, "$id", id.Value);
+            command.CommandText = "DELETE FROM RecipeIngredients WHERE RecipeId=@id";
+            command.AddParameter("@id", id.Value);
             command.ExecuteNonQuery();
             foreach (var ingredient in recipe.Ingredients)
             {
                 command.Parameters.Clear();
-                command.CommandText = "INSERT INTO RecipeIngredients(RecipeId,FoodId,Amount) VALUES($id,$food,$amount)";
-                Add(command, "$id", id.Value);
-                Add(command, "$food", ingredient.FoodId);
-                Add(command, "$amount", ingredient.Amount);
+                command.CommandText = "INSERT INTO RecipeIngredients(RecipeId,FoodId,Amount) VALUES(@id,@food,@amount)";
+                command.AddParameter("@id", id.Value);
+                command.AddParameter("@food", ingredient.FoodId);
+                command.AddParameter("@amount", ingredient.Amount);
                 command.ExecuteNonQuery();
             }
 
@@ -396,8 +326,8 @@ public sealed class FoodLibraryService
         {
             using var connection = Open();
             using var command = connection.CreateCommand();
-            command.CommandText = "DELETE FROM Recipes WHERE Id=$id";
-            Add(command, "$id", id);
+            command.CommandText = "DELETE FROM Recipes WHERE Id=@id";
+            command.AddParameter("@id", id);
             command.ExecuteNonQuery();
         }
         catch (Exception exception) when (exception is not (ArgumentException or KeyNotFoundException))

@@ -1,14 +1,30 @@
+using MomentumGroves.Data;
+using MomentumGroves.Repository;
+using MomentumGroves.Service;
+
 MomentumGroves.Helper.DotEnvLoader.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
-var builder = WebApplication.CreateBuilder(args);
+var migrate = args.FirstOrDefault() == "migrate-sqlite";
+var builder = WebApplication.CreateBuilder(migrate ? [] : args);
+if (migrate)
+{
+    Environment.ExitCode = SqliteDataMigration.Run(args[1..], builder.Configuration);
+    return;
+}
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddMemoryCache();
-builder.Services.AddSingleton<MomentumGroves.Service.DatabaseInitializationService>();
+builder.Services.AddSingleton(services => new PersonalDatabase(
+    Path.Combine(services.GetRequiredService<IWebHostEnvironment>().ContentRootPath, "src", "Data"),
+    services.GetRequiredService<IConfiguration>().GetConnectionString("Supabase")));
+builder.Services.AddSingleton<DatabaseInitializationService>();
 builder.Services.AddScoped<MomentumGroves.Service.DrinkService>();
 builder.Services.AddScoped<MomentumGroves.Service.FoodService>();
 builder.Services.AddScoped<MomentumGroves.Service.MobileFoodSyncService>();
-builder.Services.AddScoped<MomentumGroves.Repository.MobileFoodSyncRepository>();
-builder.Services.AddSingleton<MomentumGroves.Service.FoodLibraryService>();
-builder.Services.AddSingleton<MomentumGroves.Service.MomentumDataService>();
+builder.Services.AddScoped(services => new MobileFoodSyncRepository(services.GetRequiredService<PersonalDatabase>()));
+builder.Services.AddSingleton(services => new FoodLibraryService(services.GetRequiredService<PersonalDatabase>(),
+    services.GetRequiredService<ILogger<FoodLibraryService>>()));
+builder.Services.AddSingleton(services => new MomentumDataService(services.GetRequiredService<PersonalDatabase>(),
+    services.GetRequiredService<ILogger<MomentumDataService>>()));
 builder.Services.AddSingleton<MomentumGroves.Service.TrainingImageService>();
 builder.Services.AddHttpClient<MomentumGroves.Service.FridaUpdateService>(client =>
 {
@@ -25,6 +41,7 @@ builder.Services.AddHttpClient();
 var app = builder.Build();
 // Capture file existence before any other application service can create a database.
 _ = app.Services.GetRequiredService<MomentumGroves.Service.DatabaseInitializationService>();
+app.Services.GetRequiredService<PersonalDatabase>().InitializePostgres();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -63,7 +80,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 
-if (!app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))
 {
     app.Lifetime.ApplicationStarted.Register(() =>
     {

@@ -244,7 +244,28 @@ The same Admin workflow supports first-time installation and later updates. Inst
 
 ### Database filenames and versions
 
-Use the filenames above for a standard installation. The filenames are referenced in services/repositories. `frida.db` is **not** a required build-time content file in `MomentumGroves.csproj`; its absence must not prevent the project from building. If you rename one, update **all** matching paths in the source and project configuration. SQLite is embedded; no separate database server is required. The .NET SQLite package version is specified in the `.csproj`.
+Use the filenames above for a standard SQLite installation. SQLite is embedded and works without a database server or cloud credentials. The Admin installer creates the local Frida database when needed.
+
+### Optional Supabase PostgreSQL
+
+Set `ConnectionStrings:Supabase` in .NET User Secrets for Development, or supply `ConnectionStrings__Supabase` through the deployment's secret store. Use the project's PostgreSQL connection string for the direct connection or session pooler. Configure TLS with `SSL Mode=VerifyFull` and a trusted certificate chain where available. The app defaults to `SSL Mode=Require` when the connection string omits an SSL mode.
+
+A nonblank connection string sends application state, training, custom foods, recipes, and mobile food import tracking to PostgreSQL. MomentumGroves initializes the `momentum_groves` schema on startup using a server-side database role that can create and own its schema and tables. Startup fails if the selected database is unavailable or initialization fails. With the setting absent or blank, the app uses the existing `momentum.db` and `food_and_recipes.db` files. Keep the connection credential server-side. Frida search and Admin updates always use local `frida.db`.
+
+Keep `momentum_groves` out of Supabase's Data API exposed schemas. Initialization enables Row Level Security and revokes access from `PUBLIC` and the standard Supabase Data API roles. It installs no API policies. The web app connects directly as the schema owner. Set up authentication and verify Row Level Security policies before intentionally exposing any personal data through the Data API.
+
+### Copy existing SQLite data to Supabase
+
+Stop processes writing to the source databases and keep a private backup. Using SQLite's backup facility, prepare consistent snapshots named `momentum.db` and `food_and_recipes.db` in a separate directory. The tool opens those snapshots read-only. If an installation has only one of the two files, the tool reports the missing file and copies the available database. Frida is handled by its local Admin installer.
+
+With the target connection configured in the secret store, run the dry run from the repository root. When using .NET User Secrets, use the Development environment.
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT = "Development"
+dotnet run --project .\MomentumGroves.csproj -- migrate-sqlite --source "C:\private\momentum-snapshots" --dry-run
+```
+
+The dry run verifies the copy and rolls back schema and data changes. Review the table counts before repeating the command with `--apply` to commit. Keep the app stopped against the target during the copy. The destination personal tables must be empty. The command checks counts and foreign keys and preserves IDs, timestamps, JSON documents, and mobile import mappings. Standard application startup initializes the schema only.
 
 ### Protecting local data
 
@@ -654,7 +675,9 @@ Du bruger samme funktion i Admin ved første installation og ved senere opdateri
 
 ### Databasefilnavne og versioner
 
-Brug filnavnene ovenfor til en standardinstallation. Services og repositories henviser til dem i koden. `frida.db` er ikke en påkrævet fil ved build af `MomentumGroves.csproj`, så projektet skal kunne bygges, selvom filen mangler. Hvis du omdøber en database, skal du opdatere alle tilsvarende stier i kildekoden og projektkonfigurationen. SQLite er indbygget og kræver ingen separat databaseserver. Versionen af SQLite-pakken til .NET står i `.csproj`-filen.
+Brug filnavnene ovenfor til en standardinstallation med SQLite. SQLite er indbygget og virker uden en databaseserver eller cloud-legitimationsoplysninger. Frida-søgning og opdateringer via Admin bruger altid den lokale `frida.db`.
+
+Hvis `ConnectionStrings:Supabase` er angivet, bruger webappen PostgreSQL til træning, appdata, fødevarer, opskrifter og registrering af mobilimport. Forbindelsesstrengen opbevares i .NET User Secrets under udvikling eller i serverens hemmelighedslager. Hvis PostgreSQL ikke kan åbnes, stopper opstarten. SQLite bruges, når indstillingen mangler eller er tom. Se [Supabase-opsætningen](#optional-supabase-postgresql) og [vejledningen til at kopiere SQLite-data](#copy-existing-sqlite-data-to-supabase).
 
 ### Beskyttelse af lokale data
 

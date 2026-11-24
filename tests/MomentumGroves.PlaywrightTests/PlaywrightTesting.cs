@@ -6,6 +6,14 @@ namespace MomentumGroves.PlaywrightTests;
 [TestFixture]
 public class Tests : PageTest
 {
+    private SqliteWebHost _host = null!;
+
+    [OneTimeSetUp]
+    public async Task StartWebHost() => _host = await SqliteWebHost.StartAsync();
+
+    [OneTimeTearDown]
+    public void StopWebHost() => _host?.Dispose();
+
     /// <summary>
     /// This test is used with comments to better understand Playwright. This is the first test.
     /// 
@@ -13,10 +21,7 @@ public class Tests : PageTest
     [Test]
     public async Task DashboardShowsNutritionRangesAndLetsTheUserCloseThem()
     {
-        // Start on the running Momentum Groves dashboard. Set this environment variable
-        // if the app is listening on a different URL.
-        var baseUrl = Environment.GetEnvironmentVariable("MOMENTUM_GROVES_BASE_URL") ?? "http://localhost:5000";
-        await Page.GotoAsync(baseUrl);
+        await Page.GotoAsync(_host.BaseUrl);
         await Expect(Page.GetByRole(AriaRole.Heading, new()
         {
             Name = "Your daily overview"
@@ -82,8 +87,7 @@ public class Tests : PageTest
     [Test]
     public async Task DashboardShowsNutritinRangesAndLetsTheUserCloseThem()
     {
-        var baseUrl = Environment.GetEnvironmentVariable("MOMENTUM_GROVES_BASE_URL") ?? "http://localhost:5000";
-        await Page.GotoAsync(baseUrl);
+        await Page.GotoAsync(_host.BaseUrl);
 
         // Making sure page is loaded in.
         await Expect(Page.GetByRole(AriaRole.Heading, new()
