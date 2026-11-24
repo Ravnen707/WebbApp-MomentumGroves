@@ -1,3 +1,4 @@
+@{ var trainingPhoneView = ViewData["TrainingPhoneView"] is true; }
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,6 +10,8 @@
 </head>
 <body>
 <div class="app-shell">
+    @if (!trainingPhoneView)
+    {
     <aside class="sidebar">
         <a class="brand" asp-controller="Home" asp-action="Index">
             <img src="~/Logo/MomentumGrovesLogo.png" asp-append-version="true"
@@ -30,6 +33,7 @@
         </nav>
         <p class="sidebar-note">Data is stored locally in SQLite.</p>
     </aside>
+    }
     <main class="content">
         <div class="topbar">
             <label for="selected-date">Selected date</label>

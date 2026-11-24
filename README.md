@@ -286,20 +286,11 @@ To connect the two apps on a **trusted private Wi-Fi network**:
 
 1. Make sure the PC and phone are on the same reachable local network.
 2. Choose a long, private synchronization key; configure it on the web app as `MobileSync__Key` and enter the **same key** in the mobile app.
-3. Start the web app with a network-accessible listening address, for example from PowerShell at the web project root:
+3. Start the web app with an HTTPS endpoint reachable from the phone. Use an address that matches the certificate and a certificate Android trusts. Keep the web app on your private network.
+4. In the Android app, save that HTTPS address and the matching key under **Food → Saved foods**.
+5. From the Android home screen, tap **Sync to PC**. This sends pending foods and training weights, downloads the latest programmes, and stops when finished. Offline edits stay on the phone until a sync succeeds.
 
-   ```powershell
-   $env:ASPNETCORE_URLS='http://0.0.0.0:5000'
-   $env:MobileSync__Key='REPLACE_WITH_A_PRIVATE_RANDOM_KEY'
-   dotnet run --no-launch-profile --project .\MomentumGroves.csproj
-   ```
-
-4. Run `ipconfig` on the PC to find the current LAN IPv4 address.
-5. In the Android app, open the food synchronization screen and set the PC address to `http://YOUR-PC-IP:5000`.
-6. Enter the matching sync key and use the app’s transfer-to-PC action.
-7. Verify the imported foods appear in the web food library before deleting anything manually.
-
-The web endpoint is `POST /api/mobile/foods/import`, with the key sent in the `X-Momentum-Sync-Key` header. `localhost` on the phone refers to the phone, **not** the PC. The current example uses **unencrypted HTTP**, so do not use public Wi-Fi, router port forwarding, or public firewall rules. If Windows Firewall blocks port 5000, permit it on **private networks only**.
+The mobile food and training endpoints use the `X-Momentum-Sync-Key` header. Enter the PC's network address in the Android app because `localhost` points to the phone.
 
 The import logic is designed to skip existing food names and acknowledge processed items rather than overwrite desktop foods. Keep mobile and web DTO JSON fields compatible when changing either repository.
 
@@ -400,9 +391,9 @@ You can also select the unit test project in your IDE's test runner.
 <details>
 <summary><strong>Android cannot transfer foods</strong></summary>
 
-- Confirm the web app is running and listening on port 5000.
+- Confirm the web app is running on the HTTPS address saved in the Android app.
 - Confirm the phone and PC are on the same reachable private network.
-- Verify the PC's current IPv4 address and matching secret key.
+- Verify the PC address matches the HTTPS certificate and that both apps use the same sync key.
 - Check the private-network Windows Firewall rule.
 - Do not use `localhost` on the phone.
 - Do not delete pending mobile entries to troubleshoot a failed transfer.
@@ -705,20 +696,11 @@ Sådan forbinder du de to apps på et **privat Wi-Fi-netværk, du har tillid til
 
 1. Sørg for, at computeren og telefonen er på samme lokale netværk og kan nå hinanden.
 2. Vælg en lang, privat synkroniseringsnøgle. Sæt den som `MobileSync__Key` i webappen, og angiv **samme nøgle** i mobilappen.
-3. Start webappen med en lytteadresse, der kan tilgås på netværket. Du kan eksempelvis bruge PowerShell i webprojektets rodmappe.
+3. Start webappen med en HTTPS-adresse, som telefonen kan nå. Adressen skal matche certifikatet, og Android skal have tillid til certifikatet. Hold webappen på dit private netværk.
+4. Gem HTTPS-adressen og den samme synkroniseringsnøgle under **Food → Saved foods** i Android-appen.
+5. Tryk på **Sync to PC** på Android-appens startside. Appen sender ventende madvarer og træningsvægte, henter de seneste programmer og stopper, når den er færdig. Ændringer, du foretager offline, bliver på telefonen, indtil synkroniseringen lykkes.
 
-   ```powershell
-   $env:ASPNETCORE_URLS='http://0.0.0.0:5000'
-   $env:MobileSync__Key='REPLACE_WITH_A_PRIVATE_RANDOM_KEY'
-   dotnet run --no-launch-profile --project .\MomentumGroves.csproj
-   ```
-
-4. Kør `ipconfig` på computeren for at finde dens aktuelle IPv4-adresse på lokalnetværket.
-5. Åbn skærmen til synkronisering af madvarer i Android-appen, og angiv computerens adresse som `http://YOUR-PC-IP:5000`.
-6. Indtast den tilsvarende synkroniseringsnøgle, og brug appens funktion til at overføre til computeren.
-7. Kontrollér, at de importerede madvarer vises i webappens madbibliotek, inden du sletter noget manuelt.
-
-Webappens endpoint er `POST /api/mobile/foods/import`. Nøglen sendes i headeren `X-Momentum-Sync-Key`. På telefonen henviser `localhost` til selve telefonen. Eksemplet bruger **ukrypteret HTTP**. Brug derfor kun et privat netværk, og undgå port forwarding og offentlige firewallregler. Hvis Windows Firewall blokerer port 5000, skal du kun åbne den for **private netværk**.
+Mobilens endpoints til madvarer og træning bruger headeren `X-Momentum-Sync-Key`. Angiv computerens netværksadresse i Android-appen, da `localhost` henviser til telefonen.
 
 Importen springer eksisterende madvarenavne over og kvitterer for behandlede poster, så madvarerne på computeren bevares. Sørg for, at DTO'ernes JSON-felter fortsat er kompatible, når du ændrer et af de to repositories.
 
@@ -819,11 +801,11 @@ Du kan også vælge unit test-projektet i din IDE's testværktøj.
 <details>
 <summary><strong>Android kan ikke overføre madvarer</strong></summary>
 
-- Kontrollér, at webappen kører og lytter på port 5000.
+- Kontrollér, at webappen kører på den HTTPS-adresse, der er gemt i Android-appen.
 - Kontrollér, at telefonen og computeren kan nå hinanden på det samme private netværk.
-- Kontrollér computerens aktuelle IPv4-adresse, og at nøglerne matcher.
+- Kontrollér, at computerens adresse matcher HTTPS-certifikatet, og at begge apps bruger samme synkroniseringsnøgle.
 - Kontrollér Windows Firewall-reglen for private netværk.
-- Brug computerens lokale IP-adresse på telefonen.
+- Brug computerens netværksadresse på telefonen.
 - Behold ventende poster på mobilen, mens du undersøger en mislykket overførsel.
 
 </details>

@@ -1,4 +1,4 @@
-import {initializeData, showDataError} from './core/storage.js';
+import {initializeData, pendingSave, showDataError} from './core/storage.js';
 import {setupDatePicker} from './core/selected-date.js';
 import {drawChart, renderCalorieBalance, renderHome} from './home/dashboard.js?v=selected-date';
 import {renderFood} from './food/food-diary.js?v=selected-date';
@@ -29,9 +29,21 @@ function setupInfoDialogs() {
 async function start() {
     setupNavigation();
     setupDatePicker();
+    document.querySelector('#reload-training')?.addEventListener('click', async event => {
+        const button = event.currentTarget;
+        button.disabled = true;
+        document.activeElement?.blur();
+        if (await pendingSave !== false) {
+            location.reload();
+        } else {
+            button.disabled = false;
+        }
+    });
     if (document.querySelector('#home-workouts, #food-date, #training-days, #weight-form')) {
         window.addEventListener('pageshow', event => {
-            if (event.persisted) location.reload();
+            if (event.persisted) {
+                location.reload();
+            }
         });
     }
     try {

@@ -1,9 +1,10 @@
 using Microsoft.Data.Sqlite;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace MomentumGroves.Service;
 
-public sealed class MomentumDataService
+public sealed partial class MomentumDataService
 {
     private readonly ILogger<MomentumDataService> _logger;
     private readonly string _connectionString;
@@ -60,6 +61,10 @@ public sealed class MomentumDataService
             {
                 result[reader.GetString(0)] = JsonSerializer.Deserialize<JsonElement>(reader.GetString(1));
             }
+
+            result[TrainingKey] = JsonSerializer.SerializeToElement(NormalizeTraining(
+                result.TryGetValue(TrainingKey, out var current) ? JsonNode.Parse(current.GetRawText()) : null,
+                result.TryGetValue(LegacyTrainingKey, out var legacy) ? JsonNode.Parse(legacy.GetRawText()) : null));
 
             return result;
         }

@@ -4,6 +4,7 @@ import {selectedDate} from "../core/selected-date.js";
 import {PROGRAM_KEY, HISTORY_KEY, completedProgrammesThisWeek, readTrainingProgrammes, setProgrammeCompleted} from "../core/training-storage.js?v=weekly-completions";
 
 const exercise = name => ({
+    id: crypto.randomUUID(),
     name,
     sets: 2,
     reps: '10–12',
@@ -423,7 +424,6 @@ function renderTraining() {
         if (!button || button.dataset.program === active) return;
         if (currentGroup()) {
             collect();
-            persist();
         }
         active = button.dataset.program;
         draw();

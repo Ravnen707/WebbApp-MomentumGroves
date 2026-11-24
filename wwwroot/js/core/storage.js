@@ -5,6 +5,14 @@ const FOOD_KEY = 'sunhed.food.v1', WORKOUT_KEY = 'sunhed.workouts.v1', DONE_KEY 
     SICK_KEY = 'sunhed.sick-days.v1', FIBER_START_KEY = 'sunhed.fiber-start.v1';
 
 const state = Object.create(null);
+const trainingKey = 'sunhed.training-programs.v3';
+let savedTrainingWeights = {};
+function trainingWeights(programmes) {
+    return Object.fromEntries((programmes?.groups ?? []).flatMap(group =>
+        (group.programmes ?? []).flatMap(programme => (programme.exercises ?? [])
+            .filter(exercise => exercise?.id)
+            .map(exercise => [exercise.id, Number(exercise.kg) || 0]))));
+}
 let pendingSave = Promise.resolve();
 let dataReady = false;
 const read = (key, fallback) => Object.prototype.hasOwnProperty.call(state, key) ? state[key] : fallback;
@@ -16,14 +24,17 @@ const write = (key, value) => {
     const body = JSON.stringify(state[key]);
     pendingSave = pendingSave.catch(() => {
     }).then(async () => {
-        const response = await fetch('/api/momentum-data/' + encodeURIComponent(key), {
-            method: 'PUT', headers: {'Content-Type': 'application/json'}, body
+        const training = key === trainingKey;
+        const response = await fetch(training ? '/api/training/programmes' : '/api/momentum-data/' + encodeURIComponent(key), {
+            method: 'PUT', headers: {'Content-Type': 'application/json'},
+            body: training ? JSON.stringify({programmes: JSON.parse(body), originalWeights: savedTrainingWeights}) : body
         });
         if (!response.ok) {
             const details = await response.json().catch(() => ({}));
             throw new Error('SQLite could not save the change (' + response.status + ').' +
                 (details.message ? ' ' + details.message : ''));
         }
+        if (training) savedTrainingWeights = trainingWeights(JSON.parse(body));
         return true;
     }).catch(error => {
         console.error('SQLite-lagring fejlede:', error);
@@ -51,6 +62,7 @@ async function initializeData() {
         throw new Error('Could not load data from SQLite (' + response.status + ').');
     }
     Object.assign(state, await response.json());
+    savedTrainingWeights = trainingWeights(state[trainingKey]);
     dataReady = true;
     if (!read(FIBER_START_KEY, null)) {
         const start = localDate();
