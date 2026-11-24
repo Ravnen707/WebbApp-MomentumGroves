@@ -80,7 +80,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 
-if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))
+if (!app.Environment.IsEnvironment("Testing"))
 {
     app.Lifetime.ApplicationStarted.Register(() =>
     {
