@@ -37,11 +37,15 @@ internal static class SqliteDataMigration
         }
 
         var apply = args[2] == "--apply";
+        const string stateFile = "momentum.db";
+        const string libraryFile = "food_and_recipes.db";
+        var sourceContext = stateFile;
         try
         {
             using var database = new PersonalDatabase(args[1], configuration.GetConnectionString("Supabase"));
-            using var state = OpenSource(args[1], "momentum.db");
-            using var library = OpenSource(args[1], "food_and_recipes.db");
+            using var state = OpenSource(args[1], stateFile);
+            sourceContext = libraryFile;
+            using var library = OpenSource(args[1], libraryFile);
             if (state is null && library is null)
                 throw new InvalidOperationException("No personal SQLite databases were found in the source directory.");
 
@@ -60,17 +64,24 @@ internal static class SqliteDataMigration
 
             if (state is not null)
             {
+                sourceContext = $"{stateFile}, table {State.Name}";
                 using var snapshot = state.BeginTransaction(deferred: true);
                 Copy(State, snapshot, transaction);
             }
 
             if (library is not null)
             {
+                sourceContext = libraryFile;
                 using var snapshot = library.BeginTransaction(deferred: true);
                 foreach (var table in Library)
+                {
+                    sourceContext = $"{libraryFile}, table {table.Name}";
                     Copy(table, snapshot, transaction);
+                }
 
+                sourceContext = $"{libraryFile}, identity for CustomFoods";
                 RestartIdentity(snapshot, transaction, "CustomFoods");
+                sourceContext = $"{libraryFile}, identity for Recipes";
                 RestartIdentity(snapshot, transaction, "Recipes");
             }
 
@@ -81,6 +92,12 @@ internal static class SqliteDataMigration
 
             Console.WriteLine(apply ? "Migration committed." : "Dry run validated and rolled back.");
             return 0;
+        }
+        catch (SqliteException exception)
+        {
+            Console.Error.WriteLine(
+                $"Could not read SQLite source {sourceContext} (SQLite error {exception.SqliteExtendedErrorCode}). " +
+                "Check that the snapshot is readable and contains the expected tables and columns.");
         }
         catch (PostgresException exception)
         {
