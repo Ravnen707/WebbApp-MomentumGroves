@@ -31,7 +31,34 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+var mobileSyncPort = app.Configuration.GetValue<int?>("MobileSync:Port");
+if (mobileSyncPort is int port)
+{
+    app.Use(async (context, next) =>
+    {
+        if (context.Connection.LocalPort == port && context.Connection.LocalIpAddress is { } ip &&
+            !System.Net.IPAddress.IsLoopback(ip.IsIPv4MappedToIPv6 ? ip.MapToIPv4() : ip))
+        {
+            var path = context.Request.Path;
+            var method = context.Request.Method;
+            var syncRequest =
+                (HttpMethods.IsPost(method) && path == "/api/mobile/foods/import") ||
+                ((HttpMethods.IsPost(method) || HttpMethods.IsGet(method)) && path == "/api/mobile/training/sync") ||
+                (HttpMethods.IsGet(method) && path.StartsWithSegments("/TrainingImages"));
+            if (!context.Request.IsHttps || !syncRequest)
+            {
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                return;
+            }
+        }
+
+        await next();
+    });
+}
+else
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 app.UseRouting();
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");

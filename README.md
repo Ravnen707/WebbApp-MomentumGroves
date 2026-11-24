@@ -287,8 +287,8 @@ To connect the two apps on a **trusted private Wi-Fi network**:
 1. Make sure the PC and phone are on the same reachable local network.
 2. Choose a long, private synchronization key; configure it on the web app as `MobileSync__Key` and enter the **same key** in the mobile app.
 3. Start the web app with an HTTPS endpoint reachable from the phone. Use an address that matches the certificate and a certificate Android trusts. Keep the web app on your private network.
-4. In the Android app, save that HTTPS address and the matching key under **Food → Saved foods**.
-5. From the Android home screen, tap **Sync to PC**. This sends pending foods and training weights, downloads the latest programmes, and stops when finished. Offline edits stay on the phone until a sync succeeds.
+4. From the Android home screen, open **Sync to PC** and enter the HTTPS address and matching key.
+5. Tap **Sync now** to save the settings, send pending foods and training weights, and download the latest programmes. Offline edits stay on the phone until a sync succeeds.
 
 The mobile food and training endpoints use the `X-Momentum-Sync-Key` header. Enter the PC's network address in the Android app because `localhost` points to the phone.
 
@@ -697,8 +697,8 @@ Sådan forbinder du de to apps på et **privat Wi-Fi-netværk, du har tillid til
 1. Sørg for, at computeren og telefonen er på samme lokale netværk og kan nå hinanden.
 2. Vælg en lang, privat synkroniseringsnøgle. Sæt den som `MobileSync__Key` i webappen, og angiv **samme nøgle** i mobilappen.
 3. Start webappen med en HTTPS-adresse, som telefonen kan nå. Adressen skal matche certifikatet, og Android skal have tillid til certifikatet. Hold webappen på dit private netværk.
-4. Gem HTTPS-adressen og den samme synkroniseringsnøgle under **Food → Saved foods** i Android-appen.
-5. Tryk på **Sync to PC** på Android-appens startside. Appen sender ventende madvarer og træningsvægte, henter de seneste programmer og stopper, når den er færdig. Ændringer, du foretager offline, bliver på telefonen, indtil synkroniseringen lykkes.
+4. Åbn **Sync to PC** fra Android-appens startside, og indtast HTTPS-adressen og den samme synkroniseringsnøgle.
+5. Tryk på **Sync now** for at gemme indstillingerne, sende ventende madvarer og træningsvægte og hente de seneste programmer. Ændringer, du foretager offline, bliver på telefonen, indtil synkroniseringen lykkes.
 
 Mobilens endpoints til madvarer og træning bruger headeren `X-Momentum-Sync-Key`. Angiv computerens netværksadresse i Android-appen, da `localhost` henviser til telefonen.
 
