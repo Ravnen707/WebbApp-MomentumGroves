@@ -292,7 +292,12 @@ function renderTraining() {
                     imageStatus.textContent = 'Choose a JPG, PNG or WebP image no larger than 8 MB.';
                     return;
                 }
-                if (!response.ok) throw new Error();
+                if (!response.ok) {
+                    imageStatus.textContent = response.status === 503
+                        ? 'Exercise image Storage is unavailable. Check the web configuration and try again.'
+                        : 'Could not upload the picture. Try again.';
+                    return;
+                }
                 setExerciseImage(await response.json());
             } catch {
                 imageStatus.textContent = 'Could not upload the picture. Try again.';

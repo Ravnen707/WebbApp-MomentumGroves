@@ -39,6 +39,8 @@ public sealed class FoodLibraryService
 
     private DbConnection Open() => _database.Open("food_and_recipes.db");
 
+    private string FoodVersionExpression => _database.MobileDataApiEnabled ? "md5(to_jsonb(f)::text)" : "NULL";
+
     /// <summary>
     /// Maps a database row to a library food.
     /// </summary>
@@ -47,7 +49,7 @@ public sealed class FoodLibraryService
     {
         return new LibraryFood(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.GetDouble(3),
             reader.GetDouble(4), reader.GetDouble(5), reader.GetDouble(6),
-            reader.IsDBNull(7) ? null : reader.GetDouble(7));
+            reader.IsDBNull(7) ? null : reader.GetDouble(7), reader.IsDBNull(8) ? null : reader.GetString(8));
     }
 
     /// <summary>
@@ -61,7 +63,7 @@ public sealed class FoodLibraryService
             using var connection = Open();
             using var command = connection.CreateCommand();
             command.CommandText =
-                $"SELECT Id, Name, Unit, Kcal, Protein, Carbs, Fat, Fiber FROM CustomFoods WHERE @query = '' OR {_database.FoodNameMatch} ORDER BY Name LIMIT 250";
+                $"SELECT Id, Name, Unit, Kcal, Protein, Carbs, Fat, Fiber, {FoodVersionExpression} FROM CustomFoods AS f WHERE @query = '' OR {_database.FoodNameMatch} ORDER BY Name LIMIT 250";
             command.AddParameter("@query", query?.Trim() ?? "");
             using var reader = command.ExecuteReader();
             var result = new List<LibraryFood>();
@@ -97,7 +99,7 @@ public sealed class FoodLibraryService
             var total = Convert.ToInt32(count.ExecuteScalar());
             using var command = connection.CreateCommand();
             command.CommandText =
-                $"SELECT Id, Name, Unit, Kcal, Protein, Carbs, Fat, Fiber FROM CustomFoods WHERE @query = '' OR {_database.FoodNameMatch} ORDER BY Id DESC LIMIT @limit OFFSET @offset";
+                $"SELECT Id, Name, Unit, Kcal, Protein, Carbs, Fat, Fiber, {FoodVersionExpression} FROM CustomFoods AS f WHERE @query = '' OR {_database.FoodNameMatch} ORDER BY Id DESC LIMIT @limit OFFSET @offset";
             command.AddParameter("@query", search);
             command.AddParameter("@limit", pageSize);
             command.AddParameter("@offset", (long)(page - 1) * pageSize);
@@ -121,7 +123,7 @@ public sealed class FoodLibraryService
     /// Creates or updates a library food.
     /// </summary>
     /// <returns>The result of the operation.</returns>
-    public long SaveFood(long? id, SaveLibraryFood food)
+    public long SaveFood(long? id, SaveLibraryFood food, string? version = null)
     {
         try
         {
@@ -133,7 +135,29 @@ public sealed class FoodLibraryService
             }
 
             using var connection = Open();
+            using var transaction = _database.UsesPostgres ? connection.BeginTransaction() : null;
+            if (transaction is not null)
+            {
+                _database.LockFoodWrites(connection, transaction);
+                if (id.HasValue && _database.MobileDataApiEnabled)
+                    VerifyFoodVersion(connection, transaction, id.Value, version);
+
+                using var duplicate = connection.CreateCommand();
+                duplicate.Transaction = transaction;
+                duplicate.CommandText = """
+                    SELECT 1 FROM CustomFoods
+                    WHERE lower(trim(Name)) = lower(@name) AND Id IS DISTINCT FROM @id
+                        AND NOT EXISTS (SELECT 1 FROM CustomFoods WHERE Id = @id AND lower(trim(Name)) = lower(@name))
+                    LIMIT 1
+                    """;
+                duplicate.AddParameter("@name", food.Name.Trim());
+                duplicate.AddParameter("@id", id, System.Data.DbType.Int64);
+                if (duplicate.ExecuteScalar() is not null)
+                    throw new ArgumentException("A food with this name already exists.");
+            }
+
             using var command = connection.CreateCommand();
+            command.Transaction = transaction;
             command.CommandText = id.HasValue
                 ? "UPDATE CustomFoods SET Name=@name, Unit=@unit, Kcal=@kcal, Protein=@protein, Carbs=@carbs, Fat=@fat, Fiber=@fiber WHERE Id=@id"
                 : "INSERT INTO CustomFoods(Name,Unit,Kcal,Protein,Carbs,Fat,Fiber) VALUES(@name,@unit,@kcal,@protein,@carbs,@fat,@fiber) RETURNING Id";
@@ -147,14 +171,19 @@ public sealed class FoodLibraryService
             command.AddParameter("@fat", food.Fat);
             command.AddParameter("@fiber", food.Fiber, DbType.Double);
             if (!id.HasValue)
-                return (long)command.ExecuteScalar()!;
+            {
+                var createdId = (long)command.ExecuteScalar()!;
+                transaction?.Commit();
+                return createdId;
+            }
 
             if (command.ExecuteNonQuery() != 1)
                 throw new KeyNotFoundException("The food was not found.");
 
+            transaction?.Commit();
             return id.Value;
         }
-        catch (Exception exception) when (exception is not (ArgumentException or KeyNotFoundException))
+        catch (Exception exception) when (exception is not (ArgumentException or KeyNotFoundException or InvalidOperationException))
         {
             _logger.LogError(exception, "Food library operation {Operation} failed", nameof(SaveFood));
             throw;
@@ -164,13 +193,15 @@ public sealed class FoodLibraryService
     /// <summary>
     /// Deletes a food from the library.
     /// </summary>
-    public void DeleteFood(long id)
+    public void DeleteFood(long id, string? version = null)
     {
         try
         {
             using var connection = Open();
             using var transaction = connection.BeginTransaction();
             _database.LockFoodDeletion(connection, transaction);
+            if (_database.MobileDataApiEnabled)
+                VerifyFoodVersion(connection, transaction, id, version);
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
 
@@ -195,6 +226,16 @@ public sealed class FoodLibraryService
             _logger.LogError(exception, "Food library operation {Operation} failed", nameof(DeleteFood));
             throw;
         }
+    }
+
+    private static void VerifyFoodVersion(DbConnection connection, DbTransaction transaction, long id, string? version)
+    {
+        using var current = connection.CreateCommand();
+        current.Transaction = transaction;
+        current.CommandText = "SELECT md5(to_jsonb(f)::text) FROM CustomFoods AS f WHERE Id=@id";
+        current.AddParameter("@id", id);
+        if (current.ExecuteScalar() is not string stored || stored != version)
+            throw new InvalidOperationException("This food changed or was removed. Refresh the food library and review it.");
     }
 
     /// <summary>

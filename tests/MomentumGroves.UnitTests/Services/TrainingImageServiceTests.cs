@@ -1,3 +1,4 @@
+using MomentumGroves.Data.TrainingImages;
 using MomentumGroves.Service;
 
 namespace MomentumGroves.Tests.Services;
@@ -70,5 +71,56 @@ public class TrainingImageServiceTests : DatabaseServiceTests
         Assert.CatchAsync<OperationCanceledException>(() =>
             _service.SaveAsync("picture.png", _png, cancellation.Token));
         Assert.That(_service.List(), Is.Empty);
+    }
+
+    [Test]
+    public async Task CloudUploadUsesUniqueKeysAndLeavesTheLocalGalleryUntouched()
+    {
+        var store = new MemoryImageStore();
+        var service = new TrainingImageService(Environment, store);
+        var first = await service.SaveAsync("Chest Press.png", _png, default);
+        var replacement = await service.SaveAsync("Chest Press.png", _png, default);
+
+        Assert.That(first.Url, Does.StartWith("/TrainingImages/cloud-"));
+        Assert.That(replacement.Url, Is.Not.EqualTo(first.Url));
+        Assert.That(await service.ListAsync(default), Is.EquivalentTo(new[] { first, replacement }));
+        Assert.That(Directory.Exists(_directory), Is.False);
+    }
+
+    [Test]
+    public async Task MigrationRetriesDoNotOverwriteCloudObjectsOrRemoveLocalFiles()
+    {
+        var store = new MemoryImageStore();
+        var migration = new TrainingImageMigration(store);
+        Directory.CreateDirectory(_directory);
+        var file = Path.Combine(_directory, "bench.png");
+        await File.WriteAllBytesAsync(file, _png);
+
+        Assert.That(await migration.CopyAsync(file, false, default), Is.EqualTo("would copy"));
+        Assert.That(store.Objects, Is.Empty);
+        Assert.That(await migration.CopyAsync(file, true, default), Is.EqualTo("copied"));
+        Assert.That(await migration.CopyAsync(file, true, default), Is.EqualTo("already copied"));
+        var updated = _png.Concat(new byte[] { 1 }).ToArray();
+        await File.WriteAllBytesAsync(file, updated);
+        Assert.That(await migration.CopyAsync(file, true, default), Is.EqualTo("conflict"));
+        Assert.That(store.Objects["bench.png"].Bytes, Is.EqualTo(_png));
+        Assert.That(await File.ReadAllBytesAsync(file), Is.EqualTo(updated));
+    }
+
+    private sealed class MemoryImageStore : ITrainingImageStore
+    {
+        public Dictionary<string, StoredTrainingImage> Objects { get; } = new();
+
+        public Task PutAsync(string name, byte[] bytes, string mediaType, CancellationToken token)
+        {
+            Objects.Add(name, new(bytes, mediaType));
+            return Task.CompletedTask;
+        }
+
+        public Task<StoredTrainingImage?> ReadAsync(string name, CancellationToken token) =>
+            Task.FromResult(Objects.GetValueOrDefault(name));
+
+        public Task<IReadOnlyList<string>> ListAsync(CancellationToken token) =>
+            Task.FromResult<IReadOnlyList<string>>(Objects.Keys.ToArray());
     }
 }

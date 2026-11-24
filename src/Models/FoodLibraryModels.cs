@@ -11,7 +11,9 @@ public sealed record LibraryFood(
     double Protein,
     double Carbs,
     double Fat,
-    double? Fiber);
+    double? Fiber,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    string? Version = null);
 
 /// <summary>
 /// Contains the data required to save a food.

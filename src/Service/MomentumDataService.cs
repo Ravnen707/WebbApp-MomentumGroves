@@ -72,6 +72,8 @@ public sealed partial class MomentumDataService
     public async Task SaveAsync(string key, JsonElement value, CancellationToken cancellationToken)
     {
         Validate(key, value);
+        if (_database.UsesPostgres && (key is TrainingKey or LegacyTrainingKey))
+            throw new ArgumentException("Use the training endpoint to save programmes.");
         try
         {
             await using var connection = _database.CreateConnection("momentum.db");

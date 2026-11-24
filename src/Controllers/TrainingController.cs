@@ -72,6 +72,10 @@ public class TrainingController : Controller
             await data.SaveTrainingAsync(save, cancellationToken);
             return NoContent();
         }
+        catch (MomentumDataService.TrainingConflictException)
+        {
+            return Conflict(new { message = "A weight changed since this editor loaded. Copy any unsaved edits, then reload programmes and review the latest weight." });
+        }
         catch (ArgumentException)
         {
             return BadRequest();

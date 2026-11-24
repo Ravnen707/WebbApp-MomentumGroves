@@ -28,9 +28,11 @@ public sealed class PersonalDatabase : IDisposable
     /// </summary>
     /// <param name="directory">The application's local data directory.</param>
     /// <param name="supabase">The PostgreSQL connection string. An empty or missing value selects SQLite.</param>
-    public PersonalDatabase(string directory, string? supabase = null)
+    /// <param name="mobileDataApiEnabled">Preserves the manually granted mobile API schema access.</param>
+    public PersonalDatabase(string directory, string? supabase = null, bool mobileDataApiEnabled = false)
     {
         DirectoryPath = directory;
+        MobileDataApiEnabled = mobileDataApiEnabled && !string.IsNullOrWhiteSpace(supabase);
         if (!string.IsNullOrWhiteSpace(supabase))
         {
             var settings = new NpgsqlConnectionStringBuilder(supabase)
@@ -48,7 +50,7 @@ public sealed class PersonalDatabase : IDisposable
         {
             using var connection = OpenPostgres();
             using var transaction = connection.BeginTransaction();
-            InitializePostgres(connection, transaction);
+            InitializePostgres(connection, transaction, MobileDataApiEnabled);
             transaction.Commit();
             return true;
         });
@@ -63,6 +65,8 @@ public sealed class PersonalDatabase : IDisposable
     /// Whether PostgreSQL is configured for personal data.
     /// </summary>
     public bool UsesPostgres => _postgres is not null;
+
+    internal bool MobileDataApiEnabled { get; }
 
     /// <summary>
     /// The provider's case-insensitive substring predicate for searching saved food names.
@@ -193,7 +197,8 @@ public sealed class PersonalDatabase : IDisposable
     /// <summary>
     /// Creates the personal data schema in the supplied transaction and restricts access by Data API roles.
     /// </summary>
-    internal static void InitializePostgres(NpgsqlConnection connection, NpgsqlTransaction transaction)
+    internal static void InitializePostgres(NpgsqlConnection connection, NpgsqlTransaction transaction,
+        bool mobileDataApiEnabled = false)
     {
         Execute(connection, transaction, """
                                          SELECT pg_advisory_xact_lock(10672924, 1);
@@ -220,29 +225,35 @@ public sealed class PersonalDatabase : IDisposable
                                          CREATE TABLE IF NOT EXISTS MobileFoodImports (
                                              MobileId TEXT PRIMARY KEY, FoodId BIGINT NOT NULL REFERENCES CustomFoods(Id)
                                          );
-                                         REVOKE ALL ON SCHEMA momentum_groves FROM PUBLIC;
-                                         REVOKE ALL ON ALL TABLES IN SCHEMA momentum_groves FROM PUBLIC;
-                                         REVOKE ALL ON ALL SEQUENCES IN SCHEMA momentum_groves FROM PUBLIC;
-                                         DO $private$
-                                         DECLARE role_name text;
-                                         BEGIN
-                                             FOR role_name IN SELECT rolname FROM pg_roles WHERE rolname IN ('anon', 'authenticated', 'service_role', 'authenticator')
-                                             LOOP
-                                                 EXECUTE format('REVOKE ALL ON SCHEMA momentum_groves FROM %I', role_name);
-                                                 EXECUTE format('REVOKE ALL ON ALL TABLES IN SCHEMA momentum_groves FROM %I', role_name);
-                                                 EXECUTE format('REVOKE ALL ON ALL SEQUENCES IN SCHEMA momentum_groves FROM %I', role_name);
-                                                 IF has_schema_privilege(role_name, 'momentum_groves', 'USAGE') THEN
-                                                     RAISE EXCEPTION 'A Data API role still has access to the private schema';
-                                                 END IF;
-                                             END LOOP;
-                                         END;
-                                         $private$;
                                          ALTER TABLE AppState ENABLE ROW LEVEL SECURITY;
                                          ALTER TABLE CustomFoods ENABLE ROW LEVEL SECURITY;
                                          ALTER TABLE Recipes ENABLE ROW LEVEL SECURITY;
                                          ALTER TABLE RecipeIngredients ENABLE ROW LEVEL SECURITY;
                                          ALTER TABLE MobileFoodImports ENABLE ROW LEVEL SECURITY;
                                          """);
+        var preserveMobileSchemaGrant = mobileDataApiEnabled ? "TRUE" : "FALSE";
+        Execute(connection, transaction, $"""
+            REVOKE ALL ON SCHEMA momentum_groves FROM PUBLIC;
+            REVOKE ALL ON ALL TABLES IN SCHEMA momentum_groves FROM PUBLIC;
+            REVOKE ALL ON ALL SEQUENCES IN SCHEMA momentum_groves FROM PUBLIC;
+            DO $private$
+            DECLARE role_name text;
+            BEGIN
+                FOR role_name IN SELECT rolname FROM pg_roles
+                    WHERE rolname IN ('anon', 'authenticated', 'service_role', 'authenticator')
+                LOOP
+                    EXECUTE format('REVOKE ALL ON ALL TABLES IN SCHEMA momentum_groves FROM %I', role_name);
+                    EXECUTE format('REVOKE ALL ON ALL SEQUENCES IN SCHEMA momentum_groves FROM %I', role_name);
+                    IF role_name <> 'authenticated' OR NOT {preserveMobileSchemaGrant} THEN
+                        EXECUTE format('REVOKE ALL ON SCHEMA momentum_groves FROM %I', role_name);
+                        IF has_schema_privilege(role_name, 'momentum_groves', 'USAGE') THEN
+                            RAISE EXCEPTION 'A Data API role still has access to the private schema';
+                        END IF;
+                    END IF;
+                END LOOP;
+            END;
+            $private$;
+            """);
     }
 
     /// <summary>
@@ -260,7 +271,7 @@ public sealed class PersonalDatabase : IDisposable
     /// <summary>
     /// Serializes PostgreSQL writes to foods and import mappings during duplicate checks.
     /// </summary>
-    private void LockFoodWrites(DbConnection connection, DbTransaction transaction)
+    internal void LockFoodWrites(DbConnection connection, DbTransaction transaction)
     {
         if (UsesPostgres)
             Execute(connection, transaction, "LOCK TABLE CustomFoods, MobileFoodImports IN SHARE ROW EXCLUSIVE MODE");

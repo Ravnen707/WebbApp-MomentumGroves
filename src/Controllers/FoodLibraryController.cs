@@ -91,11 +91,11 @@ public sealed class FoodLibraryController : Controller
     /// <param name="food"></param>
     /// <returns></returns>
     [HttpPut("api/library/foods/{id:long}")]
-    public IActionResult UpdateFood(long id, [FromBody] SaveLibraryFood food)
+    public IActionResult UpdateFood(long id, [FromBody] SaveLibraryFood food, [FromQuery] string? version)
     {
         try
         {
-            return Ok(new { id = _library.SaveFood(id, food) });
+            return Ok(new { id = _library.SaveFood(id, food, version) });
         }
         catch (ArgumentException exception)
         {
@@ -105,6 +105,10 @@ public sealed class FoodLibraryController : Controller
         {
             return NotFound();
         }
+        catch (InvalidOperationException exception)
+        {
+            return Conflict(new { message = exception.Message });
+        }
     }
 
     /// <summary>
@@ -113,11 +117,11 @@ public sealed class FoodLibraryController : Controller
     /// <param name="id"></param>
     /// <returns></returns>
     [HttpDelete("api/library/foods/{id:long}")]
-    public IActionResult RemoveFood(long id)
+    public IActionResult RemoveFood(long id, [FromQuery] string? version)
     {
         try
         {
-            _library.DeleteFood(id);
+            _library.DeleteFood(id, version);
             return NoContent();
         }
         catch (InvalidOperationException exception)

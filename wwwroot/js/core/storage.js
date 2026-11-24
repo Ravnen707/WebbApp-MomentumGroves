@@ -29,16 +29,21 @@ const write = (key, value) => {
             method: 'PUT', headers: {'Content-Type': 'application/json'},
             body: training ? JSON.stringify({programmes: JSON.parse(body), originalWeights: savedTrainingWeights}) : body
         });
+        if (training && response.status === 409) {
+            const details = await response.json();
+            showDataError(details.message);
+            return false;
+        }
         if (!response.ok) {
             const details = await response.json().catch(() => ({}));
-            throw new Error('SQLite could not save the change (' + response.status + ').' +
+            throw new Error('The database could not save the change (' + response.status + ').' +
                 (details.message ? ' ' + details.message : ''));
         }
         if (training) savedTrainingWeights = trainingWeights(JSON.parse(body));
         return true;
     }).catch(error => {
-        console.error('SQLite-lagring fejlede:', error);
-        showDataError('Could not save changes to SQLite. Check the Rider log and resolve the error before reloading the page.');
+        console.error('Database save failed:', error);
+        showDataError('Could not save changes to the database. Check the Rider log and resolve the error before reloading the page.');
         return false;
     });
     return pendingSave;
@@ -59,7 +64,7 @@ function showDataError(message) {
 async function initializeData() {
     const response = await fetch('/api/momentum-data', {cache: 'no-store'});
     if (!response.ok) {
-        throw new Error('Could not load data from SQLite (' + response.status + ').');
+        throw new Error('Could not load data from the database (' + response.status + ').');
     }
     Object.assign(state, await response.json());
     savedTrainingWeights = trainingWeights(state[trainingKey]);

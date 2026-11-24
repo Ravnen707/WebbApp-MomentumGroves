@@ -26,6 +26,8 @@ public sealed partial class MomentumDataService
             Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Programmes.ToJsonString())));
     }
 
+    public sealed class TrainingConflictException : Exception;
+
     public sealed record TrainingSave(JsonElement Programmes, Dictionary<string, decimal> OriginalWeights);
 
     /// <summary>
@@ -99,15 +101,31 @@ public sealed partial class MomentumDataService
         await using var transaction = await PersonalDatabase.BeginStateAsync(connection, true, token);
 
         var current = ExercisesById(await ReadTrainingAsync(connection, transaction, token));
+        var submitted = ExercisesById(incoming);
 
-        foreach (var (id, exercise) in ExercisesById(incoming))
+        if (_database.UsesPostgres && save.OriginalWeights.Any(original =>
+                !submitted.ContainsKey(original.Key) && current.TryGetValue(original.Key, out var exercise) &&
+                Weight(exercise) != original.Value))
+            throw new TrainingConflictException();
+
+        foreach (var (id, exercise) in submitted)
         {
-            // Keep a phone edit when the browser saves a programme without changing that weight.
-            if (save.OriginalWeights.TryGetValue(id, out var original) &&
-                Weight(exercise) == original && current.TryGetValue(id, out var savedExercise))
+            if (!current.TryGetValue(id, out var savedExercise))
+                continue;
+
+            var stored = Weight(savedExercise);
+            var requested = Weight(exercise);
+            if (!save.OriginalWeights.TryGetValue(id, out var original))
             {
-                exercise["kg"] = Weight(savedExercise);
+                if (_database.UsesPostgres && requested != stored)
+                    throw new TrainingConflictException();
+                continue;
             }
+
+            if (requested == original)
+                exercise["kg"] = stored;
+            else if (_database.UsesPostgres && stored != original && stored != requested)
+                throw new TrainingConflictException();
         }
 
         await StoreTrainingAsync(connection, transaction, incoming, token);

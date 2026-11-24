@@ -43,6 +43,9 @@ import {nutritionSummary} from "./ingredient-row.js";
         const list = $('#library-food-list');
         const message = $('#library-food-message');
         let editId = null;
+        let editVersion = null;
+        const foodUrl = (id, version) => `/api/library/foods/${id}` +
+            (version ? `?version=${encodeURIComponent(version)}` : '');
         let saved = [];
         let currentPage = 0;
         let total = 0;
@@ -51,6 +54,7 @@ import {nutritionSummary} from "./ingredient-row.js";
         let searchSequence = 0;
         const fill = food => {
             editId = food.id || null;
+            editVersion = food.version;
             for (const key of ['name', 'unit', 'kcal', 'protein', 'carbs', 'fat', 'fiber']) {
                 form.elements.namedItem(key).value = food[key] ?? '';
             }
@@ -59,6 +63,7 @@ import {nutritionSummary} from "./ingredient-row.js";
         };
         const reset = () => {
             editId = null;
+            editVersion = null;
             form.reset();
             $('#library-food-heading').textContent = 'Create food manually';
         };
@@ -93,7 +98,7 @@ import {nutritionSummary} from "./ingredient-row.js";
                 remove.onclick = async () => {
                     if (!confirm(`Delete ${food.name}?`)) return;
                     try {
-                        await request(`/api/library/foods/${food.id}`, {method: 'DELETE'});
+                        await request(foodUrl(food.id, food.version), {method: 'DELETE'});
                         await reload();
                     } catch (error) {
                         message.textContent = error.message;
@@ -149,7 +154,7 @@ import {nutritionSummary} from "./ingredient-row.js";
             for (const key of ['kcal', 'protein', 'carbs', 'fat']) value[key] = number(value[key]);
             value.fiber = value.fiber === '' ? null : number(value.fiber);
             try {
-                await send(editId ? `/api/library/foods/${editId}` : '/api/library/foods', editId ? 'PUT' : 'POST', value);
+                await send(editId ? foodUrl(editId, editVersion) : '/api/library/foods', editId ? 'PUT' : 'POST', value);
                 reset();
                 await reload();
                 message.textContent = 'Food saved.';

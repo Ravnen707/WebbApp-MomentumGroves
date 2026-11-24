@@ -252,7 +252,22 @@ Set `ConnectionStrings:Supabase` in .NET User Secrets for Development, or supply
 
 A nonblank connection string sends application state, training, custom foods, recipes, and mobile food import tracking to PostgreSQL. MomentumGroves initializes the `momentum_groves` schema on startup using a server-side database role that can create and own its schema and tables. Startup fails if the selected database is unavailable or initialization fails. With the setting absent or blank, the app uses the existing `momentum.db` and `food_and_recipes.db` files. Keep the connection credential server-side. Frida search and Admin updates always use local `frida.db`.
 
-Keep `momentum_groves` out of Supabase's Data API exposed schemas. Initialization enables Row Level Security and revokes access from `PUBLIC` and the standard Supabase Data API roles. It installs no API policies. The web app connects directly as the schema owner. Set up authentication and verify Row Level Security policies before intentionally exposing any personal data through the Data API.
+By default, keep `momentum_groves` out of the Data API's exposed schemas. PostgreSQL initialization enables Row Level Security and revokes schema and table access from standard API roles. The web app connects directly as the schema owner.
+
+To enable the optional mobile Data API, set `MobileDataApi__Enabled=true` on the **web host** and restart it before applying the reviewed SQL from the mobile repository's `docs/supabase-setup.md` guide. The setting allows web startup to coexist with the mobile grants. The SQL installation and dashboard exposure are manual. Keep the existing verified TLS settings. The mobile app uses its project URL, publishable key and user sign-in.
+
+#### Optional Storage for exercise images
+
+Create the private bucket and owner read policy described in the mobile repository's `docs/training-image-storage.md`. Set `TrainingImages__SupabaseUrl` and `TrainingImages__ServerKey` on the web host and restart it. The training editor on localhost uploads images to the private bucket in PostgreSQL mode. Keep the secret key on the web host.
+
+To inspect existing local pictures before copying them, run from the web repository:
+
+```powershell
+$env:DOTNET_ENVIRONMENT = 'Development' # Use this when settings are in .NET User Secrets.
+dotnet run --project .\MomentumGroves.csproj -- migrate-training-images --dry-run
+```
+
+Once you have reviewed the dry run, rerun with `--apply` to copy objects. Existing local files and training references stay in place. Standalone mode still uses `wwwroot/TrainingImages` and PC sync.
 
 ### Copy existing SQLite data to Supabase
 

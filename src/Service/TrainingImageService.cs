@@ -1,12 +1,34 @@
+using MomentumGroves.Data.TrainingImages;
 using System.Text.RegularExpressions;
 
 namespace MomentumGroves.Service;
 
-public sealed class TrainingImageService(IWebHostEnvironment environment)
+public sealed class TrainingImageService(IWebHostEnvironment environment, ITrainingImageStore? cloud = null)
 {
     public const int MaxUploadBytes = 8_000_000;
     private readonly string _directory = Path.Combine(environment.WebRootPath ?? Path.Combine
         (environment.ContentRootPath, "wwwroot"), "TrainingImages");
+
+    public bool UsesCloud => cloud is not null;
+
+    public async Task<IReadOnlyList<TrainingPicture>> ListAsync(CancellationToken token)
+    {
+        var local = List();
+        if (cloud is null)
+            return local;
+
+        var names = await cloud.ListAsync(token);
+        return local.Concat(names.Where(IsImageName).Select(Describe))
+            .DistinctBy(image => image.Url).OrderBy(image => image.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    public Task<StoredTrainingImage?> ReadCloudAsync(string filename, CancellationToken token) =>
+        cloud is not null && IsImageName(filename) ? cloud.ReadAsync(filename, token) : Task.FromResult<StoredTrainingImage?>(null);
+
+    internal static bool IsImageName(string name) =>
+        name.Length is > 0 and <= 255 && name.IndexOfAny(['/', '\\', '?', '#', ':']) == -1 &&
+        !name.Any(char.IsControl) &&
+        Path.GetExtension(name).ToLowerInvariant() is ".jpg" or ".jpeg" or ".png" or ".webp";
 
     public IReadOnlyList<TrainingPicture> List()
     {
@@ -32,7 +54,14 @@ public sealed class TrainingImageService(IWebHostEnvironment environment)
         if (name.Length == 0)
             name = "exercise";
 
-        var filename = $"{Guid.NewGuid():N}_{name}{extension}";
+        var prefix = cloud is null ? "" : "cloud-";
+        var filename = $"{prefix}{Guid.NewGuid():N}_{name}{extension}";
+        if (cloud is not null)
+        {
+            await cloud.PutAsync(filename, data, MediaType(extension), cancellationToken);
+            return Describe(filename);
+        }
+
         Directory.CreateDirectory(_directory);
         var temporaryPath = Path.Combine(_directory, filename + ".tmp");
         try
@@ -49,7 +78,15 @@ public sealed class TrainingImageService(IWebHostEnvironment environment)
         return Describe(filename);
     }
 
-    private static string? GetExtension(ReadOnlySpan<byte> data)
+    internal static string MediaType(string extension) => extension switch
+    {
+        ".jpg" => "image/jpeg",
+        ".png" => "image/png",
+        ".webp" => "image/webp",
+        _ => throw new ArgumentException("Unsupported image type.")
+    };
+
+    internal static string? GetExtension(ReadOnlySpan<byte> data)
     {
         if (data.StartsWith(new byte[] { 0xff, 0xd8, 0xff }))
             return ".jpg";
@@ -64,6 +101,8 @@ public sealed class TrainingImageService(IWebHostEnvironment environment)
     private static TrainingPicture Describe(string filename)
     {
         var name = Path.GetFileNameWithoutExtension(filename);
+        if (name.StartsWith("cloud-", StringComparison.Ordinal))
+            name = name[6..];
         if (name.Length > 33 && name[32] == '_' && Guid.TryParseExact(name[..32], "N", out _))
             name = name[33..];
 
