@@ -6,7 +6,7 @@
       <UserSecretsId>7093571f-ea5e-4374-b707-b23fa560dfeb</UserSecretsId>
   </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.22" />
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="11.0.0" />
         <PackageReference Include="ExcelDataReader" Version="3.7.0" />
         <PackageReference Include="Npgsql" Version="11.0.0" />
     </ItemGroup>
