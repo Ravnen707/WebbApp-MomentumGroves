@@ -1,3 +1,4 @@
+using MomentumGroves.Data;
 using MomentumGroves.Models;
 
 namespace MomentumGroves.Service;
@@ -9,6 +10,7 @@ namespace MomentumGroves.Service;
 public sealed class DatabaseInitializationService
 {
     private readonly string _dataDirectory;
+    private readonly bool _usesPostgres;
     private readonly bool _momentumMissingAtStartup;
     private readonly bool _foodsMissingAtStartup;
     private bool _localInitializationConfirmed;
@@ -17,12 +19,13 @@ public sealed class DatabaseInitializationService
     /// Captures the existence of the database files before normal application services can open them.
     /// This check only accesses filesystem metadata and does not log on successful startup.
     /// </summary>
-    /// <param name="environment">The web hosting environment containing the application data directory.</param>
-    public DatabaseInitializationService(IWebHostEnvironment environment)
+    /// <param name="database">The configured personal database provider.</param>
+    public DatabaseInitializationService(PersonalDatabase database)
     {
-        _dataDirectory = Path.Combine(environment.ContentRootPath, "src", "Data");
-        _momentumMissingAtStartup = !File.Exists(Path.Combine(_dataDirectory, "momentum.db"));
-        _foodsMissingAtStartup = !File.Exists(Path.Combine(_dataDirectory, "food_and_recipes.db"));
+        _dataDirectory = database.DirectoryPath;
+        _usesPostgres = database.UsesPostgres;
+        _momentumMissingAtStartup = !_usesPostgres && !File.Exists(Path.Combine(_dataDirectory, "momentum.db"));
+        _foodsMissingAtStartup = !_usesPostgres && !File.Exists(Path.Combine(_dataDirectory, "food_and_recipes.db"));
     }
 
     /// <summary>
@@ -47,6 +50,9 @@ public sealed class DatabaseInitializationService
     /// <exception cref="InvalidOperationException">Thrown if the database files could not be created.</exception>
     public DatabaseInitializationStatus InitializeLocalDatabases(IServiceProvider services)
     {
+        if (_usesPostgres)
+            return GetStatus();
+
         lock (this)
         {
             Directory.CreateDirectory(_dataDirectory);

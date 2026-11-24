@@ -175,21 +175,21 @@ The installed SDK must support `net10.0`. This web repository does **not** requi
 
 `Program.cs` calls `DotEnvLoader.Load(...)` for the root `.env` file, so **this application does load `.env`** when started from the repository root. If you run it with a different working directory, check that the file is being found.
 
-### Step 3 — Database setup (automatic)
+### Step 3 — First-run database setup
 
-The repository does not include personal database files. MomentumGroves checks for the required database files when the application starts.
+A fresh clone or fork runs on SQLite with the default configuration. Leave `ConnectionStrings:Supabase` unset or blank. The app needs no Supabase account, cloud credentials, or separate database server for this setup.
 
-- If `momentum.db` or `food_and_recipes.db` is missing, a **Database initialization** modal appears. Click **Yes, initialize** to create the missing local database files and initialize their required tables.
+- On your first visit from `localhost`, the **Database initialization** dialog appears if `momentum.db` or `food_and_recipes.db` was missing at startup. Click **Yes, initialize** to create the missing databases.
 - Once local initialization is complete, if `frida.db` is missing, the modal offers **Go to Admin to make FridaDb**. Click it to open the existing Frida installation page.
 - In Admin, click **Check for updates**, then **Yes, install**. This downloads the DTU Frida dataset and creates and populates `frida.db` automatically.
 - If only Frida is missing, you are directed to Admin without being asked to initialize the other databases again.
 - When all three databases already exist, the startup check runs without showing a modal or additional status messages.
 
-The databases are stored under `src/Data/`. Existing database files are preserved; the setup flow must not overwrite or reset them. No SQLite server or database creation tool is required.
+The files live under `src/Data/`. MomentumGroves preserves existing data and reuses these files on later runs. Frida stays local with either personal database provider.
 
 ### Step 4 — Run the web app
 
-Start **MomentumGroves** using your development environment’s run or debug command. Open the local address shown in its output. Restore the project’s NuGet dependencies if your environment does not do so automatically.
+Start **MomentumGroves** using your development environment’s run or debug command. With the default port, the app opens `http://localhost:5000` in your browser. If you use a different port, open the local address shown in the run output. Restore the project’s NuGet dependencies if your environment does not do so automatically.
 
 Optional command-line alternative from the repository root:
 
@@ -244,7 +244,28 @@ The same Admin workflow supports first-time installation and later updates. Inst
 
 ### Database filenames and versions
 
-Use the filenames above for a standard installation. The filenames are referenced in services/repositories. `frida.db` is **not** a required build-time content file in `MomentumGroves.csproj`; its absence must not prevent the project from building. If you rename one, update **all** matching paths in the source and project configuration. SQLite is embedded; no separate database server is required. The .NET SQLite package version is specified in the `.csproj`.
+Use the filenames above for a standard SQLite installation. SQLite is embedded and works without a database server or cloud credentials. The Admin installer creates the local Frida database when needed.
+
+### Optional Supabase PostgreSQL
+
+Set `ConnectionStrings:Supabase` in .NET User Secrets for Development, or supply `ConnectionStrings__Supabase` through the deployment's secret store. Use the project's PostgreSQL connection string for the direct connection or session pooler. For certificate and hostname verification, download the CA certificate from Supabase **Database Settings → SSL Configuration**, then set `SSL Mode=VerifyFull` and point `Root Certificate` to the downloaded file. The app defaults to `SSL Mode=Require` when the connection string omits an SSL mode.
+
+A nonblank connection string sends application state, training, custom foods, recipes, and mobile food import tracking to PostgreSQL. MomentumGroves initializes the `momentum_groves` schema on startup using a server-side database role that can create and own its schema and tables. Startup fails if the selected database is unavailable or initialization fails. With the setting absent or blank, the app uses the existing `momentum.db` and `food_and_recipes.db` files. Keep the connection credential server-side. Frida search and Admin updates always use local `frida.db`.
+
+Keep `momentum_groves` out of Supabase's Data API exposed schemas. Initialization enables Row Level Security and revokes access from `PUBLIC` and the standard Supabase Data API roles. It installs no API policies. The web app connects directly as the schema owner. Set up authentication and verify Row Level Security policies before intentionally exposing any personal data through the Data API.
+
+### Copy existing SQLite data to Supabase
+
+Stop processes writing to the source databases and keep a private backup. Using SQLite's backup facility, prepare consistent snapshots named `momentum.db` and `food_and_recipes.db` in a separate directory. The tool opens those snapshots read-only. If an installation has only one of the two files, the tool reports the missing file and copies the available database. Frida is handled by its local Admin installer.
+
+With the target connection configured in the secret store, run the dry run from the repository root. When using .NET User Secrets, use the Development environment.
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT = "Development"
+dotnet run --project .\MomentumGroves.csproj -- migrate-sqlite --source "C:\private\momentum-snapshots" --dry-run
+```
+
+The dry run verifies the copy and rolls back schema and data changes. Review the table counts before repeating the command with `--apply` to commit. Keep the app stopped against the target during the copy. The destination personal tables must be empty. The command checks counts and foreign keys and preserves IDs, timestamps, JSON documents, and mobile import mappings. Standard application startup initializes the schema only.
 
 ### Protecting local data
 
@@ -585,21 +606,21 @@ Det installerede SDK skal understøtte `net10.0`. Webprojektet kræver ingen MAU
 
 `Program.cs` kalder `DotEnvLoader.Load(...)` og indlæser `.env`, når appen startes fra projektets rodmappe. Hvis du starter appen fra en anden arbejdsmappe, så kontrollér, at filen bliver fundet.
 
-### Trin 3 — Automatisk opsætning af databaser
+### Trin 3 — Opsætning af databaser ved første start
 
-Personlige databasefiler følger ikke med repositoryet. Ved opstart tjekker MomentumGroves, om de nødvendige databasefiler findes.
+En ny klon eller fork bruger SQLite med standardindstillingerne. Lad `ConnectionStrings:Supabase` være tom eller udeladt. Opsætningen kræver hverken en Supabase-konto, loginoplysninger til en cloudtjeneste eller en separat databaseserver.
 
-- Hvis `momentum.db` eller `food_and_recipes.db` mangler, vises dialogen **Database initialization**. Klik på **Yes, initialize** for at oprette de manglende lokale databaser og deres tabeller.
+- Når du åbner appen på `localhost` første gang, vises dialogen **Database initialization**, hvis `momentum.db` eller `food_and_recipes.db` manglede ved opstart. Klik på **Yes, initialize** for at oprette de manglende databaser.
 - Hvis `frida.db` mangler efter den lokale opsætning, viser dialogen knappen **Go to Admin to make FridaDb**. Klik på den for at åbne Frida-installationen.
 - Klik på **Check for updates** i Admin, og vælg derefter **Yes, install**. Appen henter DTU Fridas datasæt og opretter og udfylder automatisk `frida.db`.
 - Hvis kun Frida mangler, bliver du sendt til Admin. De øvrige databaser kræver ingen ny opsætning.
 - Hvis alle tre databaser allerede findes, afsluttes opstartstjekket uden at vise en dialog eller statusmeddelelse.
 
-Databaserne ligger i `src/Data/`. Opsætningen bevarer eksisterende databasefiler og deres indhold. Du behøver hverken en SQLite-server eller et separat værktøj til at oprette databaserne.
+Filerne ligger i `src/Data/`. MomentumGroves bevarer eksisterende data og genbruger filerne ved senere opstarter. Frida forbliver lokal, uanset hvor appen gemmer personlige data.
 
 ### Trin 4 — Start webappen
 
-Start **MomentumGroves** med kør- eller debugkommandoen i dit udviklingsmiljø. Åbn den lokale adresse, der vises i outputtet. Gendan projektets NuGet-afhængigheder, hvis udviklingsmiljøet ikke gør det automatisk.
+Start **MomentumGroves** med kør- eller debugkommandoen i dit udviklingsmiljø. Med standardporten åbner appen `http://localhost:5000` i browseren. Hvis du bruger en anden port, skal du åbne den lokale adresse, der vises i outputtet. Gendan projektets NuGet-afhængigheder, hvis udviklingsmiljøet ikke gør det automatisk.
 
 Du kan også bruge følgende kommando i projektets rodmappe.
 
@@ -654,7 +675,9 @@ Du bruger samme funktion i Admin ved første installation og ved senere opdateri
 
 ### Databasefilnavne og versioner
 
-Brug filnavnene ovenfor til en standardinstallation. Services og repositories henviser til dem i koden. `frida.db` er ikke en påkrævet fil ved build af `MomentumGroves.csproj`, så projektet skal kunne bygges, selvom filen mangler. Hvis du omdøber en database, skal du opdatere alle tilsvarende stier i kildekoden og projektkonfigurationen. SQLite er indbygget og kræver ingen separat databaseserver. Versionen af SQLite-pakken til .NET står i `.csproj`-filen.
+Brug filnavnene ovenfor til en standardinstallation med SQLite. SQLite er indbygget og virker uden en databaseserver eller cloud-legitimationsoplysninger. Frida-søgning og opdateringer via Admin bruger altid den lokale `frida.db`.
+
+Hvis `ConnectionStrings:Supabase` er angivet, bruger webappen PostgreSQL til træning, appdata, fødevarer, opskrifter og registrering af mobilimport. Forbindelsesstrengen opbevares i .NET User Secrets under udvikling eller i serverens hemmelighedslager. Hvis PostgreSQL ikke kan åbnes, stopper opstarten. SQLite bruges, når indstillingen mangler eller er tom. Se [Supabase-opsætningen](#optional-supabase-postgresql) og [vejledningen til at kopiere SQLite-data](#copy-existing-sqlite-data-to-supabase).
 
 ### Beskyttelse af lokale data
 

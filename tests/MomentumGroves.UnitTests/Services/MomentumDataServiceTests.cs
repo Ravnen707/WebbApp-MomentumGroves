@@ -18,7 +18,12 @@ public class MomentumDataServiceTests : DatabaseServiceTests
     }
 
     [Test]
-    public async Task ReadAll_NewDatabase_IsEmpty() => Assert.That(await _service.ReadAllAsync(default), Is.Empty);
+    public async Task ReadAll_NewDatabase_ReturnsOnlyEmptyTraining()
+    {
+        var values = await _service.ReadAllAsync(default);
+        Assert.That(values.Keys, Is.EqualTo(new[] { MomentumDataService.TrainingKey }));
+        Assert.That(values[MomentumDataService.TrainingKey].GetProperty("groups").GetArrayLength(), Is.Zero);
+    }
 
     [TestCase("null")]
     [TestCase("[]")]
@@ -40,7 +45,7 @@ public class MomentumDataServiceTests : DatabaseServiceTests
         await _service.SaveAsync("sunhed.goal.v1", Json("1"), default);
         await _service.SaveAsync("sunhed.goal.v1", Json("2"), default);
         var result = await _service.ReadAllAsync(default);
-        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result.Keys, Is.EquivalentTo(new[] { "sunhed.goal.v1", MomentumDataService.TrainingKey }));
         Assert.That(result["sunhed.goal.v1"].GetInt32(), Is.EqualTo(2));
     }
 
@@ -112,7 +117,8 @@ public class MomentumDataServiceTests : DatabaseServiceTests
         {
             ["sunhed.profile.v1"] = Json("1"), ["invalid"] = Json("2")
         }, default));
-        Assert.That(await _service.ReadAllAsync(default), Is.Empty);
+        Assert.That((await _service.ReadAllAsync(default)).Keys,
+            Is.EqualTo(new[] { MomentumDataService.TrainingKey }));
     }
 
     [TestCase("read")]

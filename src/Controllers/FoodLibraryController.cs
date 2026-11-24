@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.Sqlite;
+using System.Data.Common;
+using MomentumGroves.Data;
 using MomentumGroves.Models;
 using MomentumGroves.Service;
 
@@ -178,7 +179,7 @@ public sealed class FoodLibraryController : Controller
         {
             return NotFound();
         }
-        catch (SqliteException)
+        catch (DbException exception) when (PersonalDatabase.IsConstraintViolation(exception))
         {
             return BadRequest(new { message = "Kontrollér ingredienserne i opskriften." });
         }
