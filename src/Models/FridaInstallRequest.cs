@@ -1,3 +1,5 @@
 namespace MomentumGroves.Models;
 
-public sealed record FridaInstallRequest(long ArticleId, string Version);
+public sealed record FridaInstallRequest(
+    long ArticleId,
+    string Version);

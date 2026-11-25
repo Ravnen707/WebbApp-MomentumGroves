@@ -1,3 +1,5 @@
 namespace MomentumGroves.Models;
 
-public sealed record StoredTrainingImage(byte[] Bytes, string MediaType);
+public sealed record StoredTrainingImage(
+    byte[] Bytes,
+    string MediaType);

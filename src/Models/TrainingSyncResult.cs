@@ -4,7 +4,9 @@ using System.Text.Json.Nodes;
 
 namespace MomentumGroves.Models;
 
-public sealed record TrainingSyncResult(JsonObject Programmes, List<TrainingWeightResult> Results)
+public sealed record TrainingSyncResult(
+    JsonObject Programmes,
+    List<TrainingWeightResult> Results)
 {
     /// <summary>
     /// Computes a version fingerprint from the serialized training programmes.
