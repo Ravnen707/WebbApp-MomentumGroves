@@ -1,0 +1,63 @@
+<dialog id="drink-dialog" class="drink-dialog">
+    <div class="dialog-inner">
+        <div class="section-head"><h2>Add drink</h2>
+            <button class="btn secondary" type="button" id="close-drink" aria-label="Close">×</button>
+        </div>
+        <label>Search drinks
+            <input type="search" id="drink-search" placeholder="e.g. Pepsi Max Lime or water" autocomplete="off">
+        </label>
+        <p class="muted tiny" id="drink-status" role="status">Search the product database or choose a default drink.</p>
+        <div id="drink-results" class="drink-results"></div>
+        <form id="drink-form" hidden><label>Selected drink<input name="name" id="drink-name" required></label>
+            <label>Amount
+                (ml)<input name="ml" id="drink-ml" type="text" inputmode="decimal" min="1" step="any" value="500"
+                    required></label>
+            <div class="table-scroll">
+                <table class="nutrition-table">
+                    <thead>
+                    <tr>
+                        <th>Nutrition</th>
+                        <th>Per 100 ml (editable)</th>
+                        <th id="drink-amount-heading">For 500 ml</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <th>Calories (kcal)</th>
+                        <td><input name="kcal" type="text" inputmode="decimal" step="any" min="0" required></td>
+                        <td id="drink-total-kcal">–</td>
+                    </tr>
+                    <tr>
+                        <th>Protein (g)</th>
+                        <td><input name="protein" type="text" inputmode="decimal" step="any" min="0" required></td>
+                        <td id="drink-total-protein">–</td>
+                    </tr>
+                    <tr>
+                        <th>Carbohydrates (g)</th>
+                        <td><input name="carbs" type="text" inputmode="decimal" step="any" min="0" required></td>
+                        <td id="drink-total-carbs">–</td>
+                    </tr>
+                    <tr>
+                        <th>Fat (g)</th>
+                        <td><input name="fat" type="text" inputmode="decimal" step="any" min="0" required></td>
+                        <td id="drink-total-fat">–</td>
+                    </tr>
+                    <tr>
+                        <th>Fibre (g)</th>
+                        <td>
+                            <input name="fiber" type="text" inputmode="decimal" step="any" min="0"
+                            placeholder="Optional"></td>
+                        <td id="drink-total-fiber">–</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="muted tiny" id="drink-source"></p>
+            <p class="muted tiny" id="drink-warning" role="status"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn secondary" id="cancel-drink">Cancel</button>
+                <button type="submit" class="btn">Save drink</button>
+            </div>
+        </form>
+    </div>
+</dialog>

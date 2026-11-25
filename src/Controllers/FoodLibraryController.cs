@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Data.Common;
-using MomentumGroves.Data;
 using MomentumGroves.Models;
 using MomentumGroves.Service;
 
@@ -16,7 +14,7 @@ public sealed class FoodLibraryController : Controller
     /// <summary>
     /// Initializes the food library controller.
     /// </summary>
-    /// <param name="library"></param>
+    /// <param name="library">The service that manages saved foods and recipes.</param>
     public FoodLibraryController(FoodLibraryService library)
     {
         _library = library;
@@ -25,7 +23,7 @@ public sealed class FoodLibraryController : Controller
     /// <summary>
     /// Displays the saved foods page.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The saved foods page.</returns>
     [HttpGet]
     public IActionResult Foods()
     {
@@ -35,7 +33,7 @@ public sealed class FoodLibraryController : Controller
     /// <summary>
     /// Displays the saved recipes page.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The saved recipes page.</returns>
     [HttpGet]
     public IActionResult Recipes()
     {
@@ -45,8 +43,8 @@ public sealed class FoodLibraryController : Controller
     /// <summary>
     /// Returns saved foods matching the search query.
     /// </summary>
-    /// <param name="q"></param>
-    /// <returns></returns>
+    /// <param name="q">The optional name fragment provided by the caller.</param>
+    /// <returns>The matching foods in name order.</returns>
     [HttpGet("api/library/foods")]
     public IActionResult ListFoods([FromQuery] string? q)
     {
@@ -56,10 +54,10 @@ public sealed class FoodLibraryController : Controller
     /// <summary>
     /// Returns a paginated list for the saved foods screen.
     /// </summary>
-    /// <param name="q"></param>
-    /// <param name="page"></param>
-    /// <param name="pageSize"></param>
-    /// <returns></returns>
+    /// <param name="q">The optional name fragment provided by the caller.</param>
+    /// <param name="page">The requested one-based page number.</param>
+    /// <param name="pageSize">The requested number of items per page.</param>
+    /// <returns>The matching page and pagination details.</returns>
     [HttpGet("api/library/foods/paged")]
     public IActionResult ListPagedFoods([FromQuery] string? q, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
@@ -69,11 +67,16 @@ public sealed class FoodLibraryController : Controller
     /// <summary>
     /// Creates a food in the personal library.
     /// </summary>
-    /// <param name="food"></param>
-    /// <returns></returns>
+    /// <param name="food">The submitted food and nutrition values.</param>
+    /// <returns>The new food ID or a validation error.</returns>
     [HttpPost("api/library/foods")]
-    public IActionResult CreateFood([FromBody] SaveLibraryFood food)
+    public IActionResult CreateFood([FromBody] SaveLibraryFood? food)
     {
+        if (!ModelState.IsValid || food is null)
+        {
+            return BadRequest(new { message = "Invalid food details." });
+        }
+
         try
         {
             return Ok(new { id = _library.SaveFood(null, food) });
@@ -87,12 +90,18 @@ public sealed class FoodLibraryController : Controller
     /// <summary>
     /// Updates an existing library food.
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="food"></param>
-    /// <returns></returns>
+    /// <param name="id">The identifier of the existing item.</param>
+    /// <param name="food">The submitted food and nutrition values.</param>
+    /// <param name="version">The revision submitted by the client.</param>
+    /// <returns>The saved food ID or the relevant validation, missing-item, or conflict response.</returns>
     [HttpPut("api/library/foods/{id:long}")]
-    public IActionResult UpdateFood(long id, [FromBody] SaveLibraryFood food, [FromQuery] string? version)
+    public IActionResult UpdateFood(long id, [FromBody] SaveLibraryFood? food, [FromQuery] string? version)
     {
+        if (!ModelState.IsValid || food is null)
+        {
+            return BadRequest(new { message = "Invalid food details." });
+        }
+
         try
         {
             return Ok(new { id = _library.SaveFood(id, food, version) });
@@ -114,8 +123,9 @@ public sealed class FoodLibraryController : Controller
     /// <summary>
     /// Deletes a food that is not used by a recipe.
     /// </summary>
-    /// <param name="id"></param>
-    /// <returns></returns>
+    /// <param name="id">The identifier of the existing item.</param>
+    /// <param name="version">The revision submitted by the client.</param>
+    /// <returns>No content on success or a conflict response.</returns>
     [HttpDelete("api/library/foods/{id:long}")]
     public IActionResult RemoveFood(long id, [FromQuery] string? version)
     {
@@ -133,7 +143,7 @@ public sealed class FoodLibraryController : Controller
     /// <summary>
     /// Returns saved recipes and their nutrition values.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The saved recipes with their ingredient nutrition totals.</returns>
     [HttpGet("api/library/recipes")]
     public IActionResult ListRecipes()
     {
@@ -143,32 +153,42 @@ public sealed class FoodLibraryController : Controller
     /// <summary>
     /// Creates a recipe from saved foods.
     /// </summary>
-    /// <param name="recipe"></param>
-    /// <returns></returns>
+    /// <param name="recipe">The submitted recipe details and ingredients.</param>
+    /// <returns>The new recipe ID or a request error.</returns>
     [HttpPost("api/library/recipes")]
-    public IActionResult CreateRecipe([FromBody] SaveRecipe recipe)
+    public IActionResult CreateRecipe([FromBody] SaveRecipe? recipe)
     {
+        if (!ModelState.IsValid || recipe is null)
+        {
+            return BadRequest(new { message = "The recipe does not contain valid details." });
+        }
+
         return Save(null, recipe);
     }
 
     /// <summary>
     /// Updates an existing recipe.
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="recipe"></param>
-    /// <returns></returns>
+    /// <param name="id">The identifier of the existing item.</param>
+    /// <param name="recipe">The submitted recipe details and ingredients.</param>
+    /// <returns>The saved recipe ID or a request error.</returns>
     [HttpPut("api/library/recipes/{id:long}")]
-    public IActionResult UpdateRecipe(long id, [FromBody] SaveRecipe recipe)
+    public IActionResult UpdateRecipe(long id, [FromBody] SaveRecipe? recipe)
     {
+        if (!ModelState.IsValid || recipe is null)
+        {
+            return BadRequest(new { message = "The recipe does not contain valid details." });
+        }
+
         return Save(id, recipe);
     }
 
     /// <summary>
     /// Saves a recipe and handles validation errors.
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="recipe"></param>
-    /// <returns></returns>
+    /// <param name="id">The identifier of the existing item.</param>
+    /// <param name="recipe">The submitted recipe details and ingredients.</param>
+    /// <returns>The saved recipe ID or a request error.</returns>
     private IActionResult Save(long? id, SaveRecipe recipe)
     {
         try
@@ -183,17 +203,13 @@ public sealed class FoodLibraryController : Controller
         {
             return NotFound();
         }
-        catch (DbException exception) when (PersonalDatabase.IsConstraintViolation(exception))
-        {
-            return BadRequest(new { message = "Kontrollér ingredienserne i opskriften." });
-        }
     }
 
     /// <summary>
     /// Deletes an existing recipe.
     /// </summary>
-    /// <param name="id"></param>
-    /// <returns></returns>
+    /// <param name="id">The identifier of the existing item.</param>
+    /// <returns>No content after the delete operation.</returns>
     [HttpDelete("api/library/recipes/{id:long}")]
     public IActionResult RemoveRecipe(long id)
     {

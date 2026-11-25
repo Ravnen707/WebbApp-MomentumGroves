@@ -1,0 +1,15 @@
+<dialog id="training-image-dialog" class="drink-dialog" aria-labelledby="training-image-heading">
+    <div class="dialog-inner">
+        <div class="section-head">
+            <h2 id="training-image-heading">Exercise picture</h2>
+            <button type="button" class="btn secondary" data-close-image aria-label="Close">×</button>
+        </div>
+        <div class="training-image-actions">
+            <button type="button" class="btn secondary" data-pick-image>Pick from program</button>
+            <button type="button" class="btn" data-upload-image>Upload picture</button>
+            <input type="file" accept="image/jpeg,image/png,image/webp" data-image-file hidden>
+        </div>
+        <p class="muted" data-image-status role="status"></p>
+        <div class="training-image-gallery" data-image-gallery></div>
+    </div>
+</dialog>

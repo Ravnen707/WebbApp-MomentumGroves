@@ -20,6 +20,9 @@ public class DrinkServiceTests
     private static readonly FieldInfo LastSearch =
         typeof(DrinkService).GetField("_lastSearch", BindingFlags.NonPublic | BindingFlags.Static)!;
 
+    /// <summary>
+    /// Creates the fake provider, cache, and logger for each search test.
+    /// </summary>
     [SetUp]
     public void SetUp()
     {
@@ -29,6 +32,9 @@ public class DrinkServiceTests
         _logger = new();
     }
 
+    /// <summary>
+    /// Disposes the fixture HTTP client and cache.
+    /// </summary>
     [TearDown]
     public void TearDown()
     {
@@ -37,8 +43,20 @@ public class DrinkServiceTests
         LastSearch.SetValue(null, DateTimeOffset.MinValue);
     }
 
-    private DrinkService Create() => new(_http, _cache, _logger);
+    /// <summary>
+    /// Creates a drink search service with the fixture client, cache, and logger.
+    /// </summary>
+    /// <returns>The service configured to use the fixture dependencies.</returns>
+    private DrinkService Create()
+    {
+        return new(_http, _cache, _logger);
+    }
 
+    /// <summary>
+    /// Checks that a blank drink search succeeds without making a provider request.
+    /// </summary>
+    /// <param name="query">The search text supplied to the service.</param>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [TestCase("")]
     [TestCase("  ")]
     public async Task Search_BlankQuery_IsSuccessfulWithoutHttp(string query)
@@ -49,6 +67,10 @@ public class DrinkServiceTests
         Assert.That(_http.Requests, Is.Empty);
     }
 
+    /// <summary>
+    /// Checks that drink search uses its registered client and URL-encodes the trimmed query.
+    /// </summary>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [Test]
     public async Task Search_UsesNamedClient_AndEncodesTrimmedQuery()
     {
@@ -56,9 +78,13 @@ public class DrinkServiceTests
         Assert.That(_http.ClientNames, Is.EqualTo(new[] { "openfoodfacts" }));
         Assert.That(_http.Requests.Single().Uri.AbsoluteUri, Is.EqualTo(
             "https://search.openfoodfacts.org/search?q=" + Uri.EscapeDataString("æ & ? 東京") +
-            "&page_size=20&langs=da,en"));
+                "&page_size=20&langs=da,en"));
     }
 
+    /// <summary>
+    /// Checks that queries differing only in case or surrounding whitespace share a cache entry.
+    /// </summary>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [Test]
     public async Task Search_CacheKey_IsTrimmedAndCaseInsensitive()
     {
@@ -69,6 +95,11 @@ public class DrinkServiceTests
         Assert.That(_http.Requests, Has.Count.EqualTo(1));
     }
 
+    /// <summary>
+    /// Checks that drink search accepts each supported JSON response container.
+    /// </summary>
+    /// <param name="template">The JSON container template for a provider response.</param>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [TestCase("[{0}]")]
     [TestCase("{\"hits\":[{0}]}")]
     [TestCase("{\"hits\":{\"hits\":[{0}]}}")]
@@ -82,15 +113,26 @@ public class DrinkServiceTests
         Assert.That(result.Drinks.Single().Name, Is.EqualTo("Water"));
     }
 
+    /// <summary>
+    /// Checks that the parser recognizes the supported ways of wrapping a product object.
+    /// </summary>
+    /// <param name="wrapper">The JSON structure that wraps a provider product.</param>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [TestCase("_source")]
     [TestCase("source")]
     [TestCase("product")]
     public async Task Search_UnwrapsSupportedProductObjects(string wrapper)
     {
         _http = new(_ => TestHttp.Response("[{\"" + wrapper + "\":" + Product + "}]"));
-        Assert.That((await Create().SearchAsync("water")).Drinks.Single().Name, Is.EqualTo("Water"));
+        Assert.That((await Create().SearchAsync("water")).Drinks.Single().Name,
+            Is.EqualTo("Water"));
     }
 
+    /// <summary>
+    /// Checks that malformed provider responses produce a safe failure and a log entry.
+    /// </summary>
+    /// <param name="response">The simulated provider response body.</param>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [TestCase("null")]
     [TestCase("42")]
     [TestCase("{}")]
@@ -110,6 +152,11 @@ public class DrinkServiceTests
         Assert.That(_logger.Entries.Single().Message, Does.Not.Contain("private-query"));
     }
 
+    /// <summary>
+    /// Checks that an HTTP error is reported and its status is logged.
+    /// </summary>
+    /// <param name="status">The HTTP status used in the fixture response.</param>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [TestCase(400)]
     [TestCase(429)]
     [TestCase(500)]
@@ -124,14 +171,17 @@ public class DrinkServiceTests
         Assert.That(result.Error, Does.Not.Contain("private-response"));
     }
 
+    /// <summary>
+    /// Checks that failed requests are not cached and that retrying can reach the provider.
+    /// </summary>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [Test]
     public async Task Search_FailureIsNotCached_AndGateIsReleasedForRetry()
     {
         var calls = 0;
         _http = new(_ =>
-            ++calls == 1
-                ? TestHttp.Response("failure", HttpStatusCode.ServiceUnavailable)
-                : TestHttp.Response("[" + Product + "]"));
+            ++calls == 1 ? TestHttp.Response("failure",
+                HttpStatusCode.ServiceUnavailable) : TestHttp.Response("[" + Product + "]"));
         var service = Create();
         Assert.That((await service.SearchAsync("water")).Success, Is.False);
         LastSearch.SetValue(null, DateTimeOffset.MinValue);
@@ -139,17 +189,30 @@ public class DrinkServiceTests
         Assert.That(calls, Is.EqualTo(2));
     }
 
+    /// <summary>
+    /// Checks which product name is used when the preferred provider field is absent.
+    /// </summary>
+    /// <param name="field">The field set by this case.</param>
+    /// <param name="name">The name supplied by the case.</param>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [TestCase("product_name", "Original")]
     [TestCase("product_name_da", "Dansk")]
     [TestCase("product_name_en", "English")]
     public async Task Search_NameFallbacks(string field, string name)
     {
-        var product = "{\"product_name\":null,\"" + field + "\":\"" + name +
-                      "\",\"nutriments\":{\"energy-kcal_100ml\":1}}";
+        var product =
+            "{\"product_name\":null,\"" + field + "\":\"" + name + "\",\"nutriments\":{\"energy-kcal_100ml\":1}}";
         _http = new(_ => TestHttp.Response("[" + product + "]"));
         Assert.That((await Create().SearchAsync("name")).Drinks.Single().Name, Is.EqualTo(name));
     }
 
+    /// <summary>
+    /// Checks the display name when a product has a brand or a brand already in its name.
+    /// </summary>
+    /// <param name="brand">The brand supplied by the provider fixture.</param>
+    /// <param name="name">The name supplied by the case.</param>
+    /// <param name="expected">The expected display name after applying the brand rules.</param>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [TestCase("\"Brand\"", "Water", "Brand – Water")]
     [TestCase("\"brand\"", "Brand Water", "Brand Water")]
     [TestCase("[null,7,\" \",\"Brand\",\"Other\"]", "Water", "Brand – Water")]
@@ -163,6 +226,11 @@ public class DrinkServiceTests
         Assert.That((await Create().SearchAsync("brand")).Drinks.Single().Name, Is.EqualTo(expected));
     }
 
+    /// <summary>
+    /// Checks that an unusable product can be skipped while other results are returned.
+    /// </summary>
+    /// <param name="invalid">The invalid product JSON included in the provider response.</param>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [TestCase("null")]
     [TestCase("7")]
     [TestCase("{}")]
@@ -179,6 +247,11 @@ public class DrinkServiceTests
         Assert.That(result.Drinks, Has.Count.EqualTo(1));
     }
 
+    /// <summary>
+    /// Checks that an invalid nutrient value remains unknown in the returned drink.
+    /// </summary>
+    /// <param name="number">The numeric representation supplied by this case.</param>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [TestCase("-1")]
     [TestCase("\"10\"")]
     [TestCase("null")]
@@ -193,6 +266,12 @@ public class DrinkServiceTests
         Assert.That(drink.Protein, Is.EqualTo(2));
     }
 
+    /// <summary>
+    /// Checks that using nutrition per 100 g to estimate beverage nutrition is labeled approximate.
+    /// </summary>
+    /// <param name="nutrient">The nutrient field used by the provider fixture.</param>
+    /// <param name="property">The corresponding result property to check.</param>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [TestCase("energy-kcal", "Kcal")]
     [TestCase("proteins", "Protein")]
     [TestCase("carbohydrates", "Carbs")]
@@ -208,12 +287,18 @@ public class DrinkServiceTests
         Assert.That(drink.Source, Does.Contain("100 g"));
     }
 
+    /// <summary>
+    /// Checks that explicit nutrition per 100 ml takes priority and does not get an approximation label.
+    /// </summary>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [Test]
     public async Task Search_Explicit100ml_FallsBackWithoutApproximationLabel_AndPrefersExplicitValues()
     {
         _http = new(_ =>
             TestHttp.Response(
-                "[{\"product_name\":\"Drink\",\"nutrition_data_per\":\"100ML\",\"nutriments\":{\"energy-kcal_100ml\":1,\"energy-kcal_100g\":9,\"proteins_100g\":2,\"carbohydrates_100g\":3,\"fat_100g\":4}}]"));
+                "[{\"product_name\":\"Drink\",\"nutrition_data_per\":\"100ML\"," +
+                    "\"nutriments\":{\"energy-kcal_100ml\":1,\"energy-kcal_100g\":9,\"proteins_100g\":2," +
+                    "\"carbohydrates_100g\":3,\"fat_100g\":4}}]"));
         var drink = (await Create().SearchAsync("drink")).Drinks.Single();
         Assert.That(drink.Kcal, Is.EqualTo(1));
         Assert.That(drink.Protein, Is.EqualTo(2));
@@ -222,6 +307,10 @@ public class DrinkServiceTests
         Assert.That(drink.Source, Is.EqualTo("Open Food Facts"));
     }
 
+    /// <summary>
+    /// Checks that Danish drinks rank first, duplicates are removed, and results are capped at twenty.
+    /// </summary>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [Test]
     public async Task Search_SortsDanishFirst_DeduplicatesIgnoringCase_AndLimitsTo20()
     {
@@ -246,6 +335,9 @@ public class DrinkServiceTests
             Is.EqualTo(20));
     }
 
+    /// <summary>
+    /// Checks that an already canceled token propagates even for a blank query.
+    /// </summary>
     [Test]
     public void Search_PreCancelledToken_PropagatesEvenForBlankQuery()
     {
@@ -255,6 +347,9 @@ public class DrinkServiceTests
         Assert.That(_logger.Entries, Is.Empty);
     }
 
+    /// <summary>
+    /// Checks that canceling while throttled avoids the provider request and error log.
+    /// </summary>
     [Test]
     public void Search_CancelDuringThrottle_DoesNotCallProviderOrLogError()
     {
@@ -265,6 +360,9 @@ public class DrinkServiceTests
         Assert.That(_logger.Entries, Is.Empty);
     }
 
+    /// <summary>
+    /// Checks that canceling a provider request releases the search gate without error logging.
+    /// </summary>
     [Test]
     public void Search_CancelDuringHttp_ReleasesGateAndDoesNotLogError()
     {
@@ -278,6 +376,10 @@ public class DrinkServiceTests
         Assert.That(_logger.Entries, Is.Empty);
     }
 
+    /// <summary>
+    /// Checks that a provider timeout returns an unavailable result and is logged.
+    /// </summary>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [Test]
     public async Task Search_ProviderTimeout_ReturnsUnavailableAndLogs()
     {

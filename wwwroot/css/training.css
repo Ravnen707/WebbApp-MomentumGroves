@@ -1,0 +1,760 @@
+/* Programme tabs and editable cards. */
+.training-program-tabs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 18px 0 12px;
+}
+
+.training-program-tabs .active {
+    border-color: #a6da7e;
+    color: #a6da7e;
+}
+
+.training-program-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
+
+.training-box-heading {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+}
+
+.training-box-heading input {
+    font-size: 1.15rem;
+    font-weight: 700;
+    width: 100%;
+    max-width: 360px;
+}
+
+.training-box-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.training-box-controls .btn {
+    padding: 8px 11px;
+}
+
+.training-edit-box {
+    min-width: 0;
+}
+
+@media (max-width: 650px) {
+    .training-title {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .training-box-controls {
+        justify-content: flex-start;
+    }
+}
+
+.training-progress {
+    margin-bottom: 20px;
+}
+
+.training-progress-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 18px 0;
+}
+
+.training-progress-stats > div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px;
+    border: 1px solid var(--border, #34414a);
+    border-radius: 10px;
+}
+
+.training-progress-stats strong {
+    font-size: 1.65rem;
+}
+
+.training-progress-stats span {
+    font-size: .85rem;
+    opacity: .8;
+}
+
+.training-progress-weeks {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 12px;
+    height: 155px;
+    margin: 16px 0 24px;
+}
+
+.training-progress-week {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: end;
+    gap: 5px;
+    min-width: 0;
+}
+
+.training-progress-week .training-progress-bar {
+    width: min(100%, 48px);
+    background: #a6da7e;
+    border-radius: 6px 6px 2px 2px;
+    min-height: 4px;
+}
+
+.training-progress-week small {
+    font-size: .75rem;
+}
+
+.training-progress-strength {
+    margin-top: 14px;
+}
+
+.training-progress-strength-row {
+    display: grid;
+    grid-template-columns: 100px minmax(0, 1fr) 135px;
+    gap: 12px;
+    align-items: center;
+    margin: 10px 0;
+    font-size: .85rem;
+}
+
+.training-progress-strength-bar {
+    height: 12px;
+    border-radius: 6px;
+    background: #34414a;
+    overflow: hidden;
+}
+
+.training-progress-strength-bar > div {
+    height: 100%;
+    background: #a6da7e;
+    border-radius: 6px;
+}
+
+@media (max-width: 600px) {
+    .training-progress-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .training-progress-strength-row {
+        grid-template-columns: 80px minmax(0, 1fr) 95px;
+        gap: 6px;
+    }
+}
+
+/* Training: distinct program and development tabs */
+.training-development[hidden], .training-program-actions[hidden], .training-footer[hidden], #training-days[hidden] {
+    display: none !important;
+}
+
+.training-program-tabs {
+    border-bottom: 1px solid var(--border, #34414a);
+    padding-bottom: 0;
+    margin: 20px 0 22px;
+    gap: 5px;
+}
+
+.training-program-tabs .btn {
+    border-radius: 10px 10px 0 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: 3px solid transparent;
+    color: var(--muted, #a8b9c1);
+    padding: 13px 20px;
+}
+
+.training-program-tabs .btn.active {
+    color: #a6da7e;
+    border-bottom-color: #a6da7e;
+    background: rgba(166, 218, 126, .07);
+}
+
+.training-development {
+    display: grid;
+    gap: 18px;
+}
+
+.training-development-heading h2 {
+    margin: 0 0 6px;
+}
+
+.training-development-heading p {
+    margin: 0;
+}
+
+.training-progress-stats {
+    margin: 0;
+    gap: 14px;
+}
+
+.training-progress-stats .training-stat {
+    background: var(--panel, #192127);
+    border: 1px solid var(--border, #34414a);
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 104px;
+}
+
+.training-progress-stats .training-stat strong {
+    color: #a6da7e;
+    font-size: 2rem;
+}
+
+.training-development-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    align-items: start;
+}
+
+.training-development-card {
+    min-width: 0;
+    padding: 22px;
+}
+
+.training-development-card h3 {
+    margin: 0 0 7px;
+}
+
+.training-development-card > p {
+    margin: 0 0 15px;
+}
+
+.training-development-card select {
+    width: 100%;
+    margin: 7px 0 8px;
+}
+
+.training-progress-weeks {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    height: 260px;
+    gap: 10px;
+    margin: 22px 0 0;
+}
+
+.training-chart-y {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding-bottom: 25px;
+    font-size: .76rem;
+    color: #a8b9c1;
+    text-align: right;
+}
+
+.training-chart-plot {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    align-items: end;
+    gap: 10px;
+    padding: 0 4px 25px;
+    border-bottom: 1px solid #445159;
+}
+
+.training-chart-grid {
+    pointer-events: none;
+    position: absolute;
+    inset: 0 0 25px;
+    background: linear-gradient(to bottom, transparent calc(50% - .5px), #34414a calc(50% - .5px),
+        #34414a calc(50% + .5px), transparent calc(50% + .5px));
+    border-top: 1px solid #34414a;
+}
+
+.training-chart-column {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.training-chart-column strong {
+    font-size: .85rem;
+    margin-bottom: 5px;
+}
+
+.training-chart-bar {
+    width: min(100%, 46px);
+    min-height: 3px;
+    background: #a6da7e;
+    border-radius: 5px 5px 0 0;
+}
+
+.training-chart-column small {
+    position: absolute;
+    bottom: -23px;
+    font-size: .72rem;
+    white-space: nowrap;
+}
+
+.training-progress-strength {
+    margin-top: 16px;
+}
+
+.training-line-chart svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.training-line-grid {
+    stroke: #3b4850;
+    stroke-width: 1;
+}
+
+.training-line-label {
+    fill: #a8b9c1;
+    font-size: 12px;
+}
+
+.training-line-path {
+    fill: none;
+    stroke: #a6da7e;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.training-line-point {
+    fill: #a6da7e;
+    stroke: #192127;
+    stroke-width: 2;
+}
+
+.training-current-exercise {
+    border: 1px solid var(--border, #34414a);
+    padding: 14px;
+    border-radius: 9px;
+}
+
+@media (max-width: 1000px) {
+    .training-development-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 650px) {
+    .training-progress-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .training-development-card {
+        padding: 15px;
+    }
+
+    .training-program-tabs .btn {
+        padding: 11px 9px;
+        font-size: .85rem;
+    }
+}
+
+/* Exercise cards – Full Body programme editor */
+.training-exercise-list {
+    display: grid;
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.training-exercise-card {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr);
+    gap: 18px;
+    padding: 16px;
+    border: 1px solid #344047;
+    border-radius: 14px;
+    background: #171f24;
+}
+
+.training-exercise-media {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.training-exercise-media img, .training-image-empty {
+    width: 100%;
+    aspect-ratio: 4/5;
+    object-fit: cover;
+    border-radius: 12px;
+    background: #10171b;
+}
+
+.training-image-empty {
+    display: grid;
+    place-items: center;
+    color: #9baeb8;
+    font-size: 13px;
+    border: 1px dashed #48565d;
+}
+
+.training-image-upload, .training-image-remove {
+    display: block;
+    text-align: center;
+    padding: 8px 6px;
+    border-radius: 8px;
+    background: #30413d;
+    color: #e8f3e9;
+    cursor: pointer;
+    font-size: 12px;
+    border: 0;
+}
+
+.training-image-remove {
+    background: #533337;
+}
+
+.training-image-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.training-image-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 120px), 1fr));
+    gap: 8px;
+}
+
+.training-image-gallery button {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    overflow-wrap: anywhere;
+}
+
+.training-image-gallery img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: contain;
+}
+
+.training-exercise-content {
+    min-width: 0;
+    display: grid;
+    align-content: start;
+    gap: 12px;
+}
+
+.training-exercise-heading {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.training-exercise-heading input {
+    flex: 1;
+    min-width: 0;
+    font-weight: 700;
+    font-size: 17px;
+}
+
+.training-exercise-content textarea {
+    min-height: 62px;
+    width: 100%;
+    resize: vertical;
+}
+
+.training-exercise-inputs {
+    display: grid;
+    grid-template-columns: minmax(105px, 1.4fr) repeat(4, minmax(65px, 1fr));
+    gap: 10px;
+}
+
+.training-exercise-inputs label {
+    display: grid;
+    gap: 5px;
+    font-size: 12px;
+    color: #b5c5cb;
+}
+
+.training-exercise-inputs input, .training-exercise-inputs select {
+    width: 100%;
+    min-width: 0;
+}
+
+.training-box-heading {
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) minmax(150px, 1.5fr);
+    gap: 12px;
+}
+
+.training-box-heading label {
+    display: grid;
+    gap: 5px;
+}
+
+@media (max-width: 800px) {
+    .training-exercise-card {
+        grid-template-columns: 110px minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .training-exercise-inputs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .training-box-heading {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .training-exercise-card {
+        grid-template-columns: 1fr;
+    }
+
+    .training-exercise-media {
+        max-width: 180px;
+    }
+}
+
+/* Training program cards: full-body sessions and independent routines */
+.training-program-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.training-program-tabs [role="tab"].active,
+#training-dashboard-group[aria-pressed="true"] {
+    background: #a6da7e;
+    color: #17221a;
+    border-color: #a6da7e;
+    font-weight: 700;
+}
+
+.training-program-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+    margin: 12px 0 20px;
+}
+
+.training-stack {
+    display: grid;
+    gap: 24px;
+}
+
+.training-edit-box {
+    padding: clamp(16px, 2.5vw, 28px);
+    border-radius: 18px;
+}
+
+.training-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.training-box-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.training-box-controls label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.training-exercise-list {
+    display: grid;
+    grid-template-columns:repeat(auto-fit, minmax(min(100%, 390px), 1fr));
+    gap: 14px;
+}
+
+.training-exercise-card {
+    grid-template-columns:130px minmax(0, 1fr);
+    gap: 16px;
+    background: #1b252a;
+    border: 1px solid #35464c;
+    border-radius: 16px;
+    padding: 14px;
+}
+
+.training-exercise-media img, .training-image-empty {
+    aspect-ratio: 4/4.5;
+    object-fit: contain;
+    background: #111a1e;
+}
+
+.training-exercise-content {
+    gap: 10px;
+}
+
+.training-exercise-heading {
+    align-items: start;
+}
+
+.training-exercise-heading input {
+    font-size: 15px;
+}
+
+.training-exercise-tools {
+    display: flex;
+    gap: 4px;
+}
+
+.training-exercise-tools .btn {
+    padding: 6px 9px;
+    min-width: 30px;
+}
+
+.training-exercise-inputs {
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.training-exercise-inputs label:first-child {
+    grid-column: 1/-1;
+}
+
+.training-cardio-field {
+    display: none !important;
+}
+
+.training-exercise-inputs.is-cardio .training-strength-field {
+    display: none;
+}
+
+.training-exercise-inputs.is-cardio .training-cardio-field {
+    display: grid !important;
+    grid-column: 1/-1;
+}
+
+.training-progress-filters {
+    display: grid;
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 16px 0;
+}
+
+.training-progress-filters label {
+    display: grid;
+    gap: 6px;
+    font-size: .85rem;
+}
+
+.training-progress-filters select {
+    width: 100%;
+    min-width: 0;
+}
+
+.training-development-card {
+    min-width: 0;
+}
+
+@media (max-width: 1050px) {
+    .training-exercise-list {
+        grid-template-columns:1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .training-progress-filters {
+        grid-template-columns:1fr;
+    }
+
+    .training-exercise-card {
+        grid-template-columns:110px minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 460px) {
+    .training-exercise-card {
+        grid-template-columns:1fr;
+    }
+
+    .training-exercise-media {
+        max-width: none;
+        display: grid;
+        grid-template-columns:1fr 1fr;
+    }
+
+    .training-exercise-media img, .training-image-empty {
+        grid-column: 1/-1;
+        max-height: 220px;
+    }
+}
+
+/* Full Body: one illustrated exercise per row, as in the supplied reference. */
+.training-exercise-list {
+    display: grid;
+    grid-template-columns:minmax(0, 1fr);
+    gap: 16px;
+}
+
+.training-exercise-card {
+    display: grid;
+    grid-template-columns:165px minmax(0, 1fr);
+    gap: 20px;
+    padding: 18px;
+    align-items: start;
+}
+
+.training-exercise-media img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4/5;
+    object-fit: cover;
+    border-radius: 14px;
+}
+
+.training-exercise-content {
+    min-width: 0;
+    display: grid;
+    gap: 12px;
+}
+
+.training-exercise-inputs {
+    display: grid;
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.training-exercise-inputs label:first-child {
+    grid-column: 1/-1;
+}
+
+@media (max-width: 700px) {
+    .training-exercise-card {
+        grid-template-columns:115px minmax(0, 1fr);
+    }
+
+    .training-exercise-inputs {
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 460px) {
+    .training-exercise-card {
+        grid-template-columns:1fr;
+    }
+
+    .training-exercise-media {
+        max-width: 220px;
+    }
+}
+
+.training-exercise-media img.training-image-load-failed {
+    opacity: .25;
+}

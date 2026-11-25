@@ -6,6 +6,9 @@ namespace MomentumGroves.Tests.Controllers;
 [TestFixture]
 public class BodyMetricsControllerTests
 {
+    /// <summary>
+    /// Checks that the body metrics action returns its default MVC view.
+    /// </summary>
     [Test]
     public void Index_ReturnsDefaultView()
     {

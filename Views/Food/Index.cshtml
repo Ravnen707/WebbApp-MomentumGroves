@@ -9,13 +9,17 @@
   <section class="panel sick-day-panel">
     <label class="sick-day-label" for="sick-day">
       <input type="checkbox" id="sick-day" class="check"/>
-      <span><strong>Mark as a sick day</strong><small id="sick-day-status" aria-live="polite">On sick days, intake is logged but target assessment is paused.</small></span>
+      <span><strong>Mark as a sick day</strong>
+          <small id="sick-day-status"
+          aria-live="polite">On sick days, intake is logged but target assessment is paused.</small></span>
     </label>
   </section>
   <section class="panel cheat-day-panel">
     <label class="cheat-day-label" for="cheat-day">
       <input type="checkbox" id="cheat-day" class="check"/>
-      <span><strong>Mark as a cheat day</strong><small id="cheat-day-status" aria-live="polite">Cheat days are highlighted in orange and count towards the 7-day balance.</small></span>
+      <span><strong>Mark as a cheat day</strong>
+          <small id="cheat-day-status"
+          aria-live="polite">Cheat days are highlighted in orange and count towards the 7-day balance.</small></span>
     </label>
   </section>
 </div>
@@ -86,14 +90,14 @@
     <button type="button" class="btn secondary" id="open-copy-meal">Copy meal →</button>
   </div>
 </section>
-@await Html.PartialAsync("~/Views/Shared/Modals/_DrinkModal.cshtml")
+@await Html.PartialAsync("~/Views/Shared/Modal/_DrinkModal.cshtml")
 
 
-@await Html.PartialAsync("~/Views/Shared/Modals/_NutritionZonesModal.cshtml")
-@await Html.PartialAsync("~/Views/Shared/Modals/_EditMealModal.cshtml")
+@await Html.PartialAsync("~/Views/Shared/Modal/_NutritionZonesModal.cshtml")
+@await Html.PartialAsync("~/Views/Shared/Modal/_EditMealModal.cshtml")
 
-@await Html.PartialAsync("~/Views/Shared/Modals/_FoodModal.cshtml")
-@await Html.PartialAsync("~/Views/Shared/Modals/_CopyMealModal.cshtml")
+@await Html.PartialAsync("~/Views/Shared/Modal/_FoodModal.cshtml")
+@await Html.PartialAsync("~/Views/Shared/Modal/_CopyMealModal.cshtml")
 
 <link rel="stylesheet" href="~/css/sick-days.css" asp-append-version="true"/>
 <link rel="stylesheet" href="~/css/cheat-days.css" asp-append-version="true"/>

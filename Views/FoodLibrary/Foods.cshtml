@@ -2,8 +2,9 @@
 <section class="panel library-page" id="library-foods">
     <h1>My Foods</h1>
 
-    <label>Search your foods or DTU Frida<input id="library-food-search" type="search"
-                                                      placeholder="Search for a food..."></label>
+    <label>Search your foods or DTU Frida
+        <input id="library-food-search" type="search" placeholder="Search for a food...">
+    </label>
     <div id="library-frida-results" class="library-results library-search-results"></div>
     <h2 id="library-food-heading">Create food manually</h2>
     <form id="library-food-form" class="library-form">
@@ -13,12 +14,15 @@
                 <option value="ml">100 ml</option>
             </select></label>
         <div class="library-grid">
-            <label>Calories (kcal) *<input name="kcal" type="text" inputmode="decimal" min="0" step="any"
-                                           required></label>
-            <label>Protein (g) *<input name="protein" type="text" inputmode="decimal" min="0" step="any"
-                                       required></label>
-            <label>Carbohydrate (g) *<input name="carbs" type="text" inputmode="decimal" min="0" step="any"
-                                         required></label>
+            <label>Calories (kcal) *
+                <input name="kcal" type="text" inputmode="decimal" min="0" step="any" required>
+            </label>
+            <label>Protein (g) *
+                <input name="protein" type="text" inputmode="decimal" min="0" step="any" required>
+            </label>
+            <label>Carbohydrate (g) *
+                <input name="carbs" type="text" inputmode="decimal" min="0" step="any" required>
+            </label>
             <label>Fat (g) *<input name="fat" type="text" inputmode="decimal" min="0" step="any" required></label>
             <label>Fibre (g)<input name="fiber" type="text" inputmode="decimal" min="0" step="any"></label>
         </div>
@@ -29,8 +33,9 @@
     </form>
     <p id="library-food-message" role="status" class="muted"></p>
     <h2>Saved foods</h2>
-    <label>Search saved foods<input id="library-saved-search" type="search"
-                                       placeholder="Search all saved foods..."></label>
+    <label>Search saved foods
+        <input id="library-saved-search" type="search" placeholder="Search all saved foods...">
+    </label>
     <div id="library-food-list" class="library-results"></div>
     <p id="library-food-count" class="muted" aria-live="polite"></p>
     <button id="library-food-more" class="btn secondary" type="button" hidden>Show 10 more</button>

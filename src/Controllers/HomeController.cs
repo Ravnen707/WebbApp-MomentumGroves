@@ -7,6 +7,9 @@ public class HomeController : Controller
     /// <summary>
     /// Displays the home page.
     /// </summary>
-    /// <returns></returns>
-    public IActionResult Index() => View();
+    /// <returns>The requested page view.</returns>
+    public IActionResult Index()
+    {
+        return View();
+    }
 }

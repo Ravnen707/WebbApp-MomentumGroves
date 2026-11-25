@@ -1,25 +1,37 @@
 using System.Data;
 using MomentumGroves.Data;
 using MomentumGroves.Models;
-using MomentumGroves.DTO;
 
-namespace MomentumGroves.Repository;
+namespace MomentumGroves.Repositories;
 
 /// <summary>Persists mobile food imports in the existing desktop food database.</summary>
 public sealed class MobileFoodSyncRepository
 {
     private readonly PersonalDatabase _database;
 
+    /// <summary>
+    /// Initializes food import persistence with the supplied storage configuration.
+    /// </summary>
+    /// <param name="environment">The environment that supplies the application content root.</param>
     public MobileFoodSyncRepository(IWebHostEnvironment environment)
         : this(PersonalDatabase.Local(environment))
     {
     }
 
+    /// <summary>
+    /// Initializes food import persistence with the supplied storage configuration.
+    /// </summary>
+    /// <param name="database">The configured personal database.</param>
     public MobileFoodSyncRepository(PersonalDatabase database)
     {
         _database = database;
     }
 
+    /// <summary>
+    /// Persists the mobile batch and acknowledges previously processed items.
+    /// </summary>
+    /// <param name="foods">The foods submitted for import.</param>
+    /// <returns>The import counts and acknowledged mobile IDs.</returns>
     public MobileFoodImportResult Import(List<FoodSyncDto> foods)
     {
         using var connection = _database.Open("food_and_recipes.db");
@@ -55,7 +67,9 @@ public sealed class MobileFoodSyncRepository
 
             using var insert = connection.CreateCommand();
             insert.Transaction = transaction;
-            insert.CommandText = "INSERT INTO CustomFoods(Name,Unit,Kcal,Protein,Carbs,Fat,Fiber) VALUES(@name,@unit,@kcal,@protein,@carbs,@fat,@fiber) RETURNING Id";
+            insert.CommandText =
+                "INSERT INTO CustomFoods(Name,Unit,Kcal,Protein,Carbs,Fat,Fiber) VALUES(@name,@unit,@kcal,@protein," +
+                    "@carbs,@fat,@fiber) RETURNING Id";
             insert.AddParameter("@name", food.Name.Trim());
             insert.AddParameter("@unit", food.Unit);
             insert.AddParameter("@kcal", food.Kcal);

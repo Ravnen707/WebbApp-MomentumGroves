@@ -1,0 +1,9 @@
+<dialog id="home-meals-dialog" class="info-dialog" aria-labelledby="home-meals-heading">
+    <div class="dialog-inner">
+        <div class="section-head"><h2 id="home-meals-heading">Recent meals for the selected date</h2>
+            <button type="button" class="modal-x" data-close-dialog aria-label="Close">×</button>
+        </div>
+        <div id="home-meals"></div>
+        <div class="modal-actions"><a asp-controller="Food" asp-action="Index" class="btn">Add meal →</a></div>
+    </div>
+</dialog>

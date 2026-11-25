@@ -872,6 +872,86 @@ NUnit unit tests and service-level tests that do not involve Playwright remain u
 
 This is a mandatory restriction, not a recommendation. The coding agent MUST NOT bypass it, even when doing so would resolve a failing test or complete a verification process.
 
+
+---
+
+## 26. Line Length and Unnecessary Line Wrapping
+
+The coding agent MUST respect the project's configured right margin (hard wrap guide).
+
+Code MUST remain on a single line when the entire statement or declaration fits within the configured right margin and remains readable.
+
+The coding agent MUST NOT introduce unnecessary line breaks or vertically expand code simply because a statement contains multiple parameters, arguments or expressions.
+
+This requirement applies to:
+
+- Class declarations.
+- Primary constructors.
+- Constructor declarations.
+- Method signatures.
+- Method calls.
+- Parameter and argument lists.
+- Variable and constant declarations.
+- Return statements.
+- Attributes.
+- Conditional expressions.
+- LINQ expressions.
+
+### Correct — when within the right margin
+
+```csharp
+public sealed class DatabaseInitializationController(DatabaseInitializationService initialization, ILogger<DatabaseInitializationController> logger) : Controller
+{
+}
+```
+
+### Incorrect — when the declaration fits on a single line
+
+```csharp
+public sealed class DatabaseInitializationController(
+    DatabaseInitializationService initialization,
+    ILogger<DatabaseInitializationController> logger) : Controller
+{
+}
+```
+
+### Correct
+
+```csharp
+return new DrinkSearchResult(true, Combine(local, cached));
+```
+
+### Incorrect
+
+```csharp
+return new DrinkSearchResult(
+    true,
+    Combine(local, cached)
+);
+```
+
+### Mandatory Formatting Requirements
+
+- ALWAYS use the available horizontal space before introducing line breaks.
+- ONLY wrap a statement or declaration when it exceeds the configured right margin or when required by another mandatory formatting rule.
+- NEVER place each parameter or argument on a separate line when the complete declaration or call fits within the right margin.
+- NEVER shorten meaningful variable, method or class names merely to avoid exceeding the right margin.
+- NEVER vertically expand existing code without a valid formatting requirement.
+- NEVER change the project's right margin or formatting configuration without explicit authorization.
+- Inspect existing `.editorconfig` and Rider formatting settings to determine the configured line length.
+
+When a line exceeds the configured right margin, split it at appropriate syntactical boundaries and maintain consistent indentation.
+
+The objective is to maximize readable horizontal space while avoiding unnecessary vertical expansion.
+
+This requirement reinforces Section 5 and MUST be followed throughout the entire project, including production code and test code.
+
+The mandatory curly brace, explicit return and XML documentation requirements remain unchanged. This rule does not authorize single-line control-flow blocks or expression-bodied methods.
+
+This is a mandatory formatting requirement, not a stylistic suggestion.
+
+
+
 ## Final Requirement
 
 Every change MUST contribute to maintaining or improving the following qualities:

@@ -9,21 +9,25 @@
             <button type="button" class="btn secondary" data-food-source="frida">DTU Frida</button>
         </div>
         <div class="food-search-row">
-            <label>Search for food<input type="search" id="food-search" placeholder="Search for food..." autocomplete="off"></label>
+            <label>Search for food
+                <input type="search" id="food-search" placeholder="Search for food..." autocomplete="off">
+            </label>
             <button type="button" class="btn secondary" id="food-manual">+ Manual</button>
         </div>
         <p class="muted tiny" id="food-search-status" role="status"></p>
         <div id="food-search-results" class="drink-results"></div>
         <section class="food-ingredients-section">
-            <div class="section-head"><h3>Added to the meal</h3><span class="muted tiny" id="food-ingredient-count">0 added</span>
+            <div class="section-head"><h3>Added to the meal</h3>
+                <span class="muted tiny" id="food-ingredient-count">0 added</span>
             </div>
             <div id="food-ingredient-list" class="food-ingredient-list"></div>
         </section>
         <form id="food-form" class="food-inline-editor" hidden>
             <h3 id="food-editor-heading">Selected food</h3>
             <label>Name<input name="name" required maxlength="200" placeholder="e.g. mozzarella sticks"></label>
-            <label>Amount (g)<input name="grams" type="text" inputmode="decimal" min="0.001" step="any" value="100"
-                                    required></label>
+            <label>Amount (g)
+                <input name="grams" type="text" inputmode="decimal" min="0.001" step="any" value="100" required>
+            </label>
             <button type="button" class="btn secondary" id="food-customize-recipe" hidden>Adjust ingredients</button>
             <div id="food-recipe-customization" class="food-recipe-customization" hidden>
                 <p class="muted tiny">Adjust ingredient amounts for this meal. The saved recipe is unaffected.</p>
@@ -32,15 +36,19 @@
             <div class="food-editor-nutrients">
                 <span id="food-value-heading">Nutrition per 100 g</span>
                 <div class="library-grid">
-                    <label>Calories (kcal)<input name="kcal" type="text" inputmode="decimal" min="0" step="any"
-                                                 required></label>
-                    <label>Protein (g)<input name="protein" type="text" inputmode="decimal" min="0" step="any" required></label>
-                    <label>Carbohydrates (g)<input name="carbs" type="text" inputmode="decimal" min="0" step="any"
-                                                 required></label>
-                    <label>Fat (g)<input name="fat" type="text" inputmode="decimal" min="0" step="any"
-                                          required></label>
-                    <label>Fibre (g)<input name="fiber" type="text" inputmode="decimal" min="0" step="any"
-                                               placeholder="Optional"></label>
+                    <label>Calories (kcal)
+                        <input name="kcal" type="text" inputmode="decimal" min="0" step="any" required>
+                    </label>
+                    <label>Protein (g)
+                        <input name="protein" type="text" inputmode="decimal" min="0" step="any" required>
+                    </label>
+                    <label>Carbohydrates (g)
+                        <input name="carbs" type="text" inputmode="decimal" min="0" step="any" required>
+                    </label>
+                    <label>Fat (g)<input name="fat" type="text" inputmode="decimal" min="0" step="any" required></label>
+                    <label>Fibre (g)
+                        <input name="fiber" type="text" inputmode="decimal" min="0" step="any" placeholder="Optional">
+                    </label>
                 </div>
             </div>
             <p class="muted tiny" id="food-source"></p>
@@ -50,8 +58,9 @@
             </div>
         </form>
         <section class="food-meal-fields"><h3>Meal details</h3>
-            <label>Meal name *<input id="food-meal-name" maxlength="200" required
-                                          placeholder="e.g. chicken with rice"></label>
+            <label>Meal name *
+                <input id="food-meal-name" maxlength="200" required placeholder="e.g. chicken with rice">
+            </label>
             <label>Note (optional)<textarea id="food-meal-notes" rows="2"></textarea></label></section>
         <p class="muted tiny" id="food-warning" role="status"></p>
         <div class="modal-actions">

@@ -13,31 +13,10 @@
     <link rel="stylesheet" href="~/css/modals/database-initialization.css" asp-append-version="true"/>
 </head>
 <body>
-<partial name="~/Views/Shared/Modals/_DatabaseInitializationModal.cshtml" model="Model"/>
+<partial name="~/Views/Shared/Modal/_DatabaseInitializationModal.cshtml" model="Model"/>
 @if (Model.RequiresLocalSetup || !ViewData.ModelState.IsValid)
 {
-    <script>
-        (() => {
-            const form = document.getElementById('database-setup-form');
-            const button = document.getElementById('database-setup-confirm');
-            const loading = document.getElementById('database-setup-loading');
-
-            form.addEventListener('submit', (event) => {
-                if (button.disabled) {
-                    event.preventDefault();
-                    return;
-                }
-
-                button.disabled = true;
-                loading.hidden = false;
-            });
-
-            window.addEventListener('pageshow', () => {
-                button.disabled = false;
-                loading.hidden = true;
-            });
-        })();
-    </script>
+    <script src="~/js/modals/database-initialization.js" asp-append-version="true"></script>
 }
 </body>
 </html>

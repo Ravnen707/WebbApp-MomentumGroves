@@ -25,9 +25,11 @@ const write = (key, value) => {
     pendingSave = pendingSave.catch(() => {
     }).then(async () => {
         const training = key === trainingKey;
-        const response = await fetch(training ? '/api/training/programmes' : '/api/momentum-data/' + encodeURIComponent(key), {
+        const response = await fetch(training
+            ? '/api/training/programmes' : '/api/momentum-data/' + encodeURIComponent(key), {
             method: 'PUT', headers: {'Content-Type': 'application/json'},
-            body: training ? JSON.stringify({programmes: JSON.parse(body), originalWeights: savedTrainingWeights}) : body
+            body: training ? JSON.stringify({programmes: JSON.parse(body),
+                originalWeights: savedTrainingWeights}) : body
         });
         if (training && response.status === 409) {
             const details = await response.json();
@@ -43,7 +45,8 @@ const write = (key, value) => {
         return true;
     }).catch(error => {
         console.error('Database save failed:', error);
-        showDataError('Could not save changes to the database. Check the Rider log and resolve the error before reloading the page.');
+        showDataError('Could not save changes to the database. Check the Rider log and resolve the error ' +
+            'before reloading the page.');
         return false;
     });
     return pendingSave;
@@ -55,7 +58,7 @@ function showDataError(message) {
         box = document.createElement('div');
         box.id = 'momentum-data-error';
         box.setAttribute('role', 'alert');
-        box.style.cssText = 'position:sticky;top:0;z-index:1000;background:#5a3335;color:white;padding:12px 20px;text-align:center';
+        box.classList.add('momentum-data-error');
         document.body.prepend(box);
     }
     box.textContent = message;

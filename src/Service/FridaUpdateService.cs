@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using ExcelDataReader;
-using Microsoft.Data.Sqlite;
+using MomentumGroves.Repositories;
 using MomentumGroves.Models;
 
 namespace MomentumGroves.Service;
@@ -15,15 +15,28 @@ public sealed class FridaUpdateService
     private readonly HttpClient _http;
     private readonly string _databasePath;
     private readonly ILogger<FridaUpdateService> _logger;
+    private readonly FridaRepository _repository;
     private static readonly SemaphoreSlim InstallLock = new(1, 1);
 
+    /// <summary>
+    /// Initializes the service that checks for and installs verified Frida releases.
+    /// </summary>
+    /// <param name="http">The HTTP client used for provider requests.</param>
+    /// <param name="environment">The environment that supplies the application content root.</param>
+    /// <param name="logger">The logger for diagnostics and operation failures.</param>
     public FridaUpdateService(HttpClient http, IWebHostEnvironment environment, ILogger<FridaUpdateService> logger)
     {
         _http = http;
         _databasePath = Path.Combine(environment.ContentRootPath, "src", "Data", "frida.db");
         _logger = logger;
+        _repository = new FridaRepository(_databasePath);
     }
 
+    /// <summary>
+    /// Compares the installed Frida version with the latest available release.
+    /// </summary>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>The installed version, latest release, and update availability.</returns>
     public async Task<FridaCheckResult> CheckAsync(CancellationToken cancellationToken)
     {
         (string Version, int Count) installed = ("", 0);
@@ -42,11 +55,14 @@ public sealed class FridaUpdateService
             var newer = ParseVersion(latest.Version) > ParseVersion(installed.Version);
             return new FridaCheckResult(true,
                 newer
-                    ? $"New DTU version found: {latest.Version} (installed: {installed.Version}). You can install the new Excel file."
-                    : $"The latest DTU version found is {latest.Version}. Your installed version is {installed.Version}; no newer version was found.",
+                    ? $"New DTU version found: {latest.Version} (installed: {installed.Version}). You can install " +
+                        "the new Excel file."
+                    : $"The latest DTU version found is {latest.Version}. " +
+                        $"Your installed version is {installed.Version}; no newer version was found.",
                 installed.Version, installed.Count, latest, newer);
         }
-        catch (Exception exception) when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
+        catch (Exception exception)
+            when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
             _logger.LogWarning(exception, "DTU Frida version check failed");
             return new FridaCheckResult(false, "Could not check DTU right now. Please try again later.",
@@ -54,6 +70,12 @@ public sealed class FridaUpdateService
         }
     }
 
+    /// <summary>
+    /// Downloads and installs the latest validated Frida release.
+    /// </summary>
+    /// <param name="request">The request containing the selected Frida release.</param>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>Whether the installation succeeded and the resulting release details.</returns>
     public async Task<FridaInstallResult> InstallAsync(FridaInstallRequest request, CancellationToken cancellationToken)
     {
         if (!await InstallLock.WaitAsync(0, cancellationToken))
@@ -71,20 +93,21 @@ public sealed class FridaUpdateService
             if (latest is null || latest.ArticleId != request.ArticleId || latest.Version != request.Version)
             {
                 _logger.LogWarning("Frida installation rejected because the requested release is no longer current");
-                return new FridaInstallResult(false, "The selected version is no longer the latest. Please check again.",
-                    "", 0);
+                return new FridaInstallResult(false,
+                    "The selected version is no longer the latest. Please check again.", "", 0);
             }
 
             var installed = await GetInstalledAsync(cancellationToken);
             if (ParseVersion(latest.Version) <= ParseVersion(installed.Version))
             {
-                return new FridaInstallResult(true, "No newer version is available. The database is unchanged.", installed.Version,
+                return new FridaInstallResult(true, "No newer version is available. The database is unchanged.",
+                    installed.Version,
                     installed.Count);
             }
 
             temporaryFile = Path.Combine(Path.GetTempPath(), $"frida-{Guid.NewGuid():N}.xlsx");
             using (var response = await _http.GetAsync(latest.DownloadUrl, HttpCompletionOption.ResponseHeadersRead,
-                       cancellationToken))
+                cancellationToken))
             {
                 response.EnsureSuccessStatusCode();
                 if (response.Content.Headers.ContentLength > 100_000_000)
@@ -101,7 +124,7 @@ public sealed class FridaUpdateService
                 }
             }
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-            
+
             var foods = ReadFoods(temporaryFile);
             if (foods.Count < 500)
             {
@@ -119,7 +142,7 @@ public sealed class FridaUpdateService
                     File.Delete(stagedPath);
                 }
 
-                await CreateDatabaseAsync(stagedPath, foods, latest, cancellationToken);
+                await FridaRepository.CreateDatabaseAsync(stagedPath, foods, latest, cancellationToken);
                 // On first installation there is no database to replace.
                 // Later updates retain the existing database as a backup.
                 if (File.Exists(_databasePath))
@@ -139,12 +162,14 @@ public sealed class FridaUpdateService
                 }
             }
 
-            _logger.LogInformation("Installed Frida version {Version} with {FoodCount} foods", latest.Version, foods.Count);
+            _logger.LogInformation("Installed Frida version {Version} with {FoodCount} foods", latest.Version,
+                foods.Count);
             return new FridaInstallResult(true,
                 $"Updated to version {latest.Version}. Imported {foods.Count} foods.", latest.Version,
                 foods.Count);
         }
-        catch (Exception exception) when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
+        catch (Exception exception)
+            when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
             _logger.LogError(exception, "DTU Frida import failed");
             return new FridaInstallResult(false,
@@ -161,6 +186,10 @@ public sealed class FridaUpdateService
         }
     }
 
+    /// <summary>
+    /// Removes an installation artifact and logs file access failures.
+    /// </summary>
+    /// <param name="path">The path to the file to process.</param>
     private void TryDeleteTemporaryFile(string path)
     {
         try
@@ -173,39 +202,21 @@ public sealed class FridaUpdateService
         }
     }
 
-    public async Task<(string Version, int Count)> GetInstalledAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Reads the version and row count from the installed Frida dataset.
+    /// </summary>
+    /// <param name="cancellationToken">The token used to cancel the dataset lookup.</param>
+    /// <returns>The installed version and food count, or an empty version and zero before installation.</returns>
+    public Task<(string Version, int Count)> GetInstalledAsync(CancellationToken cancellationToken)
     {
-        // An absent database means Frida has not been installed yet.
-        // Do not create an empty file: installation creates the complete schema and data.
-        if (!File.Exists(_databasePath))
-        {
-            return ("", 0);
-        }
-
-        // This file is replaced during installation; idle pooled handles would keep it locked on Windows.
-        var builder = new SqliteConnectionStringBuilder
-        {
-            DataSource = _databasePath,
-            Mode = SqliteOpenMode.ReadOnly,
-            Pooling = false
-        };
-        await using var connection = new SqliteConnection(builder.ToString());
-        await connection.OpenAsync(cancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT COUNT(*) FROM Foods";
-        var count = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
-        command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='FridaMetadata'";
-        var hasMetadata = await command.ExecuteScalarAsync(cancellationToken) is not null;
-        var version = "6.1"; // Existing database was imported from Frida 6.1 before metadata existed.
-        if (hasMetadata)
-        {
-            command.CommandText = "SELECT Version FROM FridaMetadata LIMIT 1";
-            version = (string?)await command.ExecuteScalarAsync(cancellationToken) ?? version;
-        }
-
-        return (version, count);
+        return _repository.GetInstalledAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Finds DTU Frida Excel releases through the Figshare API.
+    /// </summary>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>The eligible Frida releases and their download metadata.</returns>
     private async Task<List<FridaRelease>> FindReleasesAsync(CancellationToken cancellationToken)
     {
         var articleIds = new HashSet<long> { KnownArticleId, 29500682 };
@@ -277,23 +288,35 @@ public sealed class FridaUpdateService
                     releases.Add(new FridaRelease(version, articleId, title, name, url));
                 }
             }
-            catch (Exception exception) when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
+            catch (Exception exception)
+                when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
             {
-                _logger.LogWarning(exception, "Could not read Frida article {ArticleId}; continuing with other articles", articleId);
+                _logger.LogWarning(exception,
+                    "Could not read Frida article {ArticleId}; continuing with other articles", articleId);
             }
         }
 
         return releases;
     }
 
+    /// <summary>
+    /// Converts the release version text into a comparable version.
+    /// </summary>
+    /// <param name="value">The version string returned by the provider.</param>
+    /// <returns>The normalized version used for release comparison.</returns>
     private static Version ParseVersion(string value)
     {
         return Version.TryParse(value, out var parsed) ? parsed : new Version(0, 0);
     }
 
-    private static List<FoodRow> ReadFoods(string path)
+    /// <summary>
+    /// Extracts valid food rows from a Frida workbook.
+    /// </summary>
+    /// <param name="path">The path to the file to process.</param>
+    /// <returns>The parsed food rows with available nutrient values.</returns>
+    private static List<FridaFoodRow> ReadFoods(string path)
     {
-        var foods = new List<FoodRow>();
+        var foods = new List<FridaFoodRow>();
         using var stream = File.OpenRead(path);
         using var reader = ExcelReaderFactory.CreateReader(stream);
         do
@@ -319,8 +342,9 @@ public sealed class FridaUpdateService
                 }
 
                 var english = reader.GetValue(1)?.ToString();
-                foods.Add(new FoodRow(name, english, Number(reader.GetValue(5)), Number(reader.GetValue(7)),
-                    Number(reader.GetValue(11)), Number(reader.GetValue(14))));
+                foods.Add(new FridaFoodRow(name, english, Number(reader.GetValue(5)),
+                    Number(reader.GetValue(7)), Number(reader.GetValue(11)),
+                    Number(reader.GetValue(14))));
             }
 
             break;
@@ -329,6 +353,11 @@ public sealed class FridaUpdateService
         return foods;
     }
 
+    /// <summary>
+    /// Reads a numeric nutrient cell from the Frida workbook.
+    /// </summary>
+    /// <param name="value">The raw workbook cell value.</param>
+    /// <returns>The parsed numeric cell value, or null if unavailable.</returns>
     private static double? Number(object? value)
     {
         if (value is null || string.IsNullOrWhiteSpace(value.ToString()))
@@ -341,67 +370,4 @@ public sealed class FridaUpdateService
             ? result
             : null;
     }
-
-    private static async Task CreateDatabaseAsync(string path, List<FoodRow> foods, FridaRelease release,
-        CancellationToken cancellationToken)
-    {
-        // Closing a pooled connection retains its native file handle, preventing the staging file
-        // from being replaced or deleted. Dispose this connection before returning to InstallAsync.
-        var builder = new SqliteConnectionStringBuilder { DataSource = path, Pooling = false };
-        await using var connection = new SqliteConnection(builder.ToString());
-        await connection.OpenAsync(cancellationToken);
-        await using var transaction = (SqliteTransaction)await connection.BeginTransactionAsync(cancellationToken);
-        await using (var schema = connection.CreateCommand())
-        {
-            schema.Transaction = transaction;
-            schema.CommandText =
-                "CREATE TABLE Foods (Id INTEGER PRIMARY KEY, NameDanish TEXT NOT NULL, NameEnglish TEXT, Kcal REAL, Protein REAL, Carbs REAL, Fat REAL); CREATE TABLE FridaMetadata (Version TEXT NOT NULL, ArticleId INTEGER NOT NULL, FileName TEXT NOT NULL, UpdatedUtc TEXT NOT NULL);";
-            await schema.ExecuteNonQueryAsync(cancellationToken);
-        }
-
-        await using (var insert = connection.CreateCommand())
-        {
-            insert.Transaction = transaction;
-            insert.CommandText =
-                "INSERT INTO Foods (NameDanish, NameEnglish, Kcal, Protein, Carbs, Fat) VALUES ($dk, $en, $kcal, $protein, $carbs, $fat)";
-            var dk = insert.Parameters.Add("$dk", SqliteType.Text);
-            var en = insert.Parameters.Add("$en", SqliteType.Text);
-            var kcal = insert.Parameters.Add("$kcal", SqliteType.Real);
-            var protein = insert.Parameters.Add("$protein", SqliteType.Real);
-            var carbs = insert.Parameters.Add("$carbs", SqliteType.Real);
-            var fat = insert.Parameters.Add("$fat", SqliteType.Real);
-            foreach (var food in foods)
-            {
-                dk.Value = food.Danish;
-                en.Value = (object?)food.English ?? DBNull.Value;
-                kcal.Value = (object?)food.Kcal ?? DBNull.Value;
-                protein.Value = (object?)food.Protein ?? DBNull.Value;
-                carbs.Value = (object?)food.Carbs ?? DBNull.Value;
-                fat.Value = (object?)food.Fat ?? DBNull.Value;
-                await insert.ExecuteNonQueryAsync(cancellationToken);
-            }
-        }
-
-        await using (var metadata = connection.CreateCommand())
-        {
-            metadata.Transaction = transaction;
-            metadata.CommandText = "INSERT INTO FridaMetadata VALUES ($version, $article, $file, $updated)";
-            metadata.Parameters.AddWithValue("$version", release.Version);
-            metadata.Parameters.AddWithValue("$article", release.ArticleId);
-            metadata.Parameters.AddWithValue("$file", release.FileName);
-            metadata.Parameters.AddWithValue("$updated", DateTimeOffset.UtcNow.ToString("O"));
-            await metadata.ExecuteNonQueryAsync(cancellationToken);
-        }
-
-        await transaction.CommitAsync(cancellationToken);
-        await connection.CloseAsync();
-    }
-
-    private sealed record FoodRow(
-        string Danish,
-        string? English,
-        double? Kcal,
-        double? Protein,
-        double? Carbs,
-        double? Fat);
 }

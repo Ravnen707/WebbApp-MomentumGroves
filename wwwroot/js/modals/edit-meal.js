@@ -52,7 +52,8 @@
         };
         if (original.type === 'drink') {
             updated.ml = values.grams;
-            updated.per100ml = Object.fromEntries(['kcal', 'protein', 'carbs', 'fat'].map(key => [key, Number((values[key] * 100 / values.grams).toFixed(3))]));
+            updated.per100ml = Object.fromEntries(['kcal', 'protein', 'carbs', 'fat'].map(key => [key,
+                Number((values[key] * 100 / values.grams).toFixed(3))]));
         }
         save(updated);
         close();

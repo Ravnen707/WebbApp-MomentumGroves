@@ -82,7 +82,8 @@ function setupFoodSearch(picker, food, refresh) {
                     }
                     : {
                         name, grams, unit: selectedUnit, per100g, source: currentSource, entryMode: 'search',
-                        ...Object.fromEntries(fields.map(key => [key, per100g[key] === null ? null : per100g[key] * grams / 100]))
+                        ...Object.fromEntries(fields.map(key => [key,
+                            per100g[key] === null ? null : per100g[key] * grams / 100]))
                     };
     }
 
@@ -101,7 +102,8 @@ function setupFoodSearch(picker, food, refresh) {
         const totals = Object.fromEntries(fields.map(key => [key,
             key === 'fiber' && !values.some(ingredient => ingredient.per100g[key] != null)
                 ? null
-                : values.reduce((total, ingredient) => total + (ingredient.per100g[key] || 0) * ingredient.grams / 100, 0)
+                : values.reduce((total, ingredient) => total + (ingredient.per100g[key] || 0) * ingredient.grams / 100,
+                    0)
         ]));
         return {grams, ...totals};
     }
@@ -159,7 +161,8 @@ function setupFoodSearch(picker, food, refresh) {
                 for (const key of fields) {
                     selectedRecipe[key] = key === 'fiber' && !originals.some(part => part[key] != null)
                         ? null
-                        : originals.reduce((total, part) => total + Number(part[key] ?? 0) * Number(part.amount) / 100, 0)
+                        : originals.reduce((total, part) => total + Number(part[key] ?? 0) * Number(part.amount) / 100,
+                            0)
                             * Number(selectedRecipe.grams) / finishedWeight;
                 }
             }
@@ -257,7 +260,10 @@ function setupFoodSearch(picker, food, refresh) {
         recipeWeightFactor = 1;
         form.elements.namedItem('grams').readOnly = false;
         setRecipeCustomizationVisible(false);
-        currentMode = (item.entryMode === 'recipe' || item.entryMode === 'recipe-custom') ? 'recipe' : item.entryMode === 'manual' || (['Manual entry', 'Manuel registrering'].includes(item.source) && !item.per100g) || (item.type !== 'drink' && !item.per100g && !item.source) ? 'manual' : 'search';
+        currentMode = (item.entryMode === 'recipe' || item.entryMode === 'recipe-custom')
+            ? 'recipe' : item.entryMode === 'manual' || (['Manual entry',
+            'Manuel registrering'].includes(item.source) && !item.per100g) || (item.type !== 'drink' && !item.per100g
+            && !item.source) ? 'manual' : 'search';
         selectedFoodPer100 = currentMode === 'search'
             ? Object.fromEntries(fields.map(key => [key,
                 item.per100g?.[key] ?? (item[key] == null ? null : Number(item[key]) * 100 / Number(item.grams || 100))
@@ -265,7 +271,9 @@ function setupFoodSearch(picker, food, refresh) {
             : null;
         const per100Heading = document.querySelector('#food-value-heading');
         if (per100Heading) {
-            per100Heading.textContent = currentMode === 'recipe' ? 'Nutrition for selected amount' : currentMode === 'manual' ? 'Total nutrition' : 'Nutrition for selected amount';
+            per100Heading.textContent = currentMode === 'recipe'
+                ? 'Nutrition for selected amount' : currentMode === 'manual'
+                ? 'Total nutrition' : 'Nutrition for selected amount';
         }
         for (const key of fields) {
             const value = currentMode === 'search'
@@ -273,7 +281,8 @@ function setupFoodSearch(picker, food, refresh) {
                 : item[key];
             form.elements.namedItem(key).value = value == null || !Number.isFinite(Number(value)) ? '' : round2(value);
         }
-        currentSource = ({'Manuel registrering': 'Manual entry', 'Mine opskrifter': 'My Recipes', 'Mine fødevarer': 'My Foods'})[item.source] || item.source || 'Manual entry';
+        currentSource = ({'Manuel registrering': 'Manual entry', 'Mine opskrifter': 'My Recipes',
+            'Mine fødevarer': 'My Foods'})[item.source] || item.source || 'Manual entry';
         if (!adjustingItem && ['My Recipes', 'Mine opskrifter'].includes(item.source)) {
             document.querySelector('#food-meal-name').value = item.name ?? '';
             const recipeIngredients = Array.isArray(item.recipeIngredients) ? item.recipeIngredients : [];
@@ -283,7 +292,8 @@ function setupFoodSearch(picker, food, refresh) {
         setText('#food-source', `Source: ${currentSource}.`);
         warning.textContent = '';
         results.replaceChildren();
-        document.querySelector('#food-editor-heading').textContent = currentMode === 'manual' ? 'Create food manually' : 'Selected food';
+        document.querySelector('#food-editor-heading').textContent = currentMode === 'manual'
+            ? 'Create food manually' : 'Selected food';
         if (item.entryMode === 'recipe-custom' && Array.isArray(item.ingredientItems)) {
             customizedRecipeIngredients = item.ingredientItems.map(ingredient => ({
                 name: ingredient.name,
@@ -390,7 +400,8 @@ function setupFoodSearch(picker, food, refresh) {
             name: ingredient.name,
             unit: ingredient.unit,
             grams: Number(ingredient.amount) * portion,
-            per100g: Object.fromEntries(fields.map(key => [key, ingredient[key] == null ? null : Number(ingredient[key])]))
+            per100g: Object.fromEntries(fields.map(key => [key,
+                ingredient[key] == null ? null : Number(ingredient[key])]))
         }));
         const rawWeight = customizedRecipeIngredients.reduce((sum, ingredient) => sum + ingredient.grams, 0);
         recipeWeightFactor = adjustingItem && rawWeight > 0 ? number('grams') / rawWeight : 1;
@@ -416,7 +427,8 @@ function setupFoodSearch(picker, food, refresh) {
             warning.textContent = 'Choose a food and enter all nutritional values.';
             return;
         }
-        if (customizedRecipeIngredients?.some(ingredient => !Number.isFinite(ingredient.grams) || ingredient.grams <= 0)) {
+        if (customizedRecipeIngredients?.some(ingredient => !Number.isFinite(ingredient.grams)
+            || ingredient.grams <= 0)) {
             warning.textContent = 'Check ingredient amounts.';
             return;
         }
@@ -453,8 +465,10 @@ function setupFoodSearch(picker, food, refresh) {
             search.value = '';
             results.replaceChildren();
             form.hidden = true;
-            status.textContent = searchSource === 'frida' ? 'Search DTU Frida.' : searchSource === 'recipes' ? 'Search your recipes.' : 'Search your saved foods.';
-            document.querySelectorAll('[data-food-source]').forEach(tab => tab.classList.toggle('active', tab === button));
+            status.textContent = searchSource === 'frida' ? 'Search DTU Frida.' : searchSource === 'recipes'
+                ? 'Search your recipes.' : 'Search your saved foods.';
+            document.querySelectorAll('[data-food-source]').forEach(tab => tab.classList.toggle('active',
+                tab === button));
             search.focus();
         });
     });
@@ -490,12 +504,14 @@ function setupFoodSearch(picker, food, refresh) {
                     throw Error(payload.message || 'Search is unavailable.');
                 }
                 const items = (Array.isArray(payload) ? payload : []).filter(item =>
-                    searchSource !== 'recipes' || (item.finishedWeight > 0 && item.name.toLowerCase().includes(q.toLowerCase())));
+                    searchSource !== 'recipes' || (item.finishedWeight > 0
+                        && item.name.toLowerCase().includes(q.toLowerCase())));
                 for (const item of items) {
                     const button = document.createElement('button');
                     button.type = 'button';
                     button.className = 'drink-result';
-                    button.textContent = item.name + ' · ' + (searchSource === 'recipes' ? 'Recipe' : searchSource === 'library' ? 'My Foods' : item.source);
+                    button.textContent = item.name + ' · ' + (searchSource === 'recipes'
+                        ? 'Recipe' : searchSource === 'library' ? 'My Foods' : item.source);
                     button.addEventListener('click', () => {
                         adjustingItem = null;
                         if (searchSource === 'recipes') {
@@ -532,7 +548,8 @@ function setupFoodSearch(picker, food, refresh) {
                     });
                     results.append(button);
                 }
-                status.textContent = items.length ? `${items.length} foods found.` : 'No foods found. You can create one manually.';
+                status.textContent = items.length
+                    ? `${items.length} foods found.` : 'No foods found. You can create one manually.';
             } catch (error) {
                 if (error.name === 'AbortError') {
                     return;
@@ -553,7 +570,8 @@ function setupFoodSearch(picker, food, refresh) {
             warning.textContent = 'Add at least one ingredient before saving the meal.';
             return;
         }
-        const sum = key => key === 'fiber' && !all.some(item => item.fiber != null) ? null : all.reduce((total, item) => total + (Number(item[key]) || 0), 0);
+        const sum = key => key === 'fiber' && !all.some(item => item.fiber != null) ? null : all.reduce((total,
+            item) => total + (Number(item[key]) || 0), 0);
         const nameInput = document.querySelector('#food-meal-name');
         const name = nameInput.value.trim();
         if (!name) {
@@ -567,11 +585,13 @@ function setupFoodSearch(picker, food, refresh) {
         }
         const grams = sum('grams');
         const item = {
-            id: editingEntry?.id ?? crypto.randomUUID(), date: editingEntry?.date ?? picker.value, name, type: 'food', grams,
+            id: editingEntry?.id ?? crypto.randomUUID(), date: editingEntry?.date ?? picker.value, name, type: 'food',
+                grams,
             notes: document.querySelector('#food-meal-notes').value.trim(),
             ingredients: all.map(entry => `${entry.name} (${fmt(entry.grams)} ${entry.unit || 'g'})`).join(', '),
             ingredientItems: all,
-            ...(grams > 0 ? {per100g: Object.fromEntries(fields.map(key => [key, sum(key) === null ? null : sum(key) * 100 / grams]))} : {}),
+            ...(grams > 0 ? {per100g: Object.fromEntries(fields.map(key => [key,
+                sum(key) === null ? null : sum(key) * 100 / grams]))} : {}),
             ...Object.fromEntries(fields.map(key => [key, sum(key) === null ? null : Number(sum(key).toFixed(3))]))
         };
         const entries = food();

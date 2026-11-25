@@ -1,11 +1,9 @@
-namespace MomentumGroves.DTO;
+namespace MomentumGroves.Models;
 
-/// <summary>
-/// Represents a locally stored food with nutrition per 100 g or 100 ml.
-/// </summary>
-public sealed class FoodDto
+/// <summary>A mobile food sent to the desktop library.</summary>
+public sealed class FoodSyncDto
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Unit { get; set; } = "g";
     public double Kcal { get; set; }

@@ -1,7 +1,8 @@
 import {read, write, DONE_KEY} from "../core/storage.js";
 import {esc, setText, localDate, shift, monday} from "../core/utils.js";
 import {selectedDate} from "../core/selected-date.js";
-import {PROGRAM_KEY, HISTORY_KEY, completedProgrammesThisWeek, readTrainingProgrammes, setProgrammeCompleted} from "../core/training-storage.js?v=weekly-completions";
+import {PROGRAM_KEY, HISTORY_KEY, completedProgrammesThisWeek, readTrainingProgrammes,
+    setProgrammeCompleted} from "../core/training-storage.js?v=weekly-completions";
 
 const exercise = name => ({
     id: crypto.randomUUID(),
@@ -19,6 +20,13 @@ function renderTraining() {
     const root = document.querySelector('#training-days');
     if (!root || root.dataset.initialized === 'true') return;
     root.dataset.initialized = 'true';
+    root.addEventListener('error', event => {
+        const image = event.target;
+        if (image instanceof HTMLImageElement && image.closest('.training-exercise-media')) {
+            image.classList.add('training-image-load-failed');
+            image.title = 'Image could not be loaded';
+        }
+    }, true);
     const tabs = document.querySelector('#training-program-tabs');
     const addBox = document.querySelector('#training-add-box');
     const saveButton = document.querySelector('#save-workouts');
@@ -45,7 +53,8 @@ function renderTraining() {
         const today = new Date(`${todayKey}T12:00:00`);
         const monthAgo = new Date(today);
         monthAgo.setDate(today.getDate() - 29);
-        const monthly = dates.filter(date => new Date(`${date}T12:00:00`) >= monthAgo && new Date(`${date}T12:00:00`) <= today).length;
+        const monthly = dates.filter(date => new Date(`${date}T12:00:00`) >= monthAgo
+            && new Date(`${date}T12:00:00`) <= today).length;
         const stats = document.querySelector('#training-progress-stats');
         if (!stats) return;
         const statsData = [
@@ -53,7 +62,8 @@ function renderTraining() {
             [dates.length, 'Total training days', 'calendar-days'],
             [records.length, 'Completed workouts', 'check-circle']
         ];
-        stats.innerHTML = statsData.map(([value, label]) => `<div class="training-stat"><strong>${value}</strong><span>${label}</span></div>`).join('');
+        stats.innerHTML = statsData.map(([value,
+            label]) => `<div class="training-stat"><strong>${value}</strong><span>${label}</span></div>`).join('');
         const currentMonday = monday(todayKey);
         const weekly = [];
         for (let index = 7; index >= 0; index--) {
@@ -72,7 +82,12 @@ function renderTraining() {
         const weeks = document.querySelector('#training-progress-weeks');
         if (!weeks) return;
         const maxCount = Math.max(3, ...weekly.map(x => x.count));
-        weeks.innerHTML = `<div class="training-chart-y"><span>${maxCount}</span><span>${Math.round(maxCount / 2)}</span><span>0</span></div><div class="training-chart-plot"><div class="training-chart-grid"></div>${weekly.map(x => `<div class="training-chart-column" title="${x.range} · ${x.count} training days"><strong>${x.count}</strong><div class="training-chart-bar" style="height:${x.count / maxCount * 100}%"></div><small>${x.label}</small></div>`).join('')}</div>`;
+        weeks.innerHTML = `<div class="training-chart-y"><span>${maxCount}</span>
+            <span>${Math.round(maxCount / 2)}</span><span>0</span></div><div class="training-chart-plot">
+            <div class="training-chart-grid"></div>${weekly.map(x => `<div class="training-chart-column"
+            title="${x.range} · ${x.count} training days"><strong>${x.count}</strong>
+            <div class="training-chart-bar" style="height:${x.count / maxCount * 100}%"></div>
+            <small>${x.label}</small></div>`).join('')}</div>`;
         const category = document.querySelector('#training-progress-category');
         const topic = document.querySelector('#training-progress-topic');
         const select = document.querySelector('#training-progress-exercise');
@@ -90,7 +105,8 @@ function renderTraining() {
         if (boxes.some(box => box.id === previousTopic)) topic.value = previousTopic;
         const box = boxes.find(item => item.id === topic.value);
         const names = (box?.exercises || []).map((item, index) => ({name: item.name, index})).filter(item => item.name);
-        select.replaceChildren(new Option('Choose an exercise', ''), ...names.map(item => new Option(item.name, String(item.index))));
+        select.replaceChildren(new Option('Choose an exercise', ''), ...names.map(item => new Option(item.name,
+            String(item.index))));
         if (names.some(item => String(item.index) === previous)) select.value = previous;
         const strength = document.querySelector('#training-progress-strength');
         const selectedIndex = Number(select.value);
@@ -101,7 +117,8 @@ function renderTraining() {
             return;
         }
         const values = snapshots.filter(x => x.date && x.boxId === box?.id)
-            .flatMap(x => x.exercises.filter(e => e.name === selected && Number(e.kg) > 0).map(e => ({date: x.date, ...e})))
+            .flatMap(x => x.exercises.filter(e => e.name === selected && Number(e.kg) > 0).map(e => ({date: x.date,
+                ...e})))
             .sort((a, b) => a.date.localeCompare(b.date));
         if (!values.length) {
             const matching = box?.exercises?.[selectedIndex];
@@ -112,7 +129,8 @@ function renderTraining() {
             if (matching) {
                 const current = document.createElement('p');
                 current.className = 'training-current-exercise';
-                current.textContent = `Current programme: ${matching.sets || 0} sets × ${matching.reps || 0} reps · ${matching.kg || 0} kg`;
+                current.textContent = `Current programme: ${matching.sets || 0} sets × ${matching.reps
+                    || 0} reps · ${matching.kg || 0} kg`;
                 strength.append(current);
             }
             return;
@@ -174,16 +192,20 @@ function renderTraining() {
         chart.append(svg);
         const description = document.createElement('p');
         description.className = 'muted tiny';
-        description.textContent = `${series.length} entries · latest ${series[series.length - 1].item.kg} kg · progress based on completed workouts`;
+        description.textContent = `${series.length} entries · latest ${series[series.length - 1].item.kg} kg · ` +
+            'progress based on completed workouts';
         strength.append(chart, description);
     };
     document.querySelector('#training-progress-category')?.addEventListener('change', () => {
-        if (document.querySelector('#training-progress-topic')) document.querySelector('#training-progress-topic').value = '';
-        if (document.querySelector('#training-progress-exercise')) document.querySelector('#training-progress-exercise').value = '';
+        if (document.querySelector('#training-progress-topic')) document.querySelector('#training-progress-topic')
+            .value = '';
+        if (document.querySelector('#training-progress-exercise')) document.querySelector('#training-progress-exercise')
+            .value = '';
         renderProgress();
     });
     document.querySelector('#training-progress-topic')?.addEventListener('change', () => {
-        if (document.querySelector('#training-progress-exercise')) document.querySelector('#training-progress-exercise').value = '';
+        if (document.querySelector('#training-progress-exercise')) document.querySelector('#training-progress-exercise')
+            .value = '';
         renderProgress();
     });
     document.querySelector('#training-progress-exercise')?.addEventListener('change', renderProgress);
@@ -307,7 +329,9 @@ function renderTraining() {
     const draw = () => {
         tabs.innerHTML = [...groups, {id: 'progress', name: 'Training progress'}].map(group => {
             const selected = group.id === active;
-            return `<button type="button" class="btn secondary${selected ? ' active' : ''}" role="tab" data-program="${esc(group.id)}" aria-selected="${selected}">${esc(group.name)}</button>`;
+            return `<button type="button" class="btn secondary${selected
+                ? ' active' : ''}" role="tab" data-program="${esc(group.id)}" aria-selected="${selected}">${esc(
+                group.name)}</button>`;
         }).join('');
         const progressMode = active === 'progress';
         document.querySelector('#training-progress').hidden = !progressMode;
@@ -330,18 +354,65 @@ function renderTraining() {
             const rows = box.exercises.map((x, i) => {
                 const cardio = x.type === 'cardio';
                 return `<article class="training-exercise-card" data-exercise-index="${i}">
-                    <div class="training-exercise-media">${x.image ? `<img src="${esc(x.image)}" alt="${esc(x.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.opacity=0.25;this.title='Image could not be loaded'"><span class="training-image-empty" hidden>Image could not be loaded – upload your own image</span>` : '<div class="training-image-empty">No image</div>'}
-                        <button type="button" class="training-image-upload" data-image-picker>${x.image ? 'Change image' : '+ Add image'}</button>
-                        ${x.image ? '<button type="button" class="training-image-remove" data-image-remove>Remove image</button>' : ''}</div>
-                    <div class="training-exercise-content"><div class="training-exercise-heading"><input data-field="name" aria-label="Exercise name" value="${esc(x.name || '')}"><div class="training-exercise-tools"><button type="button" class="btn secondary" data-exercise-move="up" title="Move up" ${i === 0 ? 'disabled' : ''}>↑</button><button type="button" class="btn secondary" data-exercise-move="down" title="Move down" ${i === box.exercises.length - 1 ? 'disabled' : ''}>↓</button><button type="button" class="btn danger" data-remove-exercise aria-label="Delete exercise">×</button></div></div>
-                        <textarea data-field="description" rows="2" placeholder="Brief exercise description">${esc(x.description || '')}</textarea>
-                        <div class="training-exercise-inputs ${cardio ? 'is-cardio' : ''}"><label>Type<select data-field="type"><option value="strength" ${!cardio ? 'selected' : ''}>Styrke</option><option value="cardio" ${cardio ? 'selected' : ''}>Cardio</option></select></label>
-                        <label class="training-strength-field">Sets<input data-field="sets" type="number" min="0" step="1" value="${Number(x.sets) || 0}"></label>
-                        <label class="training-strength-field">Reps<input data-field="reps" type="text" value="${esc(String(x.reps ?? ''))}"></label>
-                        <label class="training-strength-field">Kg<input data-field="kg" type="number" min="0" step="0.5" value="${Number(x.kg) || 0}"></label>
-                        <label class="training-cardio-field">Minutter<input data-field="minutes" type="number" min="0" step="1" value="${Number(x.minutes) || 0}"></label></div></div></article>`;
+                    <div class="training-exercise-media">
+                        ${x.image ? `
+                            <img src="${esc(x.image)}" alt="${esc(x.name)}" loading="lazy" referrerpolicy="no-referrer">
+                            <span class="training-image-empty" hidden>
+                                Image could not be loaded – upload your own image
+                            </span>` : '<div class="training-image-empty">No image</div>'}
+                        <button type="button" class="training-image-upload" data-image-picker>${x.image
+                            ? 'Change image' : '+ Add image'}</button>
+                        ${x.image
+                            ? `<button type="button" class="training-image-remove"
+                                data-image-remove>Remove image</button>`
+                            : ''}
+                    </div>
+                    <div class="training-exercise-content"><div class="training-exercise-heading">
+                        <input data-field="name" aria-label="Exercise name" value="${esc(x.name || '')}">
+                        <div class="training-exercise-tools">
+                        <button type="button" class="btn secondary" data-exercise-move="up"
+                        title="Move up" ${i === 0 ? 'disabled' : ''}>↑</button>
+                        <button type="button" class="btn secondary" data-exercise-move="down"
+                        title="Move down" ${i === box.exercises.length - 1 ? 'disabled' : ''}>↓</button>
+                        <button type="button" class="btn danger" data-remove-exercise
+                        aria-label="Delete exercise">×</button></div></div>
+                        <textarea data-field="description" rows="2" placeholder="Brief exercise description">${esc(
+                            x.description || '')}</textarea>
+                        <div class="training-exercise-inputs ${cardio
+                            ? 'is-cardio' : ''}"><label>Type<select data-field="type"><option value="strength" ${!cardio
+                            ? 'selected' : ''}>Styrke</option><option value="cardio" ${cardio
+                            ? 'selected' : ''}>Cardio</option></select></label>
+                        <label class="training-strength-field">Sets<input data-field="sets" type="number" min="0"
+                            step="1" value="${Number(x.sets) || 0}"></label>
+                        <label class="training-strength-field">Reps<input data-field="reps" type="text" value="${esc(
+                            String(x.reps ?? ''))}"></label>
+                        <label class="training-strength-field">Kg<input data-field="kg" type="number" min="0" step="0.5"
+                            value="${Number(x.kg) || 0}"></label>
+                        <label class="training-cardio-field">Minutter<input data-field="minutes" type="number" min="0"
+                            step="1" value="${Number(x.minutes) || 0}"></label></div></div></article>`;
             }).join('');
-            return `<section class="panel training-edit-box" data-box-id="${esc(box.id)}"><div class="training-title"><div class="training-box-heading"><label>Name<input data-title value="${esc(box.title)}"></label><label>Focus / description<input data-subtitle value="${esc(box.subtitle || '')}"></label></div><div class="training-box-controls"><button type="button" class="btn secondary" data-move="up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" class="btn secondary" data-move="down" ${index === programmes.length - 1 ? 'disabled' : ''}>↓</button><button type="button" class="btn danger" data-remove-box>Delete programme</button><label><input class="check" type="checkbox" data-done ${completed.has(String(box.id)) ? 'checked' : ''}> Completed</label></div></div><div class="training-exercise-list">${rows}</div><button type="button" class="btn secondary" data-add-exercise>+ Add exercise / cardio</button></section>`;
+            return `
+                <section class="panel training-edit-box" data-box-id="${esc(box.id)}">
+                    <div class="training-title">
+                        <div class="training-box-heading">
+                            <label>Name<input data-title value="${esc(box.title)}"></label>
+                            <label>Focus / description<input data-subtitle value="${esc(box.subtitle || '')}"></label>
+                        </div>
+                        <div class="training-box-controls">
+                            <button type="button" class="btn secondary" data-move="up"
+                                ${index === 0 ? 'disabled' : ''}>↑</button>
+                            <button type="button" class="btn secondary" data-move="down"
+                                ${index === programmes.length - 1 ? 'disabled' : ''}>↓</button>
+                            <button type="button" class="btn danger" data-remove-box>Delete programme</button>
+                            <label>
+                                <input class="check" type="checkbox" data-done
+                                    ${completed.has(String(box.id)) ? 'checked' : ''}> Completed
+                            </label>
+                        </div>
+                    </div>
+                    <div class="training-exercise-list">${rows}</div>
+                    <button type="button" class="btn secondary" data-add-exercise>+ Add exercise / cardio</button>
+                </section>`;
         }).join('') || '<p class="muted">No programmes yet. Press + Add programme.</p>';
         root.querySelectorAll('[data-box-id]').forEach(section => {
             const id = section.dataset.boxId;
@@ -374,9 +445,11 @@ function renderTraining() {
                 collect();
                 persist();
             }));
-            section.querySelectorAll('[data-remove-exercise]').forEach(button => button.addEventListener('click', () => {
+            section.querySelectorAll('[data-remove-exercise]').forEach(button => button.addEventListener('click',
+                () => {
                 collect();
-                programmes[find()].exercises.splice(Number(button.closest('[data-exercise-index]').dataset.exerciseIndex), 1);
+                programmes[find()].exercises.splice(Number(button.closest('[data-exercise-index]')
+                    .dataset.exerciseIndex), 1);
                 persist();
                 draw();
             }));
@@ -391,7 +464,8 @@ function renderTraining() {
             }));
             section.querySelectorAll('[data-image-remove]').forEach(button => button.addEventListener('click', () => {
                 collect();
-                const selectedExercise = programmes[find()].exercises[Number(button.closest('[data-exercise-index]').dataset.exerciseIndex)];
+                const selectedExercise =
+                    programmes[find()].exercises[Number(button.closest('[data-exercise-index]').dataset.exerciseIndex)];
                 selectedExercise.image = '';
                 selectedExercise.imageRemoved = true;
                 persist();
@@ -412,7 +486,8 @@ function renderTraining() {
                 persist();
                 draw();
             }));
-            section.querySelectorAll('[data-title],[data-subtitle],[data-field]').forEach(input => input.addEventListener('change', () => {
+            section.querySelectorAll('[data-title],[data-subtitle],[data-field]').forEach(input =>
+                input.addEventListener('change', () => {
                 collect();
                 persist();
             }));

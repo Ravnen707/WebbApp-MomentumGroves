@@ -1,7 +1,7 @@
 @model MomentumGroves.Models.DatabaseInitializationStatus
 <div id="database-setup-overlay" class="database-setup-overlay">
     <section class="database-setup-dialog" role="dialog" aria-modal="true"
-             aria-labelledby="database-setup-title" aria-describedby="database-setup-description">
+        aria-labelledby="database-setup-title" aria-describedby="database-setup-description">
         <h2 id="database-setup-title">Database initialization</h2>
         @if (ViewData.ModelState.IsValid && !Model.RequiresLocalSetup)
         {

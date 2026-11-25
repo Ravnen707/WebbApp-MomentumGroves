@@ -1,10 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using MomentumGroves.Repository;
 using MomentumGroves.Helper;
 using MomentumGroves.Models;
-using MomentumGroves.DTO;
+using MomentumGroves.Repositories;
 
 namespace MomentumGroves.Service;
 
@@ -17,13 +16,25 @@ public sealed class MobileFoodSyncService
     private readonly IConfiguration _configuration;
     private readonly MobileFoodSyncRepository _repository;
 
-    public MobileFoodSyncService(IConfiguration configuration, MobileFoodSyncRepository repository, ILogger<MobileFoodSyncService> logger)
+    /// <summary>
+    /// Initializes authorization, validation, and logging for mobile food imports.
+    /// </summary>
+    /// <param name="configuration">The settings that supply the mobile synchronization key.</param>
+    /// <param name="repository">The repository that persists mobile food imports.</param>
+    /// <param name="logger">The logger for diagnostics and operation failures.</param>
+    public MobileFoodSyncService(IConfiguration configuration, MobileFoodSyncRepository repository,
+        ILogger<MobileFoodSyncService> logger)
     {
         _logger = logger;
         _configuration = configuration;
         _repository = repository;
     }
 
+    /// <summary>
+    /// Checks the mobile synchronization key against the configured key.
+    /// </summary>
+    /// <param name="suppliedKey">The synchronization key supplied in the request.</param>
+    /// <returns>True when the supplied key matches the configured synchronization key.</returns>
     public bool IsAuthorized(string suppliedKey)
     {
         var expectedKey = _configuration["MobileSync:Key"];
@@ -54,6 +65,9 @@ public sealed class MobileFoodSyncService
     /// <summary>
     /// Deserializes a food batch while accepting either decimal separator in numeric strings.
     /// </summary>
+    /// <param name="payload">The raw JSON food import batch.</param>
+    /// <param name="foods">Receives the deserialized food batch when the payload has a supported shape.</param>
+    /// <returns>True when the payload could be interpreted as a food batch.</returns>
     public bool TryDeserializeBatch(JsonElement payload, out List<FoodSyncDto>? foods)
     {
         foods = null;
@@ -71,6 +85,11 @@ public sealed class MobileFoodSyncService
         }
     }
 
+    /// <summary>
+    /// Checks batch size and validates each submitted mobile food.
+    /// </summary>
+    /// <param name="foods">The foods submitted for import.</param>
+    /// <returns>True when the batch size and all food details are valid.</returns>
     public bool IsValidBatch(List<FoodSyncDto>? foods)
     {
         if (foods == null || foods.Count > 500)
@@ -91,8 +110,7 @@ public sealed class MobileFoodSyncService
             if (new[]
                 {
                     food.Kcal, food.Protein, food.Carbs, food.Fat, food.Fiber ?? 0
-                }.Any(value =>
-                    !double.IsFinite(value) || value < 0))
+                }.Any(value => !double.IsFinite(value) || value < 0))
             {
                 _logger.LogWarning("Mobile food batch rejected: nutrition values must be finite and non-negative");
                 return false;
@@ -102,6 +120,11 @@ public sealed class MobileFoodSyncService
         return true;
     }
 
+    /// <summary>
+    /// Imports a validated mobile food batch and logs storage failures.
+    /// </summary>
+    /// <param name="foods">The foods submitted for import.</param>
+    /// <returns>The counts and acknowledged IDs from the import.</returns>
     public MobileFoodImportResult Import(List<FoodSyncDto> foods)
     {
         try

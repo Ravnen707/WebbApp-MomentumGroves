@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using MomentumGroves.Models;
 using MomentumGroves.Service;
-using MomentumGroves.DTO;
 
 namespace MomentumGroves.Controllers;
 
@@ -16,7 +15,7 @@ public sealed class MobileFoodSyncController : ControllerBase
     /// <summary>
     /// Initializes the mobile food synchronization controller.
     /// </summary>
-    /// <param name="service"></param>
+    /// <param name="service">The application service that performs the requested operation.</param>
     public MobileFoodSyncController(MobileFoodSyncService service)
     {
         _service = service;
@@ -25,8 +24,8 @@ public sealed class MobileFoodSyncController : ControllerBase
     /// <summary>
     /// Imports new foods and acknowledges existing names without modifying them.
     /// </summary>
-    /// <param name="payload"></param>
-    /// <returns></returns>
+    /// <param name="payload">The raw JSON food import batch.</param>
+    /// <returns>The import acknowledgements or a rejected request.</returns>
     [HttpPost("import")]
     public ActionResult<MobileFoodImportResult> Import([FromBody] JsonElement payload)
     {

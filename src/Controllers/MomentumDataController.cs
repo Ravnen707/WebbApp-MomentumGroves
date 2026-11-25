@@ -12,7 +12,7 @@ public sealed class MomentumDataController : ControllerBase
     /// <summary>
     /// Initializes the momentum data controller.
     /// </summary>
-    /// <param name="service"></param>
+    /// <param name="service">The application service that performs the requested operation.</param>
     public MomentumDataController(MomentumDataService service)
     {
         _service = service;
@@ -21,8 +21,8 @@ public sealed class MomentumDataController : ControllerBase
     /// <summary>
     /// Returns all saved momentum data.
     /// </summary>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>The saved application values as JSON.</returns>
     [HttpGet]
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
@@ -32,10 +32,10 @@ public sealed class MomentumDataController : ControllerBase
     /// <summary>
     /// Saves a momentum data value and handles validation errors.
     /// </summary>
-    /// <param name="key"></param>
-    /// <param name="value"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <param name="key">The application data key to validate or update.</param>
+    /// <param name="value">The supplied value to process.</param>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>No content after saving or a validation error.</returns>
     [HttpPut("{key}")]
     public async Task<IActionResult> Put(string key, [FromBody] JsonElement value, CancellationToken cancellationToken)
     {
@@ -53,11 +53,12 @@ public sealed class MomentumDataController : ControllerBase
     /// <summary>
     /// Imports missing momentum data values and handles validation errors.
     /// </summary>
-    /// <param name="values"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <param name="values">The submitted values keyed by application data key.</param>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>The number of values imported or a validation error.</returns>
     [HttpPost("import")]
-    public async Task<IActionResult> Import([FromBody] Dictionary<string, JsonElement> values, CancellationToken cancellationToken)
+    public async Task<IActionResult> Import([FromBody] Dictionary<string, JsonElement> values,
+        CancellationToken cancellationToken)
     {
         try
         {

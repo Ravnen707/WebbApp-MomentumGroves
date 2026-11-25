@@ -17,21 +17,21 @@
     <p class="muted tiny">Time-adjusted exponential moving average of your weigh-ins</p></section>
   <section class="panel weight-goal-card">
     <div class="weight-goal-card-title"><small>Milestone</small><label class="weight-goal-toggle"><input type="checkbox"
-                                                                                                      id="weight-milestone-enabled"
-                                                                                                      aria-label="Use milestone"/>
+        id="weight-milestone-enabled"
+        aria-label="Use milestone"/>
         Use milestone</label></div>
     <form id="weight-milestone-form" class="weight-inline-goal-form">
       <label class="weight-goal-input-label"><input type="text" inputmode="decimal" name="milestone" min="20" max="500"
-                                                    step="0.1"
-                                                    placeholder="e.g. 110" aria-label="Milestone in kg"
-                                                    required/><span>kg</span></label>
+          step="0.1"
+          placeholder="e.g. 110" aria-label="Milestone in kg"
+          required/><span>kg</span></label>
       <button type="submit" class="btn secondary">Save</button>
     </form>
     <p class="muted tiny" id="weight-milestone-detail">No milestone set</p>
   </section>
   <section class="panel weight-goal-card">
-    <div class="weight-goal-card-title"><small>Final goal</small><span class="weight-goal-default"
-                                                                         id="weight-final-selected">Default</span>
+    <div class="weight-goal-card-title"><small>Final goal</small>
+        <span class="weight-goal-default" id="weight-final-selected">Default</span>
     </div>
     <strong id="weight-final-goal">–</strong>
     <p class="muted tiny" id="weight-final-detail">From Health & Nutrition Calculator</p>
@@ -48,8 +48,8 @@
         <label><input type="radio" name="status" value="skipped"/> Not weighed</label>
       </div>
       <label id="weight-input-wrap">Weight (kg) <input type="text" inputmode="decimal" name="weight" min="20" max="500"
-                                                     step="0.1"
-                                                     placeholder="e.g. 115,2" required/></label>
+          step="0.1"
+          placeholder="e.g. 115,2" required/></label>
       <div class="weight-actions">
         <button class="btn" type="submit">Save entry</button>
         <button class="btn secondary" type="button" id="weight-delete">Delete selected date</button>
@@ -61,13 +61,17 @@
     <h2>Estimated goal date</h2>
     <strong class="weight-forecast" id="weight-forecast">–</strong>
     <p id="weight-forecast-detail" class="muted"></p>
-    <p class="muted tiny">A rough estimate based on logged weigh-ins, rather than a professional or medical assessment. Your future weight trend may change.</p>
+    <p
+        class="muted tiny">A rough estimate based on logged weigh-ins, rather than a professional or medical assessment.
+        Your future weight trend may change.</p>
   </section>
 </div>
 <section class="panel weight-chart-panel">
   <div class="weight-chart-header">
     <div><h2>Weight chart</h2>
-      <p class="muted tiny">Blue points show weigh-ins and orange points show the calculated weight trend. Hover over a point for details.</p></div>
+      <p
+          class="muted tiny">Blue points show weigh-ins and orange points show the calculated weight trend. Hover over a
+          point for details.</p></div>
     <div class="weight-period-controls" aria-label="Choose chart period">
       <button type="button" class="btn secondary" id="weight-period-prev" aria-label="Previous month">‹</button>
       <span id="weight-period-label" aria-live="polite"></span>
@@ -75,10 +79,14 @@
       <button type="button" class="btn secondary" id="weight-period-today">Today</button>
     </div>
   </div>
-  <div class="weight-legend"><span class="weight-dot"></span> Actual weight <span class="weight-line"></span> Estimated weight trend
+  <div class="weight-legend"><span class="weight-dot"></span> Actual weight <span class="weight-line">
+      </span> Estimated weight trend
   </div>
   <div id="weight-chart" class="weight-chart" role="img" aria-label="Weight chart"></div>
-  <p class="muted tiny">The chart shows last week and this week by default. Move backwards or forwards one week at a time. Your full history is kept in SQLite. Days marked “Not weighed” add no measurement points. Lines connect logged weigh-ins only.</p>
+  <p
+      class="muted tiny">The chart shows last week and this week by default. Move backwards or forwards one week at a
+      time. Your full history is kept in SQLite. Days marked “Not weighed” add no measurement points. Lines connect
+      logged weigh-ins only.</p>
 </section>
 <section class="panel"><h2>Entries</h2>
   <div id="weight-history" class="weight-history"></div>

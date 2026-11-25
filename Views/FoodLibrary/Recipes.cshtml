@@ -6,11 +6,14 @@
         <label>Recipe name *<input name="name" maxlength="200" required></label>
         <h3>Ingredients</h3>
         <div id="library-recipe-ingredients" class="library-results library-recipe-rows"></div>
-        <label>Find an ingredient in My Foods<input id="library-recipe-search" type="search"
-                                                      placeholder="Search for a saved food..."></label>
+        <label>Find an ingredient in My Foods
+            <input id="library-recipe-search" type="search" placeholder="Search for a saved food...">
+        </label>
         <div id="library-recipe-food-results" class="library-results"></div>
-        <label>Meal weight (g)<input name="finishedWeight" type="text" inputmode="decimal" min="0.001" step="any"
-                                        placeholder="Weight before or after cooking"></label>
+        <label>Meal weight (g)
+            <input name="finishedWeight" type="text" inputmode="decimal" min="0.001" step="any"
+                placeholder="Weight before or after cooking">
+        </label>
         <section class="recipe-live-nutrition" aria-label="Calculated nutrition">
             <h3>Nutrition for selected ingredient amounts</h3>
             <div class="recipe-live-nutrition-grid">
@@ -21,10 +24,12 @@
                 <div><span>Fibre</span><strong id="recipe-live-fiber">–</strong></div>
                 <div><span>Ingredient weight</span><strong id="recipe-live-weight">0 g</strong></div>
             </div>
-            <p class="muted tiny">Totals for the ingredients, rather than per 100 g. Meal weight can be before or after cooking.</p>
+            <p
+                class="muted tiny">Totals for the ingredients, rather than per 100 g. Meal weight can be before or after
+                cooking.</p>
         </section>
         <div class="library-recipe-status"><span>Status</span><span id="library-recipe-preview"
-                                                                    class="library-status-badge">Waiting for ingredients and meal weight</span>
+            class="library-status-badge">Waiting for ingredients and meal weight</span>
         </div>
         <div class="library-actions">
             <button class="btn" type="submit">Save recipe</button>
