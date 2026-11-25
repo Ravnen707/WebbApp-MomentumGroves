@@ -28,10 +28,17 @@
                 <div asp-validation-summary="ModelOnly" class="database-setup-error" role="alert"></div>
             }
 
-            <form method="post" asp-route="SubmitDatabaseSetup">
+            <form id="database-setup-form" method="post" asp-route="SubmitDatabaseSetup">
                 <input type="hidden" name="showSetupModal" value="true"/>
                 <button type="submit" class="btn" id="database-setup-confirm" autofocus>Create SQLite databases</button>
             </form>
+            <div id="database-setup-loading" class="loading" role="status" aria-live="polite" hidden>
+                <span class="spinner" aria-hidden="true"></span>
+                <div>
+                    <strong>Creating SQLite databases…</strong>
+                    <p>Keep this page open.</p>
+                </div>
+            </div>
         }
     </section>
 </div>

@@ -9,9 +9,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Database setup – Momentum Groves</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true"/>
     <link rel="stylesheet" href="~/css/modals/database-initialization.css" asp-append-version="true"/>
 </head>
 <body>
 <partial name="~/Views/Shared/Modals/_DatabaseInitializationModal.cshtml" model="Model"/>
+@if (Model.RequiresLocalSetup || !ViewData.ModelState.IsValid)
+{
+    <script>
+        (() => {
+            const form = document.getElementById('database-setup-form');
+            const button = document.getElementById('database-setup-confirm');
+            const loading = document.getElementById('database-setup-loading');
+
+            form.addEventListener('submit', (event) => {
+                if (button.disabled) {
+                    event.preventDefault();
+                    return;
+                }
+
+                button.disabled = true;
+                loading.hidden = false;
+            });
+
+            window.addEventListener('pageshow', () => {
+                button.disabled = false;
+                loading.hidden = true;
+            });
+        })();
+    </script>
+}
 </body>
 </html>
