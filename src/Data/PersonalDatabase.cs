@@ -14,14 +14,21 @@ public sealed class PersonalDatabase : IDisposable
     /// The creation timestamp assigned to recipes saved before SQLite tracked that field.
     /// </summary>
     internal const string LegacyRecipeCreatedUtc = "2026-09-30T22:00:00.000Z";
+
     /// <summary>
     /// The shared PostgreSQL connection pool when Supabase is configured.
     /// </summary>
     private readonly NpgsqlDataSource? _postgres;
+
     /// <summary>
     /// Runs PostgreSQL schema initialization once per provider instance.
     /// </summary>
     private readonly Lazy<bool> _postgresSchema;
+
+    private readonly bool _allowImplicitSqliteCreation;
+
+    internal const string StateFile = "momentum.db";
+    internal const string LibraryFile = "food_and_recipes.db";
 
     /// <summary>
     /// Selects the storage provider for personal data.
@@ -29,9 +36,12 @@ public sealed class PersonalDatabase : IDisposable
     /// <param name="directory">The application's local data directory.</param>
     /// <param name="supabase">The PostgreSQL connection string. An empty or missing value selects SQLite.</param>
     /// <param name="mobileDataApiEnabled">Preserves the manually granted mobile API schema access.</param>
-    public PersonalDatabase(string directory, string? supabase = null, bool mobileDataApiEnabled = false)
+    /// <param name="allowImplicitSqliteCreation">Allows callers outside the web setup flow to create SQLite files.</param>
+    public PersonalDatabase(string directory, string? supabase = null, bool mobileDataApiEnabled = false,
+        bool allowImplicitSqliteCreation = true)
     {
         DirectoryPath = directory;
+        _allowImplicitSqliteCreation = allowImplicitSqliteCreation;
         MobileDataApiEnabled = mobileDataApiEnabled && !string.IsNullOrWhiteSpace(supabase);
         if (!string.IsNullOrWhiteSpace(supabase))
         {
@@ -61,6 +71,7 @@ public sealed class PersonalDatabase : IDisposable
     /// The directory containing the application's local data files.
     /// </summary>
     public string DirectoryPath { get; }
+
     /// <summary>
     /// Whether PostgreSQL is configured for personal data.
     /// </summary>
@@ -91,11 +102,19 @@ public sealed class PersonalDatabase : IDisposable
         if (_postgres is not null)
             return _postgres.CreateConnection();
 
-        Directory.CreateDirectory(DirectoryPath);
+        if (_allowImplicitSqliteCreation)
+            Directory.CreateDirectory(DirectoryPath);
+        return CreateSqliteConnection(file, _allowImplicitSqliteCreation);
+    }
+
+    private SqliteConnection CreateSqliteConnection(string file, bool create, bool pooling = true)
+    {
         return new SqliteConnection(new SqliteConnectionStringBuilder
         {
             DataSource = Path.Combine(DirectoryPath, file),
-            ForeignKeys = true
+            ForeignKeys = true,
+            Mode = create ? SqliteOpenMode.ReadWriteCreate : SqliteOpenMode.ReadWrite,
+            Pooling = pooling
         }.ToString());
     }
 
@@ -143,7 +162,12 @@ public sealed class PersonalDatabase : IDisposable
             return;
         }
 
-        using var connection = Open("momentum.db");
+        using var connection = Open(StateFile);
+        InitializeStateSchema(connection);
+    }
+
+    private static void InitializeStateSchema(DbConnection connection)
+    {
         Execute(connection, null, """
                                   CREATE TABLE IF NOT EXISTS AppState (
                                       Key TEXT PRIMARY KEY NOT NULL, JsonValue TEXT NOT NULL,
@@ -163,7 +187,12 @@ public sealed class PersonalDatabase : IDisposable
             return;
         }
 
-        using var connection = Open("food_and_recipes.db");
+        using var connection = Open(LibraryFile);
+        InitializeLibrarySchema(connection);
+    }
+
+    private static void InitializeLibrarySchema(DbConnection connection)
+    {
         using var transaction = connection.BeginTransaction();
         Execute(connection, transaction, """
                                          CREATE TABLE IF NOT EXISTS CustomFoods (
@@ -192,6 +221,37 @@ public sealed class PersonalDatabase : IDisposable
                 $"ALTER TABLE Recipes ADD COLUMN CreatedUtc TEXT NOT NULL DEFAULT '{LegacyRecipeCreatedUtc}'");
 
         transaction.Commit();
+    }
+
+    internal void CreateMissingSqliteDatabases()
+    {
+        CreateMissingSqliteDatabase(StateFile, InitializeStateSchema);
+        CreateMissingSqliteDatabase(LibraryFile, InitializeLibrarySchema);
+    }
+
+    private void CreateMissingSqliteDatabase(string file, Action<DbConnection> initialize)
+    {
+        var destination = Path.Combine(DirectoryPath, file);
+        if (File.Exists(destination))
+            return;
+
+        Directory.CreateDirectory(DirectoryPath);
+        var temporaryFile = $"{file}.{Guid.NewGuid():N}.tmp";
+        var temporaryPath = Path.Combine(DirectoryPath, temporaryFile);
+        try
+        {
+            using (var connection = CreateSqliteConnection(temporaryFile, create: true, pooling: false))
+            {
+                connection.Open();
+                initialize(connection);
+            }
+
+            File.Move(temporaryPath, destination);
+        }
+        finally
+        {
+            File.Delete(temporaryPath);
+        }
     }
 
     /// <summary>
@@ -233,27 +293,27 @@ public sealed class PersonalDatabase : IDisposable
                                          """);
         var preserveMobileSchemaGrant = mobileDataApiEnabled ? "TRUE" : "FALSE";
         Execute(connection, transaction, $"""
-            REVOKE ALL ON SCHEMA momentum_groves FROM PUBLIC;
-            REVOKE ALL ON ALL TABLES IN SCHEMA momentum_groves FROM PUBLIC;
-            REVOKE ALL ON ALL SEQUENCES IN SCHEMA momentum_groves FROM PUBLIC;
-            DO $private$
-            DECLARE role_name text;
-            BEGIN
-                FOR role_name IN SELECT rolname FROM pg_roles
-                    WHERE rolname IN ('anon', 'authenticated', 'service_role', 'authenticator')
-                LOOP
-                    EXECUTE format('REVOKE ALL ON ALL TABLES IN SCHEMA momentum_groves FROM %I', role_name);
-                    EXECUTE format('REVOKE ALL ON ALL SEQUENCES IN SCHEMA momentum_groves FROM %I', role_name);
-                    IF role_name <> 'authenticated' OR NOT {preserveMobileSchemaGrant} THEN
-                        EXECUTE format('REVOKE ALL ON SCHEMA momentum_groves FROM %I', role_name);
-                        IF has_schema_privilege(role_name, 'momentum_groves', 'USAGE') THEN
-                            RAISE EXCEPTION 'A Data API role still has access to the private schema';
-                        END IF;
-                    END IF;
-                END LOOP;
-            END;
-            $private$;
-            """);
+                                          REVOKE ALL ON SCHEMA momentum_groves FROM PUBLIC;
+                                          REVOKE ALL ON ALL TABLES IN SCHEMA momentum_groves FROM PUBLIC;
+                                          REVOKE ALL ON ALL SEQUENCES IN SCHEMA momentum_groves FROM PUBLIC;
+                                          DO $private$
+                                          DECLARE role_name text;
+                                          BEGIN
+                                              FOR role_name IN SELECT rolname FROM pg_roles
+                                                  WHERE rolname IN ('anon', 'authenticated', 'service_role', 'authenticator')
+                                              LOOP
+                                                  EXECUTE format('REVOKE ALL ON ALL TABLES IN SCHEMA momentum_groves FROM %I', role_name);
+                                                  EXECUTE format('REVOKE ALL ON ALL SEQUENCES IN SCHEMA momentum_groves FROM %I', role_name);
+                                                  IF role_name <> 'authenticated' OR NOT {preserveMobileSchemaGrant} THEN
+                                                      EXECUTE format('REVOKE ALL ON SCHEMA momentum_groves FROM %I', role_name);
+                                                      IF has_schema_privilege(role_name, 'momentum_groves', 'USAGE') THEN
+                                                          RAISE EXCEPTION 'A Data API role still has access to the private schema';
+                                                      END IF;
+                                                  END IF;
+                                              END LOOP;
+                                          END;
+                                          $private$;
+                                          """);
     }
 
     /// <summary>

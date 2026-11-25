@@ -1,0 +1,17 @@
+@model MomentumGroves.Models.DatabaseInitializationStatus
+@{
+    Layout = null;
+}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Database setup – Momentum Groves</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/css/modals/database-initialization.css" asp-append-version="true"/>
+</head>
+<body>
+<partial name="~/Views/Shared/Modals/_DatabaseInitializationModal.cshtml" model="Model"/>
+</body>
+</html>

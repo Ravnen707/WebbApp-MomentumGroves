@@ -2,6 +2,7 @@ using MomentumGroves.Data.TrainingImages;
 using MomentumGroves.Data;
 using MomentumGroves.Repository;
 using MomentumGroves.Service;
+using Microsoft.AspNetCore.Mvc.Controllers;
 
 MomentumGroves.Helper.DotEnvLoader.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
 var migrate = args.FirstOrDefault() == "migrate-sqlite";
@@ -18,7 +19,8 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton(services => new PersonalDatabase(
     Path.Combine(services.GetRequiredService<IWebHostEnvironment>().ContentRootPath, "src", "Data"),
     services.GetRequiredService<IConfiguration>().GetConnectionString("Supabase"),
-    services.GetRequiredService<IConfiguration>().GetValue<bool>("MobileDataApi:Enabled")));
+    services.GetRequiredService<IConfiguration>().GetValue<bool>("MobileDataApi:Enabled"),
+    allowImplicitSqliteCreation: false));
 builder.Services.AddSingleton<DatabaseInitializationService>();
 builder.Services.AddScoped<MomentumGroves.Service.DrinkService>();
 builder.Services.AddScoped<MomentumGroves.Service.FoodService>();
@@ -33,7 +35,8 @@ builder.Services.AddHttpClient<SupabaseTrainingImageStore>(client => client.Time
 builder.Services.AddSingleton(services => new TrainingImageService(
     services.GetRequiredService<IWebHostEnvironment>(),
     services.GetRequiredService<PersonalDatabase>().UsesPostgres
-        ? services.GetRequiredService<SupabaseTrainingImageStore>() : null));
+        ? services.GetRequiredService<SupabaseTrainingImageStore>()
+        : null));
 builder.Services.AddHttpClient<MomentumGroves.Service.FridaUpdateService>(client =>
 {
     client.Timeout = TimeSpan.FromMinutes(3);
@@ -53,8 +56,6 @@ if (migrateImages)
     return;
 }
 
-// Capture file existence before any other application service can create a database.
-_ = app.Services.GetRequiredService<MomentumGroves.Service.DatabaseInitializationService>();
 app.Services.GetRequiredService<PersonalDatabase>().InitializePostgres();
 if (!app.Environment.IsDevelopment())
 {
@@ -90,8 +91,34 @@ else
 {
     app.UseHttpsRedirection();
 }
+
 app.UseStaticFiles();
 app.UseRouting();
+app.Use(async (context, next) =>
+{
+    var action = context.GetEndpoint()?.Metadata.GetMetadata<ControllerActionDescriptor>();
+    if (action is null || action.ControllerTypeInfo.AsType() ==
+        typeof(MomentumGroves.Controllers.DatabaseInitializationController) ||
+        !context.RequestServices.GetRequiredService<DatabaseInitializationService>().GetStatus().RequiresLocalSetup)
+    {
+        await next();
+        return;
+    }
+
+    var route = action.AttributeRouteInfo?.Template;
+    var isApi = route?.Split('/').Contains("api", StringComparer.OrdinalIgnoreCase) == true;
+    if (!isApi && HttpMethods.IsGet(context.Request.Method))
+    {
+        var setupUrl = context.RequestServices.GetRequiredService<LinkGenerator>()
+            .GetPathByAction(context, "Index", "DatabaseInitialization")!;
+        context.Response.Redirect(setupUrl);
+        return;
+    }
+
+    context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+    await context.Response.WriteAsJsonAsync(new
+        { message = "Create the local databases in Momentum Groves setup first." });
+});
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 
 if (!app.Environment.IsEnvironment("Testing"))

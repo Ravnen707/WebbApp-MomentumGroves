@@ -1,14 +1,37 @@
-@Html.AntiForgeryToken()
-<div id="database-setup-overlay" class="database-setup-overlay" hidden>
-    <section class="database-setup-dialog" role="dialog" aria-modal="true" aria-labelledby="database-setup-title">
+@model MomentumGroves.Models.DatabaseInitializationStatus
+<div id="database-setup-overlay" class="database-setup-overlay">
+    <section class="database-setup-dialog" role="dialog" aria-modal="true"
+             aria-labelledby="database-setup-title" aria-describedby="database-setup-description">
         <h2 id="database-setup-title">Database initialization</h2>
-        <p id="database-setup-description">MomentumGroves has detected missing local databases. Would you like to initialize them now?</p>
-        <ul id="database-setup-missing" class="database-setup-list"></ul>
-        <p id="database-setup-error" class="database-setup-error" hidden></p>
-        <div class="database-setup-actions">
-            <button type="button" id="database-setup-confirm">Yes, initialize</button>
-            <button type="button" id="database-setup-admin" hidden>Go to Admin to make FridaDb</button>
-            <button type="button" id="database-setup-cancel">Cancel</button>
-        </div>
+        @if (ViewData.ModelState.IsValid && !Model.RequiresLocalSetup)
+        {
+            <p id="database-setup-description">Both local SQLite databases are ready. Open Admin to download and install
+                the DTU Frida food database.</p>
+            <a class="btn" id="database-setup-admin" asp-controller="Admin" asp-action="Index">Set up Frida DB</a>
+            <a class="btn secondary" asp-controller="Home" asp-action="Index">Continue to dashboard</a>
+        }
+        else
+        {
+            <p id="database-setup-description">Momentum Groves needs these local SQLite databases.</p>
+            <ul id="database-setup-missing" class="database-setup-list">
+                @if (Model.MomentumMissing)
+                {
+                    <li><code>momentum.db</code> for your app data</li>
+                }
+                @if (Model.FoodsMissing)
+                {
+                    <li><code>food_and_recipes.db</code> for your saved foods and recipes</li>
+                }
+            </ul>
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div asp-validation-summary="ModelOnly" class="database-setup-error" role="alert"></div>
+            }
+
+            <form method="post" asp-route="SubmitDatabaseSetup">
+                <input type="hidden" name="showSetupModal" value="true"/>
+                <button type="submit" class="btn" id="database-setup-confirm" autofocus>Create SQLite databases</button>
+            </form>
+        }
     </section>
 </div>

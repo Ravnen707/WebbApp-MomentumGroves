@@ -1,0 +1,23 @@
+.database-setup-overlay {
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: var(--bg);
+}
+
+.database-setup-dialog {
+    width: min(100%, 34rem);
+    padding: clamp(1.25rem, 5vw, 2rem);
+    border-radius: 1rem;
+    border: 1px solid var(--border);
+    background: var(--panel);
+}
+
+.database-setup-dialog h2 {
+    margin-top: 0;
+}
+
+.database-setup-error {
+    color: #ffb4b4;
+}

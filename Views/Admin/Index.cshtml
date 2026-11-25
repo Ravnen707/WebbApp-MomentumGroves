@@ -30,11 +30,14 @@
             <div class="card-heading">
                 <div>
                     <h2 id="frida-heading">DTU Frida</h2>
-                    <p>Food database · <span id="installed-version">Loading version…</span> · <span id="food-count">–</span>
+                    <p>Food database · <span id="installed-version">Loading version…</span> · <span
+                            id="food-count">–</span>
                         foods</p>
                 </div>
                 <span class="database-label">frida.db</span>
             </div>
+            <p>To install Frida for the first time, select <strong>Check for updates</strong>, then choose <strong>Yes,
+                    install</strong> when prompted.</p>
             <div class="button-row">
                 <button id="check-button" type="button" class="button primary">Check for updates</button>
             </div>
@@ -56,11 +59,13 @@
         </section>
         <section class="admin-card" aria-labelledby="test-heading">
             <h2 id="test-heading">Test</h2>
-            <p>Check the connection to DTU and the version lookup without downloading the Excel file or changing the database.</p>
+            <p>Check the connection to DTU and the version lookup without downloading the Excel file or changing the
+                database.</p>
             <button id="test-button" class="button secondary" type="button">Test DTU connection</button>
             <div id="test-result" class="status" role="status" aria-live="polite">No test run yet.</div>
         </section>
-        <p class="footnote">The admin page is accessible only from this computer. Frida updates save a backup as frida.db.backup.</p>
+        <p class="footnote">The admin page is accessible only from this computer. Frida updates save a backup as
+            frida.db.backup.</p>
     </main>
 </div>
 <form id="antiforgery-form" hidden>@Html.AntiForgeryToken()</form>
