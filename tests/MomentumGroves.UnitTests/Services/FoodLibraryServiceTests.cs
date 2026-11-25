@@ -201,7 +201,8 @@ public class FoodLibraryServiceTests : DatabaseServiceTests
     public void Foods_LimitsResultsTo250()
     {
         Sql("food_and_recipes.db",
-            "WITH RECURSIVE n(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM n WHERE x<251) INSERT INTO CustomFoods(Name,Unit,Kcal,Protein,Carbs,Fat) SELECT printf('Food%03d',x),'g',0,0,0,0 FROM n");
+            "WITH RECURSIVE n(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM n WHERE x<251) INSERT INTO CustomFoods(Name," +
+                "Unit,Kcal,Protein,Carbs,Fat) SELECT printf('Food%03d',x),'g',0,0,0,0 FROM n");
         Assert.That(_service.Foods(), Has.Count.EqualTo(250));
     }
 
@@ -259,7 +260,8 @@ public class FoodLibraryServiceTests : DatabaseServiceTests
         if (tracking)
         {
             Sql("food_and_recipes.db",
-                "CREATE TABLE MobileFoodImports (MobileId TEXT, FoodId INTEGER); INSERT INTO MobileFoodImports VALUES ('id',$id)",
+                "CREATE TABLE MobileFoodImports (MobileId TEXT, FoodId INTEGER); INSERT INTO MobileFoodImports " +
+                    "VALUES ('id',$id)",
                 ("$id", id));
         }
         _service.DeleteFood(id);
@@ -269,7 +271,8 @@ public class FoodLibraryServiceTests : DatabaseServiceTests
         {
             // An orphan tracking row would make this insert fail.
             Sql("food_and_recipes.db",
-                "CREATE UNIQUE INDEX OneMapping ON MobileFoodImports(MobileId); INSERT INTO MobileFoodImports VALUES ('id',999)");
+                "CREATE UNIQUE INDEX OneMapping ON MobileFoodImports(MobileId); INSERT INTO MobileFoodImports VALUES " +
+                    "('id',999)");
         }
     }
 

@@ -47,7 +47,8 @@ import {localDate} from '../core/utils.js';
         const xm = xs.reduce((a, b) => a + b, 0) / xs.length;
         const ym = recent.reduce((sum, p) => sum + p.trend, 0) / recent.length;
         const denominator = xs.reduce((sum, x) => sum + (x - xm) ** 2, 0);
-        const slope = denominator ? xs.reduce((sum, x, i) => sum + (x - xm) * (recent[i].trend - ym), 0) / denominator : 0;
+        const slope = denominator ? xs.reduce((sum, x, i) => sum + (x - xm) * (recent[i].trend - ym),
+            0) / denominator : 0;
         if (target >= latest.trend) return {reached: true};
         if (slope >= -0.01) return {stalled: true};
         const days = (target - latest.trend) / slope;
@@ -59,7 +60,9 @@ import {localDate} from '../core/utils.js';
 
     // Converts validated saved entries into chronological measured data points.
     function measuredPoints() {
-        return Object.entries(history).filter(([date, item]) => validDate(date) && item?.status === 'weighed' && Number.isFinite(Number(item.weight)) && Number(item.weight) >= 20 && Number(item.weight) <= 500)
+        return Object.entries(history).filter(([date,
+            item]) => validDate(date) && item?.status === 'weighed' && Number.isFinite(Number(item.weight))
+            && Number(item.weight) >= 20 && Number(item.weight) <= 500)
             .map(([date, item]) => ({date, weight: Number(item.weight)})).sort((a, b) => a.date.localeCompare(b.date));
     }
 
@@ -89,19 +92,24 @@ import {localDate} from '../core/utils.js';
     function renderGoals(points) {
         const active = activeGoal(points);
         const current = points.at(-1)?.weight;
-        const values = [...new Set((goals.milestones || []).map(Number))].filter(n => Number.isFinite(n) && n >= 20 && n <= 500).sort((a, b) => b - a);
+        const values = [...new Set((goals.milestones || []).map(Number))].filter(n => Number.isFinite(n) && n >= 20
+            && n <= 500).sort((a, b) => b - a);
         const nextMilestone = values.find(n => current === undefined || n < current - 0.00001);
         const input = byId('weight-milestone-form').elements.namedItem('milestone');
         if (document.activeElement !== input) input.value = nextMilestone ?? values.at(-1) ?? '';
         byId('weight-milestone-enabled').checked = goals.mode === 'milestone';
         byId('weight-milestone-detail').textContent = active.type === 'milestone'
             ? `${fmt(Math.max(0, (current ?? active.value) - active.value))} kg remaining to milestone`
-            : values.length && !nextMilestone ? 'Milestone reached' : values.length ? 'Enable to track your milestone' : 'Set a milestone';
+            : values.length && !nextMilestone ? 'Milestone reached' : values.length
+                ? 'Enable to track your milestone' : 'Set a milestone';
         const final = Number(profile.targetWeight);
         const validFinal = Number.isFinite(final) && final >= 20 && final <= 500 ? final : null;
         byId('weight-final-goal').textContent = validFinal === null ? 'Not set' : `${fmt(validFinal)} kg`;
-        byId('weight-final-selected').textContent = active.type === 'final' ? 'Tracking' : active.type === null ? 'Completed' : 'After milestone';
-        byId('weight-final-detail').textContent = validFinal === null ? 'Set in Health & Nutrition Calculator' : active.type === 'final' ? 'Goal tracked automatically' : 'From Health & Nutrition Calculator';
+        byId('weight-final-selected').textContent = active.type === 'final' ? 'Tracking' : active.type === null
+            ? 'Completed' : 'After milestone';
+        byId('weight-final-detail').textContent = validFinal === null
+            ? 'Set in Health & Nutrition Calculator' : active.type === 'final'
+            ? 'Goal tracked automatically' : 'From Health & Nutrition Calculator';
         return active;
     }
 
@@ -128,7 +136,8 @@ import {localDate} from '../core/utils.js';
         today.setHours(12, 0, 0, 0);
         const endDate = new Date(today.getFullYear(), today.getMonth() + monthOffset + 1, 0, 12);
         if (monthOffset === 0) endDate.setTime(today.getTime());
-        const startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 1, Math.min(endDate.getDate(), new Date(endDate.getFullYear(), endDate.getMonth(), 0).getDate()), 12);
+        const startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 1, Math.min(endDate.getDate(),
+            new Date(endDate.getFullYear(), endDate.getMonth(), 0).getDate()), 12);
         const first = localDate(startDate);
         const last = localDate(endDate);
         const visible = points.filter(p => p.date >= first && p.date <= last);
@@ -149,14 +158,17 @@ import {localDate} from '../core/utils.js';
         const totalDays = Math.max(1, daysBetween(first, last));
         const x = p => left + daysBetween(first, p.date) / totalDays * (W - left - right);
         const y = value => top + (hi - value) / span * (H - top - bottom);
-        const path = key => visible.map((p, i) => `${i ? 'L' : 'M'}${x(p).toFixed(1)},${y(p[key]).toFixed(1)}`).join(' ');
+        const path = key => visible.map((p,
+            i) => `${i ? 'L' : 'M'}${x(p).toFixed(1)},${y(p[key]).toFixed(1)}`).join(' ');
         // Uses whole-kilogram grid values and evenly spaced date labels.
         const tickStep = Math.max(1, Math.ceil(span / 5));
         const firstTick = Math.ceil(lo / tickStep) * tickStep;
         const grid = Array.from({length: Math.floor((hi - firstTick) / tickStep) + 1}, (_, i) => {
             const v = firstTick + i * tickStep;
             const yy = y(v);
-            return `<line x1="${left}" y1="${yy}" x2="${W - right}" y2="${yy}" stroke="currentColor" opacity=".12"/><text x="${left - 9}" y="${yy + 4}" fill="currentColor" opacity=".7" font-size="12" text-anchor="end">${v}</text>`;
+            return `<line x1="${left}" y1="${yy}" x2="${W - right}" y2="${yy}" stroke="currentColor" opacity=".12"/>
+                <text x="${left - 9}" y="${yy + 4}" fill="currentColor" opacity=".7" font-size="12"
+                text-anchor="end">${v}</text>`;
         }).join('');
         const labels = [0, 0.25, 0.5, 0.75, 1].map(fraction => {
             const day = Math.round(totalDays * fraction);
@@ -164,17 +176,31 @@ import {localDate} from '../core/utils.js';
             date.setDate(date.getDate() + day);
             const text = date.toLocaleDateString('en-GB', {day: 'numeric', month: 'short'});
             const xx = left + day / totalDays * (W - left - right);
-            return `<text x="${xx}" y="${H - 12}" fill="currentColor" opacity=".7" font-size="12" text-anchor="middle">${text}</text>`;
+            return `<text x="${xx}" y="${H - 12}" fill="currentColor" opacity=".7" font-size="12"
+                text-anchor="middle">${text}</text>`;
         }).join('');
         const targetLine = Number.isFinite(target) && target > 0 && target >= lo && target <= hi
-            ? `<line x1="${left}" y1="${y(target)}" x2="${W - right}" y2="${y(target)}" stroke="#b8dd9d" stroke-width="1.8" stroke-dasharray="7 5"/><text x="${W - right - 5}" y="${Math.max(14, y(target) - 8)}" text-anchor="end" class="weight-chart-goal-label">Target: ${fmt(target)} kg</text>`
+            ? `<line x1="${left}" y1="${y(target)}" x2="${W - right}" y2="${y(target)}" stroke="#b8dd9d"
+                stroke-width="1.8" stroke-dasharray="7 5"/>
+                <text x="${W - right - 5}" y="${Math.max(14, y(target) - 8)}" text-anchor="end"
+                class="weight-chart-goal-label">Target: ${fmt(target)} kg</text>`
             : '';
         const goalNote = Number.isFinite(target) && target > 0 && (target < lo || target > hi)
-            ? `<div class="weight-chart-target-note">Target: ${fmt(target)} kg · outside the chart's displayed weight range</div>` : '';
+            ? `<div class="weight-chart-target-note">Target: ${fmt(
+                target)} kg · outside the chart's displayed weight range</div>` : '';
         const circles = visible.map((p, i) => `
-            <circle class="weight-chart-point weight-chart-measured" data-index="${i}" data-kind="weight" cx="${x(p)}" cy="${y(p.weight)}" r="5.5" fill="#5ca8ed" stroke="#172026" stroke-width="1.5" tabindex="0" aria-label="${displayDate(p.date)}, measured ${fmt(p.weight)} kilogram"/>
-            <circle class="weight-chart-point weight-chart-trend" data-index="${i}" data-kind="trend" cx="${x(p)}" cy="${y(p.trend)}" r="5" fill="#f5b66b" stroke="#172026" stroke-width="1.5" tabindex="0" aria-label="${displayDate(p.date)}, estimated weight trend ${fmt(p.trend)} kilogram"/>`).join('');
-        host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Actual weigh-ins and calculated weight trend">${grid}${targetLine}<path d="${path('weight')}" fill="none" stroke="#5ca8ed" stroke-width="2.5" stroke-linejoin="round"/>${visible.length > 1 ? `<path d="${path('trend')}" fill="none" stroke="#f5b66b" stroke-width="3" stroke-linejoin="round"/>` : ''}${circles}${labels}</svg>${goalNote}<div class="weight-chart-tooltip" role="status" hidden></div>`;
+            <circle class="weight-chart-point weight-chart-measured" data-index="${i}" data-kind="weight" cx="${x(p)}"
+                cy="${y(p.weight)}" r="5.5" fill="#5ca8ed" stroke="#172026" stroke-width="1.5" tabindex="0"
+                aria-label="${displayDate(p.date)}, measured ${fmt(p.weight)} kilogram"/>
+            <circle class="weight-chart-point weight-chart-trend" data-index="${i}" data-kind="trend" cx="${x(p)}"
+                cy="${y(p.trend)}" r="5" fill="#f5b66b" stroke="#172026" stroke-width="1.5" tabindex="0"
+                aria-label="${displayDate(p.date)}, estimated weight trend ${fmt(p.trend)} kilogram"/>`).join('');
+        host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img"
+            aria-label="Actual weigh-ins and calculated weight trend">${grid}${targetLine}<path d="${path('weight')}"
+            fill="none" stroke="#5ca8ed" stroke-width="2.5" stroke-linejoin="round"/>${visible.length > 1 ? `<path
+            d="${path('trend')}" fill="none" stroke="#f5b66b" stroke-width="3"
+            stroke-linejoin="round"/>` : ''}${circles}${labels}</svg>${goalNote}<div class="weight-chart-tooltip"
+            role="status" hidden></div>`;
         const tooltip = host.querySelector('.weight-chart-tooltip');
         const showTooltip = (circle, event) => {
             const p = visible[Number(circle.dataset.index)];
@@ -183,15 +209,18 @@ import {localDate} from '../core/utils.js';
             const title = document.createElement('strong');
             title.textContent = displayDate(p.date);
             const value = document.createElement('span');
-            value.textContent = `${kind === 'weight' ? 'Measured weight' : 'Estimated weight trend'}: ${fmt(kind === 'weight' ? p.weight : p.trend)} kg`;
+            value.textContent = `${kind === 'weight'
+                ? 'Measured weight' : 'Estimated weight trend'}: ${fmt(kind === 'weight' ? p.weight : p.trend)} kg`;
             const other = document.createElement('span');
-            other.textContent = `${kind === 'weight' ? 'Estimated weight trend' : 'Measured weight'}: ${fmt(kind === 'weight' ? p.trend : p.weight)} kg`;
+            other.textContent = `${kind === 'weight'
+                ? 'Estimated weight trend' : 'Measured weight'}: ${fmt(kind === 'weight' ? p.trend : p.weight)} kg`;
             tooltip.append(title, value, other);
             tooltip.hidden = false;
             const rect = host.getBoundingClientRect();
             const clientX = event?.clientX || rect.left + (Number(circle.getAttribute('cx')) / W) * rect.width;
             const clientY = event?.clientY || rect.top + (Number(circle.getAttribute('cy')) / H) * rect.width * H / W;
-            tooltip.style.left = `${Math.max(8, Math.min(clientX - rect.left + 12, rect.width - tooltip.offsetWidth - 8))}px`;
+            tooltip.style.left = `${Math.max(8, Math.min(clientX - rect.left + 12,
+                rect.width - tooltip.offsetWidth - 8))}px`;
             tooltip.style.top = `${Math.max(8, clientY - rect.top - tooltip.offsetHeight - 12)}px`;
         };
         host.querySelectorAll('.weight-chart-point').forEach(circle => {
@@ -217,13 +246,20 @@ import {localDate} from '../core/utils.js';
         const active = renderGoals(points);
         const target = active.value;
         const estimate = target === null ? null : forecast(points, target);
-        byId('weight-forecast').textContent = target === null ? active.finished ? 'All goals reached' : 'No active goal' : estimate?.date ? estimate.date.toLocaleDateString('en-GB', {
+        byId('weight-forecast').textContent = target === null ? active.finished
+            ? 'All goals reached' : 'No active goal' : estimate?.date ? estimate.date.toLocaleDateString('en-GB', {
             month: 'long',
             year: 'numeric'
         }) : estimate?.reached ? 'Goal reached' : 'Cannot estimate yet';
-        byId('weight-forecast-detail').textContent = target === null ? 'The weight chart and weigh-ins continue as usual without a goal or forecast.' : estimate?.date ? `Historical weight trend: ${fmt(estimate.weeklyRate)} kg/week. Highly uncertain estimate; allow for a difference of at least 1–2 months.` : estimate?.stalled ? 'The recent trend does not show clear weight loss.' : 'Requires at least 6 weigh-ins over 14 days. The forecast uses up to 60 days of history.';
+        byId('weight-forecast-detail').textContent = target === null
+            ? 'The weight chart and weigh-ins continue as usual without a goal or forecast.' : estimate?.date
+                ? `Historical weight trend: ${fmt(estimate.weeklyRate)} kg/week. ` +
+                    'Highly uncertain estimate; allow for a difference of at least 1–2 months.'  : estimate?.stalled
+                    ? 'The recent trend does not show clear weight loss.'
+                    : 'Requires at least 6 weigh-ins over 14 days. The forecast uses up to 60 days of history.';
         drawChart(points, target);
-        const entries = Object.entries(history).filter(([date]) => validDate(date)).sort(([a], [b]) => b.localeCompare(a));
+        const entries = Object.entries(history).filter(([date]) => validDate(date)).sort(([a],
+            [b]) => b.localeCompare(a));
         const host = byId('weight-history');
         if (!entries.length) {
             host.textContent = 'No entries yet.';
@@ -269,7 +305,8 @@ import {localDate} from '../core/utils.js';
             less.type = 'button';
             less.className = 'btn secondary weight-history-more';
             less.textContent = 'Show fewer';
-            less.addEventListener('click', () => {
+            less.addEventListener('click', () => 
+            {
                 historyVisibleCount = 7;
                 render();
             });
@@ -332,7 +369,8 @@ import {localDate} from '../core/utils.js';
                 mode: savedGoals.mode === 'milestone' ? 'milestone' : 'final',
                 milestones: Array.isArray(savedGoals.milestones) ? savedGoals.milestones : []
             } : {mode: 'final', milestones: []};
-            history = state[HISTORY_KEY] && typeof state[HISTORY_KEY] === 'object' && !Array.isArray(state[HISTORY_KEY]) ? state[HISTORY_KEY] : {};
+            history = state[HISTORY_KEY] && typeof state[HISTORY_KEY] === 'object' && !Array.isArray(state[HISTORY_KEY])
+                ? state[HISTORY_KEY] : {};
             showSelectedEntry();
             render();
         } catch (error) {

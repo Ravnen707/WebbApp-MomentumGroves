@@ -88,8 +88,8 @@ public class TrainingImageServiceTests : DatabaseServiceTests
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
 
-        Assert.CatchAsync<OperationCanceledException>(() =>
-            _service.SaveAsync("picture.png", _png, cancellation.Token));
+        Assert.CatchAsync<OperationCanceledException>(() => _service.SaveAsync("picture.png", _png,
+            cancellation.Token));
         Assert.That(_service.List(), Is.Empty);
     }
 

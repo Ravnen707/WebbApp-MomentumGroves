@@ -3,13 +3,15 @@
         <div class="section-head"><h2>Add drink</h2>
             <button class="btn secondary" type="button" id="close-drink" aria-label="Close">×</button>
         </div>
-        <label>Search drinks<input type="search" id="drink-search" placeholder="e.g. Pepsi Max Lime or water"
-                                   autocomplete="off"></label>
+        <label>Search drinks
+            <input type="search" id="drink-search" placeholder="e.g. Pepsi Max Lime or water" autocomplete="off">
+        </label>
         <p class="muted tiny" id="drink-status" role="status">Search the product database or choose a default drink.</p>
         <div id="drink-results" class="drink-results"></div>
-        <form id="drink-form" hidden><label>Selected drink<input name="name" id="drink-name" required></label><label>Amount
+        <form id="drink-form" hidden><label>Selected drink<input name="name" id="drink-name" required></label>
+            <label>Amount
                 (ml)<input name="ml" id="drink-ml" type="text" inputmode="decimal" min="1" step="any" value="500"
-                           required></label>
+                    required></label>
             <div class="table-scroll">
                 <table class="nutrition-table">
                     <thead>
@@ -42,8 +44,9 @@
                     </tr>
                     <tr>
                         <th>Fibre (g)</th>
-                        <td><input name="fiber" type="text" inputmode="decimal" step="any" min="0"
-                                   placeholder="Optional"></td>
+                        <td>
+                            <input name="fiber" type="text" inputmode="decimal" step="any" min="0"
+                            placeholder="Optional"></td>
                         <td id="drink-total-fiber">–</td>
                     </tr>
                     </tbody>

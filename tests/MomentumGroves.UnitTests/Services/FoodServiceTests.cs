@@ -70,8 +70,8 @@ public class FoodServiceTests : DatabaseServiceTests
         Add("Apple", "Fruit");
         var result = await Create().SearchAsync(query);
         Assert.That(result.Success, Is.True);
-        Assert.That(result.Results.Single(),
-            Is.EqualTo(new FoodResult("Apple", "DTU Frida 6.1", 52, 0.3, 14, 0.2, 2.4)));
+        Assert.That(result.Results.Single(), Is.EqualTo(new FoodResult("Apple", "DTU Frida 6.1", 52, 0.3, 14, 0.2,
+            2.4)));
     }
 
     /// <summary>

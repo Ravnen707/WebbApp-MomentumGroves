@@ -76,7 +76,8 @@ public class MomentumDataServiceTests : DatabaseServiceTests
 
         Assert.That(saved.Results, Is.EqualTo(new[] { new TrainingWeightResult(edit.ChangeId, "saved") }));
         Assert.That(replayed.Results, Is.EqualTo(saved.Results));
-        Assert.That(conflict.Results, Is.EqualTo(new[] { new TrainingWeightResult(conflictingEdit.ChangeId, "conflict") }));
+        Assert.That(conflict.Results, Is.EqualTo(new[] { new TrainingWeightResult(conflictingEdit.ChangeId,
+            "conflict") }));
         Assert.That(weight, Is.EqualTo(12m));
     }
 

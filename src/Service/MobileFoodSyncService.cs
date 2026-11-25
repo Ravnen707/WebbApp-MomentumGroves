@@ -22,7 +22,8 @@ public sealed class MobileFoodSyncService
     /// <param name="configuration">The settings that supply the mobile synchronization key.</param>
     /// <param name="repository">The repository that persists mobile food imports.</param>
     /// <param name="logger">The logger for diagnostics and operation failures.</param>
-    public MobileFoodSyncService(IConfiguration configuration, MobileFoodSyncRepository repository, ILogger<MobileFoodSyncService> logger)
+    public MobileFoodSyncService(IConfiguration configuration, MobileFoodSyncRepository repository,
+        ILogger<MobileFoodSyncService> logger)
     {
         _logger = logger;
         _configuration = configuration;
@@ -109,8 +110,7 @@ public sealed class MobileFoodSyncService
             if (new[]
                 {
                     food.Kcal, food.Protein, food.Carbs, food.Fat, food.Fiber ?? 0
-                }.Any(value =>
-                    !double.IsFinite(value) || value < 0))
+                }.Any(value => !double.IsFinite(value) || value < 0))
             {
                 _logger.LogWarning("Mobile food batch rejected: nutrition values must be finite and non-negative");
                 return false;

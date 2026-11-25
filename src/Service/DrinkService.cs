@@ -133,8 +133,8 @@ public sealed class DrinkService
                 }
             }
 
-            return drinks.OrderByDescending(x => x.Danish)
-                .DistinctBy(x => x.Name, StringComparer.OrdinalIgnoreCase).Take(20).ToList();
+            return drinks.OrderByDescending(x => x.Danish).DistinctBy(x => x.Name,
+                StringComparer.OrdinalIgnoreCase).Take(20).ToList();
         }
         finally
         {
@@ -167,7 +167,8 @@ public sealed class DrinkService
             }
 
             if (hits.ValueKind == JsonValueKind.Object &&
-                hits.TryGetProperty("hits", out var nestedHits) && nestedHits.ValueKind == JsonValueKind.Array)
+                hits.TryGetProperty("hits", out var nestedHits) &&
+                nestedHits.ValueKind == JsonValueKind.Array)
             {
                 return nestedHits;
             }
@@ -324,9 +325,7 @@ public sealed class DrinkService
 
         if (brands.ValueKind == JsonValueKind.Array)
         {
-            return brands.EnumerateArray()
-                .Where(x => x.ValueKind == JsonValueKind.String)
-                .Select(x => x.GetString())
+            return brands.EnumerateArray().Where(x => x.ValueKind == JsonValueKind.String).Select(x => x.GetString())
                 .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
         }
 
@@ -340,14 +339,14 @@ public sealed class DrinkService
     /// <returns>True when the product is identified as a beverage.</returns>
     private static bool IsBeverage(JsonElement product)
     {
-        if (!product.TryGetProperty("categories_tags", out var categories) ||
-            categories.ValueKind != JsonValueKind.Array)
+        if (!product.TryGetProperty("categories_tags",
+                out var categories) || categories.ValueKind != JsonValueKind.Array)
         {
             return false;
         }
 
-        return categories.EnumerateArray().Any(x =>
-            x.ValueKind == JsonValueKind.String && x.GetString() == "en:beverages");
+        return categories.EnumerateArray().Any(x => x.ValueKind == JsonValueKind.String
+                                                    && x.GetString() == "en:beverages");
     }
 
     /// <summary>
@@ -374,9 +373,8 @@ public sealed class DrinkService
     /// <returns>True when the product is identified as Danish.</returns>
     private static bool IsDanish(JsonElement product)
     {
-        return product.TryGetProperty("countries_tags", out var tags)
-               && tags.ValueKind == JsonValueKind.Array
-               && tags.EnumerateArray().Any(x =>
-                   x.ValueKind == JsonValueKind.String && x.GetString() == "en:denmark");
+        return product.TryGetProperty("countries_tags", out var tags) && tags.ValueKind ==
+            JsonValueKind.Array && tags.EnumerateArray().Any(x => x.ValueKind == JsonValueKind.String &&
+                                                                  x.GetString() == "en:denmark");
     }
 }

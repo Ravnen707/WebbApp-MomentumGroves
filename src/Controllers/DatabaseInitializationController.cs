@@ -11,10 +11,8 @@ namespace MomentumGroves.Controllers;
 [Route("api/database-initialization")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class DatabaseInitializationController(
-    DatabaseInitializationService initialization,
-    ILogger<DatabaseInitializationController> logger) : Controller
+    DatabaseInitializationService initialization, ILogger<DatabaseInitializationController> logger) : Controller
 {
-
     /// <summary>
     /// Displays local database setup when an application database is missing.
     /// </summary>
@@ -38,9 +36,7 @@ public sealed class DatabaseInitializationController(
     [HttpGet("status")]
     public IActionResult Status()
     {
-        return IsLocalRequest()
-            ? Ok(initialization.GetStatus())
-            : StatusCode(StatusCodes.Status403Forbidden);
+        return IsLocalRequest() ? Ok(initialization.GetStatus()) : StatusCode(StatusCodes.Status403Forbidden);
     }
 
     /// <summary>

@@ -31,9 +31,12 @@ internal sealed class FoodLibraryRepository(PersonalDatabase database, ILogger l
     /// <returns>The food and its version mapped from the current row.</returns>
     private static LibraryFood ReadFood(DbDataReader reader)
     {
-        return new LibraryFood(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.GetDouble(3),
-            reader.GetDouble(4), reader.GetDouble(5), reader.GetDouble(6),
-            reader.IsDBNull(7) ? null : reader.GetDouble(7), reader.IsDBNull(8) ? null : reader.GetString(8));
+        var fiber = reader.IsDBNull(7) ? (double?)null : reader.GetDouble(7);
+        var version = reader.IsDBNull(8) ? null : reader.GetString(8);
+        return new LibraryFood(Id: reader.GetInt64(0), Name: reader.GetString(1),
+            Unit: reader.GetString(2), Kcal: reader.GetDouble(3),
+            Protein: reader.GetDouble(4), Carbs: reader.GetDouble(5),
+            Fat: reader.GetDouble(6), Fiber: fiber, Version: version);
     }
 
     /// <summary>
@@ -48,7 +51,8 @@ internal sealed class FoodLibraryRepository(PersonalDatabase database, ILogger l
             using var connection = Open();
             using var command = connection.CreateCommand();
             command.CommandText =
-                $"SELECT Id, Name, Unit, Kcal, Protein, Carbs, Fat, Fiber, {FoodVersionExpression} FROM CustomFoods AS f WHERE @query = '' OR {database.FoodNameMatch} ORDER BY Name LIMIT 250";
+                $"SELECT Id, Name, Unit, Kcal, Protein, Carbs, Fat, Fiber, {FoodVersionExpression} " +
+                $"FROM CustomFoods AS f WHERE @query = '' OR {database.FoodNameMatch} ORDER BY Name LIMIT 250";
             command.AddParameter("@query", query?.Trim() ?? "");
             using var reader = command.ExecuteReader();
             var result = new List<LibraryFood>();
@@ -86,7 +90,9 @@ internal sealed class FoodLibraryRepository(PersonalDatabase database, ILogger l
             var total = Convert.ToInt32(count.ExecuteScalar());
             using var command = connection.CreateCommand();
             command.CommandText =
-                $"SELECT Id, Name, Unit, Kcal, Protein, Carbs, Fat, Fiber, {FoodVersionExpression} FROM CustomFoods AS f WHERE @query = '' OR {database.FoodNameMatch} ORDER BY Id DESC LIMIT @limit OFFSET @offset";
+                $"SELECT Id, Name, Unit, Kcal, Protein, Carbs, Fat, Fiber, {FoodVersionExpression} " +
+                $"FROM CustomFoods AS f WHERE @query = '' OR {database.FoodNameMatch} " +
+                "ORDER BY Id DESC LIMIT @limit OFFSET @offset";
             command.AddParameter("@query", search);
             command.AddParameter("@limit", pageSize);
             command.AddParameter("@offset", (long)(page - 1) * pageSize);
@@ -130,11 +136,11 @@ internal sealed class FoodLibraryRepository(PersonalDatabase database, ILogger l
                 using var duplicate = connection.CreateCommand();
                 duplicate.Transaction = transaction;
                 duplicate.CommandText = """
-                    SELECT 1 FROM CustomFoods
-                    WHERE lower(trim(Name)) = lower(@name) AND Id IS DISTINCT FROM @id
-                        AND NOT EXISTS (SELECT 1 FROM CustomFoods WHERE Id = @id AND lower(trim(Name)) = lower(@name))
-                    LIMIT 1
-                    """;
+                                        SELECT 1 FROM CustomFoods
+                                        WHERE lower(trim(Name)) = lower(@name) AND Id IS DISTINCT FROM @id
+                                            AND NOT EXISTS (SELECT 1 FROM CustomFoods WHERE Id = @id AND lower(trim(Name)) = lower(@name))
+                                        LIMIT 1
+                                        """;
                 duplicate.AddParameter("@name", food.Name.Trim());
                 duplicate.AddParameter("@id", id, System.Data.DbType.Int64);
                 if (duplicate.ExecuteScalar() is not null)
@@ -146,12 +152,15 @@ internal sealed class FoodLibraryRepository(PersonalDatabase database, ILogger l
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = id.HasValue
-                ? "UPDATE CustomFoods SET Name=@name, Unit=@unit, Kcal=@kcal, Protein=@protein, Carbs=@carbs, Fat=@fat, Fiber=@fiber WHERE Id=@id"
-                : "INSERT INTO CustomFoods(Name,Unit,Kcal,Protein,Carbs,Fat,Fiber) VALUES(@name,@unit,@kcal,@protein,@carbs,@fat,@fiber) RETURNING Id";
+                ? "UPDATE CustomFoods SET Name=@name, Unit=@unit, Kcal=@kcal, Protein=@protein, Carbs=@carbs, " +
+                  "Fat=@fat, Fiber=@fiber WHERE Id=@id"
+                : "INSERT INTO CustomFoods(Name,Unit,Kcal,Protein,Carbs,Fat,Fiber) VALUES(@name,@unit,@kcal,@protein," +
+                  "@carbs,@fat,@fiber) RETURNING Id";
             if (id.HasValue)
             {
                 command.AddParameter("@id", id.Value);
             }
+
             command.AddParameter("@name", food.Name.Trim());
             command.AddParameter("@unit", food.Unit);
             command.AddParameter("@kcal", food.Kcal);
@@ -174,7 +183,8 @@ internal sealed class FoodLibraryRepository(PersonalDatabase database, ILogger l
             transaction?.Commit();
             return id.Value;
         }
-        catch (Exception exception) when (exception is not (ArgumentException or KeyNotFoundException or InvalidOperationException))
+        catch (Exception exception)
+            when (exception is not (ArgumentException or KeyNotFoundException or InvalidOperationException))
         {
             logger.LogError(exception, "Food library operation {Operation} failed", nameof(SaveFood));
             throw;
@@ -197,6 +207,7 @@ internal sealed class FoodLibraryRepository(PersonalDatabase database, ILogger l
             {
                 VerifyFoodVersion(connection, transaction, id, version);
             }
+
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
 
@@ -240,7 +251,8 @@ internal sealed class FoodLibraryRepository(PersonalDatabase database, ILogger l
         current.AddParameter("@id", id);
         if (current.ExecuteScalar() is not string stored || stored != version)
         {
-            throw new InvalidOperationException("This food changed or was removed. Refresh the food library and review it.");
+            throw new InvalidOperationException(
+                "This food changed or was removed. Refresh the food library and review it.");
         }
     }
 
@@ -268,15 +280,20 @@ internal sealed class FoodLibraryRepository(PersonalDatabase database, ILogger l
                 var id = reader.GetInt64(0);
                 if (!recipes.ContainsKey(id))
                 {
-                    recipes[id] = (reader.GetString(1), reader.IsDBNull(2) ? null : reader.GetDouble(2),
-                        DateTimeOffset.Parse(reader.GetString(12), CultureInfo.InvariantCulture), new());
+                    var weight = reader.IsDBNull(2) ? (double?)null : reader.GetDouble(2);
+                    var createdUtc = DateTimeOffset.Parse(reader.GetString(12),
+                        CultureInfo.InvariantCulture);
+                    recipes[id] = (reader.GetString(1), weight, createdUtc, new());
                 }
 
                 if (!reader.IsDBNull(3))
                 {
-                    recipes[id].Items.Add(new RecipeIngredientDetail(reader.GetInt64(3), reader.GetString(4),
-                        reader.GetString(5), reader.GetDouble(6), reader.GetDouble(7), reader.GetDouble(8),
-                        reader.GetDouble(9), reader.GetDouble(10), reader.IsDBNull(11) ? null : reader.GetDouble(11)));
+                    var fiber = reader.IsDBNull(11) ? (double?)null : reader.GetDouble(11);
+                    recipes[id].Items.Add(new RecipeIngredientDetail(
+                        FoodId: reader.GetInt64(3), Name: reader.GetString(4),
+                        Unit: reader.GetString(5), Amount: reader.GetDouble(6),
+                        Kcal: reader.GetDouble(7), Protein: reader.GetDouble(8),
+                        Carbs: reader.GetDouble(9), Fat: reader.GetDouble(10), Fiber: fiber));
                 }
             }
 
@@ -314,6 +331,7 @@ internal sealed class FoodLibraryRepository(PersonalDatabase database, ILogger l
             {
                 command.AddParameter("@id", id.Value);
             }
+
             command.AddParameter("@name", recipe.Name.Trim());
             command.AddParameter("@weight", recipe.FinishedWeight, DbType.Double);
             if (!id.HasValue)

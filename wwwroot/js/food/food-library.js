@@ -73,7 +73,9 @@ import {nutritionSummary} from "./ingredient-row.js";
             const query = savedSearch.value.trim();
             moreButton.disabled = true;
             try {
-                const page = await request(`/api/library/foods/paged?page=${nextPage}&pageSize=10&q=${encodeURIComponent(query)}`);
+                const page =
+                    await request(`/api/library/foods/paged?page=${nextPage}&pageSize=10&q=${encodeURIComponent(
+                    query)}`);
                 if (sequence !== savedSequence) return;
                 saved = append ? [...saved, ...page.items] : page.items;
                 currentPage = nextPage;
@@ -89,7 +91,9 @@ import {nutritionSummary} from "./ingredient-row.js";
             for (const food of saved) {
                 const row = el('div', undefined, 'library-item');
                 const details = el('div');
-                details.append(el('strong', food.name), el('small', `${fmt(food.kcal)} kcal · P ${fmt(food.protein)} · C ${fmt(food.carbs)} · F ${fmt(food.fat)} · Fibre ${food.fiber == null ? '–' : fmt(food.fiber)} / 100 ${food.unit}`));
+                details.append(el('strong', food.name), el('small',
+                    `${fmt(food.kcal)} kcal · P ${fmt(food.protein)} · C ${fmt(food.carbs)} · F ${fmt(
+                    food.fat)} · Fibre ${food.fiber == null ? '–' : fmt(food.fiber)} / 100 ${food.unit}`));
                 const edit = el('button', 'Edit', 'btn secondary');
                 edit.type = 'button';
                 edit.onclick = () => fill(food);
@@ -124,7 +128,8 @@ import {nutritionSummary} from "./ingredient-row.js";
                     if (seq !== searchSequence) return;
                     results.append(el('h3', 'Results from DTU Frida'));
                     for (const food of foods) {
-                        const button = el('button', `${food.name} · ${fmt(food.kcal ?? 0)} kcal / 100 g`, 'library-result-button');
+                        const button = el('button', `${food.name} · ${fmt(food.kcal ?? 0)} kcal / 100 g`,
+                            'library-result-button');
                         button.type = 'button';
                         button.onclick = () => fill({
                             ...food,
@@ -150,11 +155,13 @@ import {nutritionSummary} from "./ingredient-row.js";
         $('#library-food-reset').onclick = reset;
         form.addEventListener('submit', async event => {
             event.preventDefault();
-            const value = Object.fromEntries(['name', 'unit', 'kcal', 'protein', 'carbs', 'fat', 'fiber'].map(key => [key, form.elements.namedItem(key).value]));
+            const value = Object.fromEntries(['name', 'unit', 'kcal', 'protein', 'carbs', 'fat',
+                'fiber'].map(key => [key, form.elements.namedItem(key).value]));
             for (const key of ['kcal', 'protein', 'carbs', 'fat']) value[key] = number(value[key]);
             value.fiber = value.fiber === '' ? null : number(value.fiber);
             try {
-                await send(editId ? foodUrl(editId, editVersion) : '/api/library/foods', editId ? 'PUT' : 'POST', value);
+                await send(editId ? foodUrl(editId, editVersion) : '/api/library/foods', editId ? 'PUT' : 'POST',
+                    value);
                 reset();
                 await reload();
                 message.textContent = 'Food saved.';
@@ -252,7 +259,8 @@ import {nutritionSummary} from "./ingredient-row.js";
                 return !food || food.fiber === null || food.fiber === undefined;
             }) ? ' (partial)' : ''}` : 'Not specified';
             const totalWeight = $('#recipe-live-weight');
-            if (totalWeight) totalWeight.textContent = `${fmt(ingredients.reduce((sum, item) => sum + (item.amount > 0 ? item.amount : 0), 0))} g`;
+            if (totalWeight) totalWeight.textContent = `${fmt(ingredients.reduce((sum,
+                item) => sum + (item.amount > 0 ? item.amount : 0), 0))} g`;
             const node = $('#library-recipe-preview');
             if (!(weight > 0) || !ingredients.length) {
                 node.textContent = 'Waiting for ingredients and meal weight';
@@ -260,14 +268,17 @@ import {nutritionSummary} from "./ingredient-row.js";
                 return;
             }
             const total = totals;
-            node.textContent = `Ready to use · ${fmt(total('kcal'))} kcal total · P ${fmt(total('protein'))} · C ${fmt(total('carbs'))} · F ${fmt(total('fat'))}`;
+            node.textContent =
+                `Ready to use · ${fmt(total('kcal'))} kcal total · P ${fmt(total('protein'))} · C ${fmt(total(
+                'carbs'))} · F ${fmt(total('fat'))}`;
             node.classList.add('ready');
         };
         const renderSearch = () => {
             results.replaceChildren();
             const query = search.value.trim().toLowerCase();
             if (!query) return;
-            for (const food of foods.filter(x => x.name.toLowerCase().includes(query) && !ingredients.some(i => i.foodId === x.id)).slice(0, 15)) {
+            for (const food of foods.filter(x => x.name.toLowerCase().includes(query)
+                && !ingredients.some(i => i.foodId === x.id)).slice(0, 15)) {
                 const button = el('button', `${food.name} (per 100 ${food.unit})`, 'library-result-button');
                 button.type = 'button';
                 button.onclick = () => {
@@ -298,7 +309,10 @@ import {nutritionSummary} from "./ingredient-row.js";
             for (const recipe of recipes) {
                 const row = el('div', undefined, 'library-item');
                 const info = el('div');
-                info.append(el('strong', recipe.name), el('small', recipe.finishedWeight ? `${fmt(recipe.finishedWeight)} g meal · ${fmt(recipe.kcal)} kcal total · P ${fmt(recipe.protein)} · C ${fmt(recipe.carbs)} · F ${fmt(recipe.fat)}` : 'Waiting for finished weight'));
+                info.append(el('strong', recipe.name), el('small',
+                    recipe.finishedWeight
+                    ? `${fmt(recipe.finishedWeight)} g meal · ${fmt(recipe.kcal)} kcal total · P ${fmt(
+                    recipe.protein)} · C ${fmt(recipe.carbs)} · F ${fmt(recipe.fat)}` : 'Waiting for finished weight'));
                 const created = el('time', recipeDate.format(new Date(recipe.createdUtc)));
                 created.dateTime = recipe.createdUtc;
                 const creationDetails = el('small', 'Created ');
@@ -357,7 +371,8 @@ import {nutritionSummary} from "./ingredient-row.js";
                 ingredients
             };
             try {
-                await send(editId ? `/api/library/recipes/${editId}` : '/api/library/recipes', editId ? 'PUT' : 'POST', value);
+                await send(editId ? `/api/library/recipes/${editId}` : '/api/library/recipes', editId ? 'PUT' : 'POST',
+                    value);
                 reset();
                 await reload();
                 message.textContent = 'Recipe saved.';

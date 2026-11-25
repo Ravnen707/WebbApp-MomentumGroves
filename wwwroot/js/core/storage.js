@@ -25,9 +25,11 @@ const write = (key, value) => {
     pendingSave = pendingSave.catch(() => {
     }).then(async () => {
         const training = key === trainingKey;
-        const response = await fetch(training ? '/api/training/programmes' : '/api/momentum-data/' + encodeURIComponent(key), {
+        const response = await fetch(training
+            ? '/api/training/programmes' : '/api/momentum-data/' + encodeURIComponent(key), {
             method: 'PUT', headers: {'Content-Type': 'application/json'},
-            body: training ? JSON.stringify({programmes: JSON.parse(body), originalWeights: savedTrainingWeights}) : body
+            body: training ? JSON.stringify({programmes: JSON.parse(body),
+                originalWeights: savedTrainingWeights}) : body
         });
         if (training && response.status === 409) {
             const details = await response.json();
@@ -43,7 +45,8 @@ const write = (key, value) => {
         return true;
     }).catch(error => {
         console.error('Database save failed:', error);
-        showDataError('Could not save changes to the database. Check the Rider log and resolve the error before reloading the page.');
+        showDataError('Could not save changes to the database. Check the Rider log and resolve the error ' +
+            'before reloading the page.');
         return false;
     });
     return pendingSave;

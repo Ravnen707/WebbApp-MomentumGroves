@@ -202,9 +202,8 @@ public class FridaUpdateServiceTests : DatabaseServiceTests
         Assert.That(result.InstalledVersion, Is.EqualTo("6.1"));
         var searches = _http.Requests.Where(r => r.Method == HttpMethod.Post).ToList();
         Assert.That(searches, Has.Count.EqualTo(2));
-        Assert.That(
-            searches.All(r => JsonDocument.Parse(r.Body).RootElement.GetProperty("page_size").GetInt32() == 100),
-            Is.True);
+        Assert.That(searches.All(r => JsonDocument.Parse(r.Body).RootElement.GetProperty("page_size")
+            .GetInt32() == 100), Is.True);
     }
 
     /// <summary>

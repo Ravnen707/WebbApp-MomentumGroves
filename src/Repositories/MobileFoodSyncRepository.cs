@@ -68,7 +68,8 @@ public sealed class MobileFoodSyncRepository
             using var insert = connection.CreateCommand();
             insert.Transaction = transaction;
             insert.CommandText =
-                "INSERT INTO CustomFoods(Name,Unit,Kcal,Protein,Carbs,Fat,Fiber) VALUES(@name,@unit,@kcal,@protein,@carbs,@fat,@fiber) RETURNING Id";
+                "INSERT INTO CustomFoods(Name,Unit,Kcal,Protein,Carbs,Fat,Fiber) VALUES(@name,@unit,@kcal,@protein," +
+                    "@carbs,@fat,@fiber) RETURNING Id";
             insert.AddParameter("@name", food.Name.Trim());
             insert.AddParameter("@unit", food.Unit);
             insert.AddParameter("@kcal", food.Kcal);

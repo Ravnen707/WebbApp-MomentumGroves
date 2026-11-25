@@ -50,10 +50,10 @@ internal sealed class MomentumDataRepository(PersonalDatabase database)
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = """
-                              INSERT INTO AppState (Key, JsonValue, UpdatedUtc)
-                              VALUES (@key, @json, @updated)
-                              ON CONFLICT(Key) DO UPDATE SET JsonValue = excluded.JsonValue, UpdatedUtc = excluded.UpdatedUtc
-                              """;
+        INSERT INTO AppState (Key, JsonValue, UpdatedUtc)
+        VALUES (@key, @json, @updated)
+        ON CONFLICT(Key) DO UPDATE SET JsonValue = excluded.JsonValue, UpdatedUtc = excluded.UpdatedUtc
+        """;
         command.AddParameter("@key", key);
         command.AddParameter("@json", value.GetRawText());
         command.AddParameter("@updated", PersonalDatabase.UtcNow());
@@ -66,7 +66,8 @@ internal sealed class MomentumDataRepository(PersonalDatabase database)
     /// <param name="values">The submitted documents keyed by application data key.</param>
     /// <param name="cancellationToken">The token used to cancel the storage operation.</param>
     /// <returns>The number of values inserted.</returns>
-    internal async Task<int> ImportMissingAsync(Dictionary<string, JsonElement> values, CancellationToken cancellationToken)
+    internal async Task<int> ImportMissingAsync(Dictionary<string, JsonElement> values,
+        CancellationToken cancellationToken)
     {
         await using var connection = database.CreateConnection(PersonalDatabase.StateFile);
         await connection.OpenAsync(cancellationToken);
@@ -77,7 +78,8 @@ internal sealed class MomentumDataRepository(PersonalDatabase database)
             await using var command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText =
-                "INSERT INTO AppState (Key, JsonValue, UpdatedUtc) VALUES (@key, @json, @updated) ON CONFLICT(Key) DO NOTHING";
+                "INSERT INTO AppState (Key, JsonValue, UpdatedUtc) VALUES (@key, @json, @updated) ON CONFLICT(Key) " +
+                    "DO NOTHING";
             command.AddParameter("@key", key);
             command.AddParameter("@json", value.GetRawText());
             command.AddParameter("@updated", PersonalDatabase.UtcNow());

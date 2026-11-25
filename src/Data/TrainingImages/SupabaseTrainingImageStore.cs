@@ -164,7 +164,8 @@ public sealed class SupabaseTrainingImageStore(HttpClient http, IConfiguration c
     {
         if (!response.IsSuccessStatusCode)
         {
-            throw new TrainingImageStorageException($"Supabase exercise image Storage returned HTTP {(int)response.StatusCode}.");
+            throw new TrainingImageStorageException(
+                $"Supabase exercise image Storage returned HTTP {(int)response.StatusCode}.");
         }
     }
 

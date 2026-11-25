@@ -43,7 +43,8 @@ public sealed class TrainingImageService(IWebHostEnvironment environment, ITrain
     /// <returns>The stored image, or null when absent or cloud storage is unavailable.</returns>
     public Task<StoredTrainingImage?> ReadCloudAsync(string filename, CancellationToken token)
     {
-        return cloud is not null && IsImageName(filename) ? cloud.ReadAsync(filename, token) : Task.FromResult<StoredTrainingImage?>(null);
+        return cloud is not null && IsImageName(filename) ? cloud.ReadAsync(filename,
+            token) : Task.FromResult<StoredTrainingImage?>(null);
     }
 
     /// <summary>
@@ -53,8 +54,8 @@ public sealed class TrainingImageService(IWebHostEnvironment environment, ITrain
     /// <returns>True when the filename is valid and uses a supported extension.</returns>
     internal static bool IsImageName(string name)
     {
-        return name.Length is > 0 and <= 255 && name.IndexOfAny(['/', '\\', '?', '#', ':']) == -1 &&
-            !name.Any(char.IsControl) &&
+        return name.Length is > 0 and <= 255 && name.IndexOfAny(['/', '\\', '?', '#',
+            ':']) == -1 && !name.Any(char.IsControl) &&
             Path.GetExtension(name).ToLowerInvariant() is ".jpg" or ".jpeg" or ".png" or ".webp";
     }
 
@@ -92,7 +93,9 @@ public sealed class TrainingImageService(IWebHostEnvironment environment, ITrain
             throw new ArgumentException("Choose a JPG, PNG or WebP image no larger than 8 MB.");
         }
 
-        var name = Regex.Replace(Path.GetFileNameWithoutExtension(originalName), "[^a-zA-Z0-9]+", "-").Trim('-');
+        var name = Regex.Replace(Path.GetFileNameWithoutExtension(originalName),
+            "[^a-zA-Z0-9]+", "-").Trim('-');
+        
         name = name[..Math.Min(name.Length, 80)].TrimEnd('-');
         if (name.Length == 0)
         {

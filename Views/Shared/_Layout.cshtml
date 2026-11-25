@@ -16,7 +16,7 @@
         <aside class="sidebar">
             <a class="brand" asp-controller="Home" asp-action="Index">
                 <img src="~/Logo/MomentumGrovesLogo.png" asp-append-version="true"
-                     alt="Momentum Groves dashboard" width="1536" height="1024"/>
+                    alt="Momentum Groves dashboard" width="1536" height="1024"/>
             </a>
             <nav aria-label="Main menu">
                 <a asp-controller="Home" asp-action="Index">Dashboard</a>
@@ -27,8 +27,8 @@
                 <details class="sidebar-group" id="food-library-nav"
                          open="@(ViewContext.RouteData.Values["controller"]?.ToString() == "FoodLibrary")">
                     <summary>Food Library</summary>
-                    <a asp-controller="FoodLibrary" asp-action="Foods">My Foods</a><a asp-controller="FoodLibrary"
-                                                                                      asp-action="Recipes">My
+                    <a asp-controller="FoodLibrary" asp-action="Foods">My Foods</a>
+                        <a asp-controller="FoodLibrary" asp-action="Recipes">My
                         Recipes</a>
                 </details>
                 <a asp-controller="Admin" asp-action="Index">Admin</a>

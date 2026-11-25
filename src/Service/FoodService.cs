@@ -1,4 +1,5 @@
 using MomentumGroves.Models;
+using System.Text.Json;
 using MomentumGroves.Repositories;
 
 namespace MomentumGroves.Service;
@@ -22,16 +23,18 @@ public sealed class FoodService
         try
         {
             _fiber = File.Exists(fiberPath)
-                ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, double>>(File.ReadAllText(fiberPath)) ?? new()
+                ? JsonSerializer.Deserialize<Dictionary<string, double>>(File.ReadAllText(fiberPath)) ?? new()
                 : new();
             if (!File.Exists(fiberPath))
             {
                 _logger.LogWarning("Fiber supplement is missing; searches will return unavailable fiber values");
             }
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        catch (Exception exception)
+            when (exception is IOException or UnauthorizedAccessException or JsonException)
         {
-            _logger.LogWarning(exception, "Could not load fiber supplement; searches will return unavailable fiber values");
+            _logger.LogWarning(exception,
+                "Could not load fiber supplement; searches will return unavailable fiber values");
             _fiber = new();
         }
     }
@@ -60,8 +63,7 @@ public sealed class FoodService
         catch (Exception exception)
         {
             _logger.LogWarning(exception, "Local Frida SQLite search failed");
-            return new FoodSearchResult(false, Array.Empty<FoodResult>(),
-                "The local food database could not be read.");
+            return new FoodSearchResult(false, Array.Empty<FoodResult>(), "The local food database could not be read.");
         }
     }
 }

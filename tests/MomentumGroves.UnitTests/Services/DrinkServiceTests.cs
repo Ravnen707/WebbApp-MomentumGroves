@@ -78,7 +78,7 @@ public class DrinkServiceTests
         Assert.That(_http.ClientNames, Is.EqualTo(new[] { "openfoodfacts" }));
         Assert.That(_http.Requests.Single().Uri.AbsoluteUri, Is.EqualTo(
             "https://search.openfoodfacts.org/search?q=" + Uri.EscapeDataString("æ & ? 東京") +
-            "&page_size=20&langs=da,en"));
+                "&page_size=20&langs=da,en"));
     }
 
     /// <summary>
@@ -124,7 +124,8 @@ public class DrinkServiceTests
     public async Task Search_UnwrapsSupportedProductObjects(string wrapper)
     {
         _http = new(_ => TestHttp.Response("[{\"" + wrapper + "\":" + Product + "}]"));
-        Assert.That((await Create().SearchAsync("water")).Drinks.Single().Name, Is.EqualTo("Water"));
+        Assert.That((await Create().SearchAsync("water")).Drinks.Single().Name,
+            Is.EqualTo("Water"));
     }
 
     /// <summary>
@@ -179,9 +180,8 @@ public class DrinkServiceTests
     {
         var calls = 0;
         _http = new(_ =>
-            ++calls == 1
-                ? TestHttp.Response("failure", HttpStatusCode.ServiceUnavailable)
-                : TestHttp.Response("[" + Product + "]"));
+            ++calls == 1 ? TestHttp.Response("failure",
+                HttpStatusCode.ServiceUnavailable) : TestHttp.Response("[" + Product + "]"));
         var service = Create();
         Assert.That((await service.SearchAsync("water")).Success, Is.False);
         LastSearch.SetValue(null, DateTimeOffset.MinValue);
@@ -200,8 +200,8 @@ public class DrinkServiceTests
     [TestCase("product_name_en", "English")]
     public async Task Search_NameFallbacks(string field, string name)
     {
-        var product = "{\"product_name\":null,\"" + field + "\":\"" + name +
-                      "\",\"nutriments\":{\"energy-kcal_100ml\":1}}";
+        var product =
+            "{\"product_name\":null,\"" + field + "\":\"" + name + "\",\"nutriments\":{\"energy-kcal_100ml\":1}}";
         _http = new(_ => TestHttp.Response("[" + product + "]"));
         Assert.That((await Create().SearchAsync("name")).Drinks.Single().Name, Is.EqualTo(name));
     }
@@ -296,7 +296,9 @@ public class DrinkServiceTests
     {
         _http = new(_ =>
             TestHttp.Response(
-                "[{\"product_name\":\"Drink\",\"nutrition_data_per\":\"100ML\",\"nutriments\":{\"energy-kcal_100ml\":1,\"energy-kcal_100g\":9,\"proteins_100g\":2,\"carbohydrates_100g\":3,\"fat_100g\":4}}]"));
+                "[{\"product_name\":\"Drink\",\"nutrition_data_per\":\"100ML\"," +
+                    "\"nutriments\":{\"energy-kcal_100ml\":1,\"energy-kcal_100g\":9,\"proteins_100g\":2," +
+                    "\"carbohydrates_100g\":3,\"fat_100g\":4}}]"));
         var drink = (await Create().SearchAsync("drink")).Drinks.Single();
         Assert.That(drink.Kcal, Is.EqualTo(1));
         Assert.That(drink.Protein, Is.EqualTo(2));

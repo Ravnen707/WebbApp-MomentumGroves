@@ -48,12 +48,17 @@ function updateZoneDisplay(key, value, goal, date, prefix) {
     const stat = document.querySelector(prefix === 'home' ? `#${key}-stat` : `#food-${key}`);
     if (stat) {
         stat.style.color = inactive || unknown ? 'var(--muted)' : nutritionColor(key, value, goal, date);
-        stat.title = !hasTarget ? '' : inactive ? 'Fibre was not assessed on this date' : unknown ? 'Fibre is missing for one or more entries' : isSickDay(date) ? 'Sick day – target assessment paused' : isCheatDay(date) ? 'Cheat day – included in balance' : zoneNames[nutritionZone(key, value)];
+        stat.title = !hasTarget ? '' : inactive ? 'Fibre was not assessed on this date' : unknown
+            ? 'Fibre is missing for one or more entries' : isSickDay(date)
+            ? 'Sick day – target assessment paused' : isCheatDay(date)
+            ? 'Cheat day – included in balance' : zoneNames[nutritionZone(key, value)];
     }
     const label = document.querySelector(prefix === 'home' ? `#${key}-zone` : `#food-${key}-zone`);
     if (label) {
         const cheat = !isSickDay(date) && isCheatDay(date);
-        label.textContent = !hasTarget ? '' : inactive ? 'Not active yet' : unknown ? 'Partially/not specified' : isSickDay(date) ? 'Sick day – targets paused' : cheat ? 'Cheat day – included in balance' : zoneNames[nutritionZone(key, value)];
+        label.textContent = !hasTarget ? '' : inactive ? 'Not active yet' : unknown
+            ? 'Partially/not specified' : isSickDay(date) ? 'Sick day – targets paused' : cheat
+            ? 'Cheat day – included in balance' : zoneNames[nutritionZone(key, value)];
         label.style.color = inactive || unknown ? 'var(--muted)' : nutritionColor(key, value, goal, date);
     }
 }
@@ -63,8 +68,15 @@ const getProfile = () => read(PROFILE_KEY, {});
 
 function calculate(profile) {
     const p = {...profile};
-    for (const k of ['weight', 'targetWeight', 'height', 'age', 'trainingDays', 'deficit', 'proteinFactor', 'fatPercent']) p[k] = Number(p[k]);
-    if (!Number.isFinite(p.weight) || p.weight < 20 || p.weight > 500 || !Number.isFinite(p.targetWeight) || p.targetWeight < 20 || p.targetWeight > 500 || !Number.isFinite(p.height) || p.height < 100 || p.height > 250 || !Number.isInteger(p.age) || p.age < 18 || p.age > 110 || !['male', 'female'].includes(p.sex) || !Number.isInteger(p.trainingDays) || p.trainingDays < 0 || p.trainingDays > 7 || ![300, 500, 700].includes(p.deficit) || !Number.isFinite(p.proteinFactor) || p.proteinFactor < 0.8 || p.proteinFactor > 2.5 || !Number.isFinite(p.fatPercent) || p.fatPercent < 15 || p.fatPercent > 45) return null;
+    for (const k of ['weight', 'targetWeight', 'height', 'age', 'trainingDays', 'deficit', 'proteinFactor',
+        'fatPercent']) p[k] = Number(p[k]);
+    if (!Number.isFinite(p.weight) || p.weight < 20 || p.weight > 500 || !Number.isFinite(p.targetWeight)
+        || p.targetWeight < 20 || p.targetWeight > 500 || !Number.isFinite(p.height) || p.height < 100 || p.height > 250
+        || !Number.isInteger(p.age) || p.age < 18 || p.age > 110 || !['male',
+        'female'].includes(p.sex) || !Number.isInteger(p.trainingDays) || p.trainingDays < 0 || p.trainingDays > 7
+        || ![300, 500,
+        700].includes(p.deficit) || !Number.isFinite(p.proteinFactor) || p.proteinFactor < 0.8 || p.proteinFactor > 2.5
+        || !Number.isFinite(p.fatPercent) || p.fatPercent < 15 || p.fatPercent > 45) return null;
     const bmr = 10 * p.weight + 6.25 * p.height - 5 * p.age + (p.sex === 'male' ? 5 : -161);
     const factor = p.includeTraining ? 1.2 + p.trainingDays * 0.05 : 1.2;
     const maintenance = Math.round(bmr * factor);
@@ -90,7 +102,8 @@ function setProgress(selector, value, goal, date = localDate(), key = 'kcal') {
     const el = document.querySelector(selector);
     if (!el) return;
     el.style.width = `${goal > 0 ? Math.min(100, Math.max(0, value / goal * 100)) : 0}%`;
-    el.style.background = key === 'fiber' && (!fiberActive(date) || !fiberComplete(date)) ? 'var(--muted)' : nutritionColor(key, value, goal, date);
+    el.style.background = key === 'fiber' && (!fiberActive(date) || !fiberComplete(date))
+        ? 'var(--muted)' : nutritionColor(key, value, goal, date);
 }
 
 
@@ -123,9 +136,11 @@ function renderCalculator() {
     function update() {
         const p = current(), result = calculate(p);
         document.querySelector('#training-settings').hidden = !p.includeTraining;
-        setText('#training-info', `You can adjust the number of training days without changing your training programmes.`);
+        setText('#training-info',
+            `You can adjust the number of training days without changing your training programmes.`);
         if (!result) {
-            for (const id of ['#calc-bmr', '#calc-maintenance', '#calc-kcal', '#calc-protein', '#calc-carbs', '#calc-fat', '#calc-loss']) setText(id, '–');
+            for (const id of ['#calc-bmr', '#calc-maintenance', '#calc-kcal', '#calc-protein', '#calc-carbs',
+                '#calc-fat', '#calc-loss']) setText(id, '–');
             setText('#calc-explanation', 'Check your entries.');
             return;
         }
@@ -136,7 +151,9 @@ function renderCalculator() {
         setText('#calc-carbs', `${fmt(result.carbs)} g`);
         setText('#calc-fat', `${fmt(result.fat)} g`);
         setText('#calc-loss', `${result.weeklyLoss.toLocaleString('en-GB', {maximumFractionDigits: 2})} kg/week`);
-        setText('#calc-explanation', `${p.includeTraining ? `${p.trainingDays} training sessions/week` : 'Sedentary'} · activity factor ${result.factor.toLocaleString('en-GB', {maximumFractionDigits: 2})} · ${p.deficit} kcal deficit`);
+        const activity = p.includeTraining ? `${p.trainingDays} training sessions/week` : 'Sedentary';
+        const factor = result.factor.toLocaleString('en-GB', {maximumFractionDigits: 2});
+        setText('#calc-explanation', `${activity} · activity factor ${factor} · ${p.deficit} kcal deficit`);
         const macroKcal = [result.protein * 4, result.carbs * 4, result.fat * 9],
             sum = macroKcal.reduce((a, b) => a + b, 0);
         ['protein', 'carbs', 'fat'].forEach((k, i) => {

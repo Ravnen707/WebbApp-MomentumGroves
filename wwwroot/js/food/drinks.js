@@ -23,7 +23,8 @@ function setupDrinks(picker, refresh) {
         protein: 0,
         carbs: 0,
         fat: 0, fiber: 0
-    }, {name: 'Unsweetened tea', source: 'Default value (approximate)', kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0}];
+    }, {name: 'Unsweetened tea', source: 'Default value (approximate)', kcal: 0, protein: 0, carbs: 0, fat: 0,
+        fiber: 0}];
     const saved = () => read('momentum.drinks.recent.v1', []);
     const display = (products) => {
         results.replaceChildren();
@@ -46,7 +47,8 @@ function setupDrinks(picker, refresh) {
         form.elements.name.value = p.name;
         form.elements.ml.value = 500;
         for (const k of fields) form.elements[k].value = p[k] === null || p[k] === undefined ? '' : p[k];
-        document.querySelector('#drink-source').textContent = 'Source: ' + p.source + '. Always check the values against the packaging.';
+        document.querySelector('#drink-source').textContent =
+            'Source: ' + p.source + '. Always check the values against the packaging.';
         warning.textContent = '';
         results.replaceChildren();
         status.textContent = 'Product selected. Check the values and press Save.';
@@ -58,7 +60,9 @@ function setupDrinks(picker, refresh) {
         document.querySelector('#drink-amount-heading').textContent = `For ${fmt(ml)} ml`;
         for (const k of fields) {
             const v = form.elements[k].value;
-            document.querySelector('#drink-total-' + k).textContent = v === '' || !Number.isFinite(parseDecimal(v)) || !Number.isFinite(ml) ? 'Not specified' : fmt(parseDecimal(v) * ml / 100) + (k === 'kcal' ? ' kcal' : ' g');
+            document.querySelector('#drink-total-' + k).textContent = v === '' || !Number.isFinite(parseDecimal(v))
+                || !Number.isFinite(ml) ? 'Not specified' : fmt(parseDecimal(v) * ml / 100) + (k === 'kcal'
+                ? ' kcal' : ' g');
         }
     }
 
@@ -92,7 +96,8 @@ function setupDrinks(picker, refresh) {
             display([...defaults, ...saved().slice(0, 6)]);
             return;
         }
-        const local = [...defaults, ...saved()].filter(x => x.name.toLocaleLowerCase('en-GB').includes(q.toLocaleLowerCase('en-GB')));
+        const local = [...defaults,
+            ...saved()].filter(x => x.name.toLocaleLowerCase('en-GB').includes(q.toLocaleLowerCase('en-GB')));
         display(local);
         timer = setTimeout(async () => {
             if (id !== searchId) return;
@@ -140,7 +145,8 @@ function setupDrinks(picker, refresh) {
                 continue;
             }
             if (raw === '' || !Number.isFinite(parseDecimal(raw)) || parseDecimal(raw) < 0) {
-                warning.textContent = 'All four nutritional values are required. Missing values cannot be treated as 0.';
+                warning.textContent =
+                    'All four nutritional values are required. Missing values cannot be treated as 0.';
                 return;
             }
             values[k] = parseDecimal(raw);
@@ -152,7 +158,8 @@ function setupDrinks(picker, refresh) {
             type: 'drink',
             grams: ml,
             ml,
-            notes: 'Drink', ...Object.fromEntries(fields.map(k => [k, values[k] === null ? null : Number((values[k] * ml / 100).toFixed(3))])),
+            notes: 'Drink', ...Object.fromEntries(fields.map(k => [k,
+                values[k] === null ? null : Number((values[k] * ml / 100).toFixed(3))])),
             per100ml: values
         };
         const entries = read(FOOD_KEY, []);

@@ -39,8 +39,8 @@ internal static class FridaWorkbook
             /// <param name="value">The test value supplied for the field.</param>
             void Number(string column, double value)
             {
-                row.Add(new XElement(sheet + "c",
-                new XAttribute("r", column + index), new XElement(sheet + "v", value)));
+                row.Add(new XElement(sheet + "c", new XAttribute("r", column + index), new XElement(sheet + "v",
+                    value)));
             }
             if (index <= 4)
             {
@@ -81,28 +81,40 @@ internal static class FridaWorkbook
                 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
                   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
                   <Default Extension="xml" ContentType="application/xml"/>
-                  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
-                  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
-                  <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+                  <Override PartName="/xl/workbook.xml"
+                    ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+                  <Override PartName="/xl/worksheets/sheet1.xml"
+                    ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+                  <Override PartName="/xl/worksheets/sheet2.xml"
+                    ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
                 </Types>
                 """);
             Add("_rels/.rels", """
                 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-                  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+                  <Relationship Id="rId1"
+                    Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
+                    Target="xl/workbook.xml"/>
                 </Relationships>
                 """);
             Add("xl/workbook.xml", new XDocument(new XElement(sheet + "workbook",
                 new XAttribute(XNamespace.Xmlns + "r", relationships),
                 new XElement(sheet + "sheets",
-                    new XElement(sheet + "sheet", new XAttribute("name", "Notes"), new XAttribute("sheetId", 1), new XAttribute(relationships + "id", "rId1")),
-                    new XElement(sheet + "sheet", new XAttribute("name", includeDataSheet ? "Data_Table" : "Other"), new XAttribute("sheetId", 2), new XAttribute(relationships + "id", "rId2"))))).ToString());
+                    new XElement(sheet + "sheet", new XAttribute("name", "Notes"), new XAttribute("sheetId", 1),
+                        new XAttribute(relationships + "id", "rId1")),
+                    new XElement(sheet + "sheet", new XAttribute("name", includeDataSheet ? "Data_Table" : "Other"),
+                        new XAttribute("sheetId", 2), new XAttribute(relationships + "id", "rId2"))))).ToString());
             Add("xl/_rels/workbook.xml.rels", """
                 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-                  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
-                  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
+                  <Relationship Id="rId1"
+                    Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
+                    Target="worksheets/sheet1.xml"/>
+                  <Relationship Id="rId2"
+                    Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
+                    Target="worksheets/sheet2.xml"/>
                 </Relationships>
                 """);
-            Add("xl/worksheets/sheet1.xml", new XElement(sheet + "worksheet", new XElement(sheet + "sheetData")).ToString());
+            Add("xl/worksheets/sheet1.xml", new XElement(sheet + "worksheet",
+                new XElement(sheet + "sheetData")).ToString());
             Add("xl/worksheets/sheet2.xml", new XElement(sheet + "worksheet", rows).ToString());
         }
         return output.ToArray();

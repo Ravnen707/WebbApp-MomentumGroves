@@ -26,18 +26,20 @@ builder.Services.AddSingleton<AdminTechnicalStatusService>();
 builder.Services.AddScoped<MomentumGroves.Service.DrinkService>();
 builder.Services.AddScoped<MomentumGroves.Service.FoodService>();
 builder.Services.AddScoped<MomentumGroves.Service.MobileFoodSyncService>();
-builder.Services.AddScoped(services => new MobileFoodSyncRepository(services.GetRequiredService<PersonalDatabase>()));
-builder.Services.AddSingleton(services => new FoodLibraryService(services.GetRequiredService<PersonalDatabase>(),
+builder.Services.AddScoped(services => new MobileFoodSyncRepository(
+    services.GetRequiredService<PersonalDatabase>()));
+builder.Services.AddSingleton(services => new FoodLibraryService(
+    services.GetRequiredService<PersonalDatabase>(),
     services.GetRequiredService<ILogger<FoodLibraryService>>()));
-builder.Services.AddSingleton(services => new MomentumDataService(services.GetRequiredService<PersonalDatabase>(),
+builder.Services.AddSingleton(services => new MomentumDataService(
+    services.GetRequiredService<PersonalDatabase>(),
     services.GetRequiredService<ILogger<MomentumDataService>>()));
 builder.Services.AddHttpClient<SupabaseTrainingImageStore>(client => client.Timeout = TimeSpan.FromSeconds(20))
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddSingleton(services => new TrainingImageService(
     services.GetRequiredService<IWebHostEnvironment>(),
     services.GetRequiredService<PersonalDatabase>().UsesPostgres
-        ? services.GetRequiredService<SupabaseTrainingImageStore>()
-        : null));
+        ? services.GetRequiredService<SupabaseTrainingImageStore>() : null));
 builder.Services.AddHttpClient<MomentumGroves.Service.FridaUpdateService>(client =>
 {
     client.Timeout = TimeSpan.FromMinutes(3);
@@ -98,8 +100,8 @@ app.UseRouting();
 app.Use(async (context, next) =>
 {
     var action = context.GetEndpoint()?.Metadata.GetMetadata<ControllerActionDescriptor>();
-    if (action is null || action.ControllerTypeInfo.AsType() ==
-        typeof(MomentumGroves.Controllers.DatabaseInitializationController) ||
+    if (action is null ||
+        action.ControllerTypeInfo.AsType() == typeof(MomentumGroves.Controllers.DatabaseInitializationController) ||
         !context.RequestServices.GetRequiredService<DatabaseInitializationService>().GetStatus().RequiresLocalSetup)
     {
         await next();

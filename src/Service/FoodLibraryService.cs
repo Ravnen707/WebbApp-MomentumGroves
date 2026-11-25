@@ -75,8 +75,8 @@ public sealed class FoodLibraryService
     public long SaveFood(long? id, SaveLibraryFood food, string? version = null)
     {
         if (string.IsNullOrWhiteSpace(food.Name) || food.Name.Length > 200 || food.Unit is not ("g" or "ml") ||
-            new[] { food.Kcal, food.Protein, food.Carbs, food.Fat, food.Fiber ?? 0 }.Any(x =>
-                !double.IsFinite(x) || x < 0))
+            new[] { food.Kcal, food.Protein, food.Carbs, food.Fat,
+                food.Fiber ?? 0 }.Any(x => !double.IsFinite(x) || x < 0))
         {
             throw new ArgumentException("Invalid food details.");
         }
@@ -112,8 +112,7 @@ public sealed class FoodLibraryService
             /// <returns>The sum of known amounts for the nutrient, or null when all amounts are unknown.</returns>
             double? Total(Func<RecipeIngredientDetail, double?> selector)
             {
-                return items.Any(x => selector(x).HasValue)
-                    ? items.Sum(x => (selector(x) ?? 0) * x.Amount / 100)
+                return items.Any(x => selector(x).HasValue) ? items.Sum(x => (selector(x) ?? 0) * x.Amount / 100)
                     : null;
             }
 

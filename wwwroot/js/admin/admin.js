@@ -16,7 +16,14 @@
             return result.success ? "No DTU release identified." : "Could not determine the latest DTU release.";
         }
         const latest = result.latest;
-        return `Latest version found: ${latest.version}\nTitle: ${latest.title}\nFile: ${latest.fileName}\nArticle ID: ${latest.articleId}\nInstalled version: ${result.installedVersion}\nUpdate available: ${result.updateAvailable ? "Yes" : "No"}`;
+        return [
+            `Latest version found: ${latest.version}`,
+            `Title: ${latest.title}`,
+            `File: ${latest.fileName}`,
+            `Article ID: ${latest.articleId}`,
+            `Installed version: ${result.installedVersion}`,
+            `Update available: ${result.updateAvailable ? "Yes" : "No"}`
+        ].join('\n');
     }
 
     function setBusy(value) {
@@ -63,7 +70,8 @@
             status(`${result.message}\n${describeRelease(result)}`, !result.success);
             if (result.success && result.updateAvailable && result.latest) {
                 release = result.latest;
-                byId('update-description').textContent = `${release.fileName} (version ${release.version}). Installed version: ${result.installedVersion}.`;
+                byId('update-description').textContent =
+                    `${release.fileName} (version ${release.version}). Installed version: ${result.installedVersion}.`;
                 prompt.hidden = false;
             }
         } catch (error) {

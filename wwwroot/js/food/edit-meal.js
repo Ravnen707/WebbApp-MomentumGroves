@@ -42,7 +42,8 @@ export const openEntryEditor = (() => {
     }
 
     function ingredientTotals() {
-        const grams = ingredientItems.reduce((sum, item) => sum + Number(item.grams) * (item.diaryWeightFactor ?? 1), 0);
+        const grams = ingredientItems.reduce((sum, item) => sum + Number(item.grams) * (item.diaryWeightFactor ?? 1),
+            0);
         const totals = {grams};
         for (const key of nutrientKeys) {
             const known = ingredientItems.some(item => ingredientPer100(item, key) != null);
@@ -64,7 +65,8 @@ export const openEntryEditor = (() => {
         editingIngredients = true;
         const totals = ingredientTotals();
         showTotals(totals);
-        input('ingredients').value = ingredientItems.map(item => `${item.name} (${roundFoodAmount(item.grams)} ${item.unit || 'g'})`).join(', ');
+        input('ingredients').value = ingredientItems.map(item =>
+            `${item.name} (${roundFoodAmount(item.grams)} ${item.unit || 'g'})`).join(', ');
         message.textContent = '';
     }
 

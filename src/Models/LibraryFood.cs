@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace MomentumGroves.Models;
 
 /// <summary>
@@ -12,5 +14,5 @@ public sealed record LibraryFood(
     double Carbs,
     double Fat,
     double? Fiber,
-    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     string? Version = null);

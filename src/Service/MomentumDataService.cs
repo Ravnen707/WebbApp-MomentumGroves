@@ -67,8 +67,8 @@ public sealed partial class MomentumDataService
 
             return result;
         }
-        catch (Exception exception) when (!(exception is OperationCanceledException &&
-                                            cancellationToken.IsCancellationRequested))
+        catch (Exception exception)
+            when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
             _logger.LogError(exception, "Application data operation {Operation} failed", nameof(ReadAllAsync));
             throw;
@@ -93,8 +93,8 @@ public sealed partial class MomentumDataService
         {
             await _repository.SaveAsync(key, value, cancellationToken);
         }
-        catch (Exception exception) when (!(exception is OperationCanceledException &&
-                                            cancellationToken.IsCancellationRequested))
+        catch (Exception exception)
+            when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
             _logger.LogError(exception, "Application data operation {Operation} failed", nameof(SaveAsync));
             throw;
@@ -119,8 +119,8 @@ public sealed partial class MomentumDataService
         {
             return await _repository.ImportMissingAsync(values, cancellationToken);
         }
-        catch (Exception exception) when (!(exception is OperationCanceledException &&
-                                            cancellationToken.IsCancellationRequested))
+        catch (Exception exception)
+            when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
             _logger.LogError(exception, "Application data operation {Operation} failed", nameof(ImportMissingAsync));
             throw;

@@ -4,8 +4,12 @@
     <h1>Your daily overview</h1>
     <p class="muted">Your targets are calculated from your personal profile.</p></div>
   <a class="btn" asp-controller="BodyMetrics" asp-action="Index">Adjust my targets →</a></div>
-<p id="home-sick-status" class="home-sick-status" hidden>🩺 This date is marked as a sick day. Your entries are shown, but nutrition targets are not assessed. <a asp-controller="Food" asp-action="Index">Open food diary</a></p>
-<p id="home-cheat-status" class="home-cheat-status" hidden>★ This date is marked as a cheat day. Your entries still count towards the 7-day balance. <a asp-controller="Food" asp-action="Index">Open food diary</a></p>
+<p id="home-sick-status" class="home-sick-status"
+    hidden>🩺 This date is marked as a sick day. Your entries are shown, but nutrition targets are not assessed. <a
+    asp-controller="Food" asp-action="Index">Open food diary</a></p>
+<p id="home-cheat-status" class="home-cheat-status"
+    hidden>★ This date is marked as a cheat day. Your entries still count towards the 7-day balance. <a
+    asp-controller="Food" asp-action="Index">Open food diary</a></p>
 <div class="stats stats-four dashboard-nutrition">
   <section class="panel">
     <div class="statlabel">CALORIES</div>
@@ -55,12 +59,14 @@
       <div id="fiber-bar"></div>
     </div>
     <p class="muted tiny" id="fiber-remaining"></p>
-    <a class="tiny" id="fiber-diary-link" asp-controller="Food" asp-action="Index" hidden>Log fibre in the food diary</a>
+    <a class="tiny" id="fiber-diary-link" asp-controller="Food" asp-action="Index"
+        hidden>Log fibre in the food diary</a>
     <button type="button" class="nutrition-zones-link" data-open-nutrition-zones>View nutrition ranges →</button>
   </section>
 </div>
 <section class="panel section-gap workout-wide">
-  <div class="section-head"><h2>Training programmes</h2><a asp-controller="Training" asp-action="Index">Training program →</a>
+  <div class="section-head"><h2>Training programmes</h2>
+      <a asp-controller="Training" asp-action="Index">Training program →</a>
   </div>
   <p class="muted tiny" id="home-training-week"></p>
   <div id="home-workouts" class="workout-horizontal"></div>
@@ -94,7 +100,8 @@
             class="balance-zone-bar balance-zone-red"></span><small>–</small></div>
         <div class="balance-zone"><strong>Slightly below target</strong><span
             class="balance-zone-bar balance-zone-orange"></span><small>–</small></div>
-        <div class="balance-zone"><strong>Close to target</strong><span class="balance-zone-bar balance-zone-green"></span><small>–</small>
+        <div class="balance-zone"><strong>Close to target</strong><span class="balance-zone-bar balance-zone-green">
+            </span><small>–</small>
         </div>
         <div class="balance-zone"><strong>Slightly above target</strong><span
             class="balance-zone-bar balance-zone-orange"></span><small>–</small></div>
@@ -106,7 +113,8 @@
   <p class="muted tiny calorie-balance-note" id="balance-note"></p>
 </section>
 <section class="panel section-gap">
-  <div class="section-head"><h2>Nutrition over the last 7 days</h2><a asp-controller="Food" asp-action="Index">Food Diary
+  <div class="section-head"><h2>Nutrition over the last 7 days</h2>
+      <a asp-controller="Food" asp-action="Index">Food Diary
       →</a></div>
   <div class="chart-selector"><label for="week-chart-metric">Show nutrient
       <select id="week-chart-metric" aria-label="Choose a nutrient for the last 7 days">

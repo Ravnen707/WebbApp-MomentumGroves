@@ -20,7 +20,8 @@
         const el = document.querySelector(selector);
         if (el) el.innerHTML = value;
     };
-    const localDate = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const localDate = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,
+        '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const shift = (date, n) => {
         const d = new Date(date + 'T12:00:00');
         d.setDate(d.getDate() + n);

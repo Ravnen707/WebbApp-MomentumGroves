@@ -57,7 +57,8 @@ public sealed class MomentumDataController : ControllerBase
     /// <param name="cancellationToken">The token used to cancel the operation.</param>
     /// <returns>The number of values imported or a validation error.</returns>
     [HttpPost("import")]
-    public async Task<IActionResult> Import([FromBody] Dictionary<string, JsonElement> values, CancellationToken cancellationToken)
+    public async Task<IActionResult> Import([FromBody] Dictionary<string, JsonElement> values,
+        CancellationToken cancellationToken)
     {
         try
         {

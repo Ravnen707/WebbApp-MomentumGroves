@@ -15,9 +15,10 @@ internal static class SqliteDataMigration
     private static readonly SqliteMigrationTable[] Library =
     [
         new("CustomFoods", "Id, Name, Unit, Kcal, Protein, Carbs, Fat, Fiber",
-            [DbType.Int64, DbType.String, DbType.String, DbType.Double, DbType.Double, DbType.Double, DbType.Double, DbType.Double]),
-        new("Recipes", "Id, Name, FinishedWeight, CreatedUtc",
-            [DbType.Int64, DbType.String, DbType.Double, DbType.String]),
+            [DbType.Int64, DbType.String, DbType.String, DbType.Double, DbType.Double, DbType.Double, DbType.Double,
+                DbType.Double]),
+        new("Recipes", "Id, Name, FinishedWeight, CreatedUtc", [DbType.Int64, DbType.String, DbType.Double,
+            DbType.String]),
         new("RecipeIngredients", "RecipeId, FoodId, Amount", [DbType.Int64, DbType.Int64, DbType.Double]),
         new("MobileFoodImports", "MobileId, FoodId", [DbType.String, DbType.Int64], Optional: true)
     ];
@@ -55,7 +56,8 @@ internal static class SqliteDataMigration
             using var transaction = destination.BeginTransaction();
             PersonalDatabase.InitializePostgres(destination, transaction);
             PersonalDatabase.Execute(destination, transaction, """
-                LOCK TABLE AppState, CustomFoods, MobileFoodImports, Recipes, RecipeIngredients IN ACCESS EXCLUSIVE MODE;
+                LOCK TABLE AppState, CustomFoods, MobileFoodImports, Recipes, RecipeIngredients
+                    IN ACCESS EXCLUSIVE MODE;
                 """);
 
             foreach (var table in Library.Prepend(State))
@@ -111,13 +113,15 @@ internal static class SqliteDataMigration
         {
             Console.Error.WriteLine($"Migration failed with PostgreSQL SQLSTATE {exception.SqlState}.");
         }
-        catch (InvalidOperationException exception) when (exception.Source == typeof(SqliteDataMigration).Assembly.GetName().Name)
+        catch (InvalidOperationException exception)
+            when (exception.Source == typeof(SqliteDataMigration).Assembly.GetName().Name)
         {
             Console.Error.WriteLine(exception.Message);
         }
         catch (Exception exception)
         {
-            Console.Error.WriteLine($"Migration failed ({exception.GetType().Name}). Check the source snapshots and destination configuration.");
+            Console.Error.WriteLine($"Migration failed ({exception.GetType().Name}). Check the source snapshots and " +
+                "destination configuration.");
         }
 
         return 1;
@@ -273,6 +277,7 @@ internal static class SqliteDataMigration
         }
 
         var next = checked(highWaterMark + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        PersonalDatabase.Execute(transaction.Connection!, transaction, $"ALTER TABLE {table} ALTER COLUMN Id RESTART WITH {next}");
+        PersonalDatabase.Execute(transaction.Connection!, transaction,
+            $"ALTER TABLE {table} ALTER COLUMN Id RESTART WITH {next}");
     }
 }

@@ -42,8 +42,8 @@ public sealed partial class MomentumDataService
             var changed = false;
             foreach (var edit in edits)
             {
-                if (!exercises.TryGetValue(edit.ExerciseId, out var exercise) ||
-                    exercise["type"]?.ToString() == "cardio")
+                if (!exercises.TryGetValue(edit.ExerciseId,
+                    out var exercise) || exercise["type"]?.ToString() == "cardio")
                 {
                     results.Add(new(edit.ChangeId, "missing"));
                     continue;
@@ -158,10 +158,8 @@ public sealed partial class MomentumDataService
 
             source = new JsonObject
             {
-                ["groups"] = groups, ["dashboardGroupId"] = groups.Count > 0 &&
-                                                            groups[0]?["id"]?.ToString() == "full"
-                    ? "full"
-                    : null
+                ["groups"] = groups,
+                ["dashboardGroupId"] = groups.Count > 0 && groups[0]?["id"]?.ToString() == "full" ? "full" : null
             };
         }
 
@@ -181,8 +179,8 @@ public sealed partial class MomentumDataService
 
                 for (var index = 0; index < exercises.Count; index++)
                 {
-                    if (exercises[index] is JsonObject exercise &&
-                        string.IsNullOrWhiteSpace(exercise["id"]?.ToString()))
+                    if (exercises[index] is JsonObject exercise
+                        && string.IsNullOrWhiteSpace(exercise["id"]?.ToString()))
                     {
                         exercise["id"] = $"legacy:{group["id"]}:{programme["id"]}:{index}";
                     }

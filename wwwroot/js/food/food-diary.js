@@ -31,7 +31,11 @@ function renderFood() {
         document.querySelector('#food-list')?.classList.toggle('cheat-day-entries', cheat);
         document.querySelector('.stats.stats-four')?.classList.toggle('cheat-day-stats', cheat && !sick);
         for (const key of ['kcal', 'protein', 'carbs', 'fat', 'fiber']) {
-            setText(`#food-${key}`, key === 'fiber' && !fiberActive(picker.value) ? '–' : key === 'fiber' && !fiberComplete(picker.value) ? (fiberKnown(picker.value) ? `${fmt(t.fiber)} g (partial)` : 'Not specified') : (sick || cheat) ? `${fmt(t[key])}${key === 'kcal' ? ' kcal' : ' g'}` : `${fmt(t[key])} / ${fmt(g[key])}${key === 'kcal' ? '' : ' g'}`);
+            setText(`#food-${key}`,
+                key === 'fiber' && !fiberActive(picker.value) ? '–' : key === 'fiber' && !fiberComplete(picker.value)
+                ? (fiberKnown(picker.value) ? `${fmt(t.fiber)} g (partial)` : 'Not specified') : (sick || cheat)
+                ? `${fmt(t[key])}${key === 'kcal' ? ' kcal' : ' g'}` : `${fmt(t[key])} / ${fmt(g[key])}${key === 'kcal'
+                ? '' : ' g'}`);
             setProgress(`#food-${key}-bar`, t[key], g[key], picker.value, key);
             updateZoneDisplay(key, t[key], g[key], picker.value, 'food');
             const stat = document.querySelector(`#food-${key}`);
@@ -54,7 +58,20 @@ function renderFood() {
                 : 'Mark as a cheat day to highlight it in orange. The day still counts towards the balance.';
         }
         setText('#meal-count', `${items.length} entries`);
-        setHTML('#food-list', items.length ? items.map(x => `<div class="meal-row"><div><strong>${esc(x.name)}</strong><small>${fmt(x.grams)} ${x.type === 'drink' ? 'ml' : 'g'} · ${fmt(x.kcal)} kcal · P: ${fmt(x.protein)} g · C: ${fmt(x.carbs || 0)} g · F: ${fmt(x.fat)} g · Fibre: ${x.fiber == null ? 'not specified' : fmt(x.fiber) + ' g'}</small>${x.notes ? `<small>${esc(x.notes)}</small>` : ''}</div><div class="meal-actions"><button type="button" class="btn secondary" data-edit="${esc(x.id)}">Edit</button><button type="button" class="btn danger" data-remove="${esc(x.id)}">Delete</button></div></div>`).join('') : '<div class="empty">No entries for this date.</div>');
+    setHTML('#food-list', items.length ? items.map(x => `
+        <div class="meal-row">
+            <div>
+                <strong>${esc(x.name)}</strong>
+                <small>${fmt(x.grams)} ${x.type === 'drink' ? 'ml' : 'g'} · ${fmt(x.kcal)} kcal · P: ${fmt(x.protein)} g
+                    · C: ${fmt(x.carbs || 0)} g · F: ${fmt(x.fat)} g
+                    · Fibre: ${x.fiber == null ? 'not specified' : fmt(x.fiber) + ' g'}</small>
+                ${x.notes ? `<small>${esc(x.notes)}</small>` : ''}
+            </div>
+            <div class="meal-actions">
+                <button type="button" class="btn secondary" data-edit="${esc(x.id)}">Edit</button>
+                <button type="button" class="btn danger" data-remove="${esc(x.id)}">Delete</button>
+            </div>
+        </div>`).join('') : '<div class="empty">No entries for this date.</div>');
         document.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => {
             if (!confirm('Delete this entry?')) return;
             write(FOOD_KEY, food().filter(x => String(x.id) !== btn.dataset.remove));

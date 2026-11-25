@@ -71,8 +71,7 @@ public class TrainingController : Controller
     public async Task<IActionResult> Save([FromServices] MomentumDataService data,
         [FromBody] TrainingSave save, CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid || save is null ||
-            save.Programmes.ValueKind != System.Text.Json.JsonValueKind.Object)
+        if (!ModelState.IsValid || save is null || save.Programmes.ValueKind != System.Text.Json.JsonValueKind.Object)
         {
             return BadRequest();
         }
@@ -84,7 +83,9 @@ public class TrainingController : Controller
         }
         catch (TrainingConflictException)
         {
-            return Conflict(new { message = "A weight changed since this editor loaded. Copy any unsaved edits, then reload programmes and review the latest weight." });
+            const string message = "A weight changed since this editor loaded. Copy any unsaved edits, " +
+                "then reload programmes and review the latest weight.";
+            return Conflict(new { message });
         }
         catch (ArgumentException)
         {

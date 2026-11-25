@@ -14,7 +14,8 @@
 </div>
 <div class="training-program-actions">
     <button type="button" id="training-rename-group" class="btn secondary">Rename group</button>
-    <button type="button" id="training-dashboard-group" class="btn secondary" aria-pressed="false">Show this group on dashboard</button>
+    <button type="button" id="training-dashboard-group" class="btn secondary"
+        aria-pressed="false">Show this group on dashboard</button>
     <button type="button" id="training-add-box" class="btn secondary">+ Add programme</button>
 </div>
 <div id="training-days" class="training-stack"></div>
@@ -36,12 +37,16 @@
         </section>
         <section class="panel training-development-card"><h3>Exercise progress</h3>
             <div class="training-progress-filters">
-                <label>Category<select id="training-progress-category"
-                                       aria-label="Choose a training category"></select></label>
-                <label>Programme<select id="training-progress-topic" aria-label="Choose a training programme"></select></label>
+                <label>Category
+                    <select id="training-progress-category" aria-label="Choose a training category"></select>
+                </label>
+                <label>Programme
+                    <select id="training-progress-topic" aria-label="Choose a training programme"></select>
+                </label>
                 <label>Exercise<select id="training-progress-exercise" aria-label="Choose an exercise"></select></label>
             </div>
-            <div id="training-progress-strength" class="training-progress-strength muted" aria-live="polite">Choose an exercise to see your progress.
+            <div id="training-progress-strength" class="training-progress-strength muted"
+                aria-live="polite">Choose an exercise to see your progress.
             </div>
         </section>
     </div>

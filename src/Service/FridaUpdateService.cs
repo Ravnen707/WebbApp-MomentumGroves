@@ -55,11 +55,14 @@ public sealed class FridaUpdateService
             var newer = ParseVersion(latest.Version) > ParseVersion(installed.Version);
             return new FridaCheckResult(true,
                 newer
-                    ? $"New DTU version found: {latest.Version} (installed: {installed.Version}). You can install the new Excel file."
-                    : $"The latest DTU version found is {latest.Version}. Your installed version is {installed.Version}; no newer version was found.",
+                    ? $"New DTU version found: {latest.Version} (installed: {installed.Version}). You can install " +
+                        "the new Excel file."
+                    : $"The latest DTU version found is {latest.Version}. " +
+                        $"Your installed version is {installed.Version}; no newer version was found.",
                 installed.Version, installed.Count, latest, newer);
         }
-        catch (Exception exception) when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
+        catch (Exception exception)
+            when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
             _logger.LogWarning(exception, "DTU Frida version check failed");
             return new FridaCheckResult(false, "Could not check DTU right now. Please try again later.",
@@ -90,20 +93,21 @@ public sealed class FridaUpdateService
             if (latest is null || latest.ArticleId != request.ArticleId || latest.Version != request.Version)
             {
                 _logger.LogWarning("Frida installation rejected because the requested release is no longer current");
-                return new FridaInstallResult(false, "The selected version is no longer the latest. Please check again.",
-                    "", 0);
+                return new FridaInstallResult(false,
+                    "The selected version is no longer the latest. Please check again.", "", 0);
             }
 
             var installed = await GetInstalledAsync(cancellationToken);
             if (ParseVersion(latest.Version) <= ParseVersion(installed.Version))
             {
-                return new FridaInstallResult(true, "No newer version is available. The database is unchanged.", installed.Version,
+                return new FridaInstallResult(true, "No newer version is available. The database is unchanged.",
+                    installed.Version,
                     installed.Count);
             }
 
             temporaryFile = Path.Combine(Path.GetTempPath(), $"frida-{Guid.NewGuid():N}.xlsx");
             using (var response = await _http.GetAsync(latest.DownloadUrl, HttpCompletionOption.ResponseHeadersRead,
-                       cancellationToken))
+                cancellationToken))
             {
                 response.EnsureSuccessStatusCode();
                 if (response.Content.Headers.ContentLength > 100_000_000)
@@ -158,12 +162,14 @@ public sealed class FridaUpdateService
                 }
             }
 
-            _logger.LogInformation("Installed Frida version {Version} with {FoodCount} foods", latest.Version, foods.Count);
+            _logger.LogInformation("Installed Frida version {Version} with {FoodCount} foods", latest.Version,
+                foods.Count);
             return new FridaInstallResult(true,
                 $"Updated to version {latest.Version}. Imported {foods.Count} foods.", latest.Version,
                 foods.Count);
         }
-        catch (Exception exception) when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
+        catch (Exception exception)
+            when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
             _logger.LogError(exception, "DTU Frida import failed");
             return new FridaInstallResult(false,
@@ -282,9 +288,11 @@ public sealed class FridaUpdateService
                     releases.Add(new FridaRelease(version, articleId, title, name, url));
                 }
             }
-            catch (Exception exception) when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
+            catch (Exception exception)
+                when (!(exception is OperationCanceledException && cancellationToken.IsCancellationRequested))
             {
-                _logger.LogWarning(exception, "Could not read Frida article {ArticleId}; continuing with other articles", articleId);
+                _logger.LogWarning(exception,
+                    "Could not read Frida article {ArticleId}; continuing with other articles", articleId);
             }
         }
 
@@ -334,8 +342,9 @@ public sealed class FridaUpdateService
                 }
 
                 var english = reader.GetValue(1)?.ToString();
-                foods.Add(new FridaFoodRow(name, english, Number(reader.GetValue(5)), Number(reader.GetValue(7)),
-                    Number(reader.GetValue(11)), Number(reader.GetValue(14))));
+                foods.Add(new FridaFoodRow(name, english, Number(reader.GetValue(5)),
+                    Number(reader.GetValue(7)), Number(reader.GetValue(11)),
+                    Number(reader.GetValue(14))));
             }
 
             break;

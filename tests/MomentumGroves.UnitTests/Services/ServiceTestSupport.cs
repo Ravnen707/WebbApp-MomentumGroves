@@ -34,7 +34,8 @@ public abstract class DatabaseServiceTests
     [SetUp]
     public void CreateWorkspace()
     {
-        _workspaceRoot = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "MomentumGroves-NUnit", Guid.NewGuid().ToString("N")));
+        _workspaceRoot = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "MomentumGroves-NUnit",
+            Guid.NewGuid().ToString("N")));
         Environment = new TestEnvironment { ContentRootPath = _workspaceRoot };
         Directory.CreateDirectory(DataPath(""));
     }
@@ -86,7 +87,8 @@ public abstract class DatabaseServiceTests
     protected void CreateFrida(string? version = null)
     {
         Sql("frida.db",
-            "CREATE TABLE Foods (Id INTEGER PRIMARY KEY, NameDanish TEXT, NameEnglish TEXT, Kcal REAL, Protein REAL, Carbs REAL, Fat REAL)");
+            "CREATE TABLE Foods (Id INTEGER PRIMARY KEY, NameDanish TEXT, NameEnglish TEXT, Kcal REAL, Protein REAL, " +
+                "Carbs REAL, Fat REAL)");
         if (version is not null)
         {
             Sql("frida.db", "CREATE TABLE FridaMetadata (Version TEXT); INSERT INTO FridaMetadata VALUES ($version)",

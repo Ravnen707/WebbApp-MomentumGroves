@@ -140,7 +140,9 @@ internal sealed class FridaRepository(string databasePath)
         {
             schema.Transaction = transaction;
             schema.CommandText =
-                "CREATE TABLE Foods (Id INTEGER PRIMARY KEY, NameDanish TEXT NOT NULL, NameEnglish TEXT, Kcal REAL, Protein REAL, Carbs REAL, Fat REAL); CREATE TABLE FridaMetadata (Version TEXT NOT NULL, ArticleId INTEGER NOT NULL, FileName TEXT NOT NULL, UpdatedUtc TEXT NOT NULL);";
+                "CREATE TABLE Foods (Id INTEGER PRIMARY KEY, NameDanish TEXT NOT NULL, NameEnglish TEXT, Kcal REAL, " +
+                    "Protein REAL, Carbs REAL, Fat REAL); CREATE TABLE FridaMetadata (Version TEXT NOT NULL, " +
+                    "ArticleId INTEGER NOT NULL, FileName TEXT NOT NULL, UpdatedUtc TEXT NOT NULL);";
             await schema.ExecuteNonQueryAsync(cancellationToken);
         }
 
@@ -148,7 +150,8 @@ internal sealed class FridaRepository(string databasePath)
         {
             insert.Transaction = transaction;
             insert.CommandText =
-                "INSERT INTO Foods (NameDanish, NameEnglish, Kcal, Protein, Carbs, Fat) VALUES ($dk, $en, $kcal, $protein, $carbs, $fat)";
+                "INSERT INTO Foods (NameDanish, NameEnglish, Kcal, Protein, Carbs, Fat) VALUES ($dk, $en, $kcal, " +
+                    "$protein, $carbs, $fat)";
             var dk = insert.Parameters.Add("$dk", SqliteType.Text);
             var en = insert.Parameters.Add("$en", SqliteType.Text);
             var kcal = insert.Parameters.Add("$kcal", SqliteType.Real);

@@ -33,8 +33,7 @@ public class MobileFoodSyncServiceTests : DatabaseServiceTests
     /// <returns>The configured food synchronization service.</returns>
     private MobileFoodSyncService Create(string? key)
     {
-        return new(
-        TestHttp.Configuration(("MobileSync:Key", key)), new MobileFoodSyncRepository(Environment), _logger);
+        return new(TestHttp.Configuration(("MobileSync:Key", key)), new MobileFoodSyncRepository(Environment), _logger);
     }
 
     /// <summary>

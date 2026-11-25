@@ -7,10 +7,12 @@ import { food } from "../food/food-diary.js";
     };
     const isSickDay = date => sickDays()[date] === true;
     const fiberActive = date => date >= read(FIBER_START_KEY, '9999-12-31');
-    const fiberKnown = date => food().some(item => item.date === date && item.fiber !== null && item.fiber !== undefined && Number.isFinite(Number(item.fiber)));
+    const fiberKnown = date => food().some(item => item.date === date && item.fiber !== null && item.fiber !== undefined
+        && Number.isFinite(Number(item.fiber)));
     const fiberComplete = date => {
         const entries = food().filter(item => item.date === date);
-        return entries.length > 0 && entries.every(item => item.fiber !== null && item.fiber !== undefined && Number.isFinite(Number(item.fiber)));
+        return entries.length > 0 && entries.every(item => item.fiber !== null && item.fiber !== undefined
+            && Number.isFinite(Number(item.fiber)));
     };
 
     function setSickDay(date, enabled) {
