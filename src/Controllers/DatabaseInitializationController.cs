@@ -20,6 +20,10 @@ public sealed class DatabaseInitializationController(
         return status.RequiresLocalSetup ? View(status) : RedirectToAction("Index", "Home");
     }
 
+    /// <summary>
+    /// Initializes missing Momentum and food-library databases, leaving Frida to the Admin installer.
+    /// </summary>
+    /// <returns>The resulting database setup status.</returns>
     [HttpGet("status")]
     public IActionResult Status() => IsLocalRequest()
         ? Ok(initialization.GetStatus())

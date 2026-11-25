@@ -52,7 +52,9 @@ public sealed class PersonalDatabase : IDisposable
                 LogParameters = false
             };
             if (!settings.ShouldSerialize("SSL Mode"))
+            {
                 settings.SslMode = SslMode.Require;
+            }
             _postgres = NpgsqlDataSource.Create(settings.ConnectionString);
         }
 
@@ -82,8 +84,7 @@ public sealed class PersonalDatabase : IDisposable
     /// <summary>
     /// The provider's case-insensitive substring predicate for searching saved food names.
     /// </summary>
-    internal string FoodNameMatch => UsesPostgres
-        ? "strpos(lower(Name), lower(@query)) > 0"
+    internal string FoodNameMatch => UsesPostgres ? "strpos(lower(Name), lower(@query)) > 0"
         : "instr(lower(Name), lower(@query)) > 0";
 
     /// <summary>
@@ -100,11 +101,15 @@ public sealed class PersonalDatabase : IDisposable
     internal DbConnection CreateConnection(string file)
     {
         if (_postgres is not null)
+        {
             return _postgres.CreateConnection();
+        }
 
         if (_allowImplicitSqliteCreation)
             Directory.CreateDirectory(DirectoryPath);
-        return CreateSqliteConnection(file, _allowImplicitSqliteCreation);
+        {
+            return CreateSqliteConnection(file, _allowImplicitSqliteCreation);
+        }
     }
 
     private SqliteConnection CreateSqliteConnection(string file, bool create, bool pooling = true)
@@ -159,7 +164,9 @@ public sealed class PersonalDatabase : IDisposable
         if (UsesPostgres)
         {
             InitializePostgres();
-            return;
+            {
+                return;
+            }
         }
 
         using var connection = Open(StateFile);
@@ -184,7 +191,9 @@ public sealed class PersonalDatabase : IDisposable
         if (UsesPostgres)
         {
             InitializePostgres();
-            return;
+            {
+                return;
+            }
         }
 
         using var connection = Open(LibraryFile);
@@ -217,8 +226,10 @@ public sealed class PersonalDatabase : IDisposable
         column.Transaction = transaction;
         column.CommandText = "SELECT 1 FROM pragma_table_info('Recipes') WHERE name = 'CreatedUtc'";
         if (column.ExecuteScalar() is null)
+        {
             Execute(connection, transaction,
                 $"ALTER TABLE Recipes ADD COLUMN CreatedUtc TEXT NOT NULL DEFAULT '{LegacyRecipeCreatedUtc}'");
+        }
 
         transaction.Commit();
     }
@@ -233,7 +244,9 @@ public sealed class PersonalDatabase : IDisposable
     {
         var destination = Path.Combine(DirectoryPath, file);
         if (File.Exists(destination))
+        {
             return;
+        }
 
         Directory.CreateDirectory(DirectoryPath);
         var temporaryFile = $"{file}.{Guid.NewGuid():N}.tmp";
@@ -322,10 +335,14 @@ public sealed class PersonalDatabase : IDisposable
     internal void EnsureMobileImports(DbConnection connection, DbTransaction transaction)
     {
         if (UsesPostgres)
+        {
             LockFoodWrites(connection, transaction);
+        }
         else
+        {
             Execute(connection, transaction,
                 "CREATE TABLE IF NOT EXISTS MobileFoodImports (MobileId TEXT PRIMARY KEY, FoodId INTEGER NOT NULL REFERENCES CustomFoods(Id))");
+        }
     }
 
     /// <summary>
@@ -334,7 +351,9 @@ public sealed class PersonalDatabase : IDisposable
     internal void LockFoodWrites(DbConnection connection, DbTransaction transaction)
     {
         if (UsesPostgres)
+        {
             Execute(connection, transaction, "LOCK TABLE CustomFoods, MobileFoodImports IN SHARE ROW EXCLUSIVE MODE");
+        }
     }
 
     /// <summary>
@@ -355,7 +374,9 @@ public sealed class PersonalDatabase : IDisposable
     internal bool HasMobileImports(DbConnection connection, DbTransaction transaction)
     {
         if (UsesPostgres)
+        {
             return true;
+        }
 
         using var command = connection.CreateCommand();
         command.Transaction = transaction;
@@ -370,7 +391,9 @@ public sealed class PersonalDatabase : IDisposable
         CancellationToken cancellationToken)
     {
         if (connection is SqliteConnection sqlite)
+        {
             return sqlite.BeginTransaction(deferred: !write);
+        }
 
         var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
         try
@@ -441,7 +464,9 @@ internal static class DatabaseParameters
         var parameter = command.CreateParameter();
         parameter.ParameterName = name;
         if (type.HasValue)
+        {
             parameter.DbType = type.Value;
+        }
         parameter.Value = value ?? DBNull.Value;
         command.Parameters.Add(parameter);
     }
