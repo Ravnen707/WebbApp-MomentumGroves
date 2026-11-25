@@ -6,33 +6,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>@ViewData["Title"] – Momentum Groves</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
-    <link rel="stylesheet" href="~/css/modals/database-initialization.css" asp-append-version="true"/>
 </head>
 <body>
 <div class="app-shell">
     @if (!trainingPhoneView)
     {
-    <aside class="sidebar">
-        <a class="brand" asp-controller="Home" asp-action="Index">
-            <img src="~/Logo/MomentumGrovesLogo.png" asp-append-version="true"
-                 alt="Momentum Groves dashboard" width="1536" height="1024"/>
-        </a>
-        <nav aria-label="Main menu">
-            <a asp-controller="Home" asp-action="Index">Dashboard</a>
-            <a asp-controller="Food" asp-action="Index">Food Diary</a>
-            <a asp-controller="Training" asp-action="Index">Training</a>
-            <a asp-controller="BodyMetrics" asp-action="Index">Health & Nutrition Calculator</a>
-            <a asp-controller="WeightTracking" asp-action="Index">Weight Progress</a>
-            <details class="sidebar-group" id="food-library-nav"
-                     open="@(ViewContext.RouteData.Values["controller"]?.ToString() == "FoodLibrary")">
-                <summary>Food Library</summary>
-                <a asp-controller="FoodLibrary" asp-action="Foods">My Foods</a><a asp-controller="FoodLibrary"
-                                                                                  asp-action="Recipes">My Recipes</a>
-            </details>
-            <a asp-controller="Admin" asp-action="Index">Admin</a>
-        </nav>
-        <p class="sidebar-note">Data is stored locally in SQLite.</p>
-    </aside>
+        <aside class="sidebar">
+            <a class="brand" asp-controller="Home" asp-action="Index">
+                <img src="~/Logo/MomentumGrovesLogo.png" asp-append-version="true"
+                     alt="Momentum Groves dashboard" width="1536" height="1024"/>
+            </a>
+            <nav aria-label="Main menu">
+                <a asp-controller="Home" asp-action="Index">Dashboard</a>
+                <a asp-controller="Food" asp-action="Index">Food Diary</a>
+                <a asp-controller="Training" asp-action="Index">Training</a>
+                <a asp-controller="BodyMetrics" asp-action="Index">Health & Nutrition Calculator</a>
+                <a asp-controller="WeightTracking" asp-action="Index">Weight Progress</a>
+                <details class="sidebar-group" id="food-library-nav"
+                         open="@(ViewContext.RouteData.Values["controller"]?.ToString() == "FoodLibrary")">
+                    <summary>Food Library</summary>
+                    <a asp-controller="FoodLibrary" asp-action="Foods">My Foods</a><a asp-controller="FoodLibrary"
+                                                                                      asp-action="Recipes">My
+                        Recipes</a>
+                </details>
+                <a asp-controller="Admin" asp-action="Index">Admin</a>
+            </nav>
+            <p class="sidebar-note">Data is stored locally in SQLite.</p>
+        </aside>
     }
     <main class="content">
         <div class="topbar">
@@ -43,8 +43,6 @@
         @RenderBody()
     </main>
 </div>
-@await Html.PartialAsync("Modals/_DatabaseInitializationModal")
-<script src="~/js/modals/database-initialization.js" asp-append-version="true" defer></script>
 <script type="module" src="~/js/app.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
 <script>

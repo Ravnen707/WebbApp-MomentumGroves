@@ -4,65 +4,58 @@ using MomentumGroves.Service;
 namespace MomentumGroves.Controllers;
 
 [Route("api/database-initialization")]
-public sealed class DatabaseInitializationController : Controller
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+public sealed class DatabaseInitializationController(
+    DatabaseInitializationService initialization,
+    ILogger<DatabaseInitializationController> logger) : Controller
 {
-    private readonly DatabaseInitializationService _initialization;
 
-    /// <summary>
-    /// Creates the controller responsible for the local-only database setup endpoints.
-    /// </summary>
-    /// <param name="initialization">The database initialization service.</param>
-    public DatabaseInitializationController(DatabaseInitializationService initialization)
-    {
-        _initialization = initialization;
-    }
-
-    /// <summary>
-    /// Returns the database setup status without opening or changing any databases.
-    /// </summary>
-    /// <returns>The current setup status, or forbidden for non-loopback requests.</returns>
-    [HttpGet("status")]
-    public IActionResult Status()
+    [HttpGet("/database-setup")]
+    public IActionResult Index()
     {
         if (!IsLocalRequest())
-        {
-            return Forbid();
-        }
+            return StatusCode(StatusCodes.Status403Forbidden);
 
-        return Ok(_initialization.GetStatus());
+        var status = initialization.GetStatus();
+        return status.RequiresLocalSetup ? View(status) : RedirectToAction("Index", "Home");
     }
 
     /// <summary>
     /// Initializes missing Momentum and food-library databases, leaving Frida to the Admin installer.
     /// </summary>
     /// <returns>The resulting database setup status.</returns>
+    [HttpGet("status")]
+    public IActionResult Status() => IsLocalRequest()
+        ? Ok(initialization.GetStatus())
+        : StatusCode(StatusCodes.Status403Forbidden);
+
     [HttpPost("initialize")]
+    [HttpPost("/database-setup", Name = "SubmitDatabaseSetup")]
     [ValidateAntiForgeryToken]
-    public IActionResult Initialize()
+    public IActionResult Initialize([FromForm] bool showSetupModal)
     {
         if (!IsLocalRequest())
-        {
-            return Forbid();
-        }
+            return StatusCode(StatusCodes.Status403Forbidden);
 
         try
         {
-            return Ok(_initialization.InitializeLocalDatabases(HttpContext.RequestServices));
+            initialization.InitializeLocalDatabases();
+            var status = initialization.GetStatus();
+            return showSetupModal ? View(nameof(Index), status) : Ok(status);
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            return StatusCode(500,
-                new { message = "Could not initialize the local databases. Check file permissions and try again." });
+            logger.LogError(exception, "Could not initialize local databases");
+            Response.StatusCode = StatusCodes.Status500InternalServerError;
+            const string message = "Could not create the local databases. Check file permissions and try again.";
+            if (!showSetupModal)
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message });
+
+            ModelState.AddModelError(string.Empty, message);
+            return View(nameof(Index), initialization.GetStatus());
         }
     }
 
-    /// <summary>
-    /// Checks whether the caller is the same computer running the application.
-    /// </summary>
-    /// <returns>True for loopback requests; otherwise false.</returns>
-    private bool IsLocalRequest()
-    {
-        var address = HttpContext.Connection.RemoteIpAddress;
-        return address is not null && System.Net.IPAddress.IsLoopback(address);
-    }
+    private bool IsLocalRequest() =>
+        HttpContext.Connection.RemoteIpAddress is { } address && System.Net.IPAddress.IsLoopback(address);
 }
