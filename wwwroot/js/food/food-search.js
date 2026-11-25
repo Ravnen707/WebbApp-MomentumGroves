@@ -1,9 +1,8 @@
-import {ingredientRow, nutritionSummary} from "./ingredient-row.js";
+import {ingredientRow, nutritionSummary, roundFoodAmount as round2} from "./ingredient-row.js?v=meal-edit";
 import {FOOD_KEY, write} from "../core/storage.js";
 import {parseDecimal, fmt, setText} from "../core/utils.js";
-import {food} from "./food-diary.js?v=20261101-food-nutrition";
 
-function setupFoodSearch(picker, refresh) {
+function setupFoodSearch(picker, food, refresh) {
     const dialog = document.querySelector('#food-dialog');
     const form = document.querySelector('#food-form');
     const search = document.querySelector('#food-search');
@@ -25,12 +24,13 @@ function setupFoodSearch(picker, refresh) {
     let currentSource = '';
     let searchSource = 'frida';
     let currentMode = 'search';
-    let editingId = null;
+    let editingEntry = null;
+    let adjustingItem = null;
     let selectedRecipe = null;
     let selectedFoodPer100 = null;
     let selectedUnit = 'g';
     let customizedRecipeIngredients = null;
-    const round2 = value => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+    let recipeWeightFactor = 1;
     const number = key => parseDecimal(form.elements.namedItem(key).value);
 
     function activeIngredient() {
@@ -57,6 +57,7 @@ function setupFoodSearch(picker, refresh) {
         return currentMode === 'recipe' && customizedRecipeIngredients
             ? {
                 name, grams, source: currentSource, entryMode: 'recipe-custom',
+                recipeFinishedWeight: selectedRecipe.recipeFinishedWeight,
                 recipeIngredients: selectedRecipe.recipeIngredients.map(ingredient => ({...ingredient})),
                 ingredientItems: customizedRecipeIngredients.map(ingredient => ({
                     name: ingredient.name, grams: ingredient.grams, unit: ingredient.unit || 'g',
@@ -96,7 +97,7 @@ function setupFoodSearch(picker, refresh) {
 
     function recipeIngredientTotals() {
         const values = customizedRecipeIngredients || [];
-        const grams = values.reduce((total, ingredient) => total + ingredient.grams, 0);
+        const grams = values.reduce((total, ingredient) => total + ingredient.grams, 0) * recipeWeightFactor;
         const totals = Object.fromEntries(fields.map(key => [key,
             key === 'fiber' && !values.some(ingredient => ingredient.per100g[key] != null)
                 ? null
@@ -112,8 +113,10 @@ function setupFoodSearch(picker, refresh) {
             form.elements.namedItem(key).value = totals[key] == null ? '' : round2(totals[key]);
         }
         const notes = document.querySelector('#food-meal-notes');
-        notes.value = customizedRecipeIngredients.map(ingredient =>
-            `${ingredient.name} - ${fmt(ingredient.grams)} ${ingredient.unit || 'g'}`).join(' | ');
+        if (!adjustingItem) {
+            notes.value = customizedRecipeIngredients.map(ingredient =>
+                `${ingredient.name} - ${fmt(ingredient.grams)} ${ingredient.unit || 'g'}`).join(' | ');
+        }
     }
 
     function renderRecipeCustomization() {
@@ -127,7 +130,7 @@ function setupFoodSearch(picker, refresh) {
             const amount = document.createElement('input');
             amount.type = 'text';
             amount.inputMode = 'decimal';
-            amount.value = ingredient.grams;
+            amount.value = round2(ingredient.grams);
             amount.setAttribute('aria-label', `Amount for ${ingredient.name} in grams`);
             const unit = document.createElement('span');
             unit.textContent = ingredient.unit || 'g';
@@ -144,14 +147,28 @@ function setupFoodSearch(picker, refresh) {
             label.append(name, amount, unit);
             container.append(label);
         }
-        updateCustomizedRecipe();
     }
 
     function resetRecipeCustomization() {
         customizedRecipeIngredients = null;
         setRecipeCustomizationVisible(false);
         if (selectedRecipe) {
+            const finishedWeight = Number(selectedRecipe.recipeFinishedWeight);
+            const originals = selectedRecipe.recipeIngredients ?? [];
+            if (adjustingItem?.entryMode === 'recipe-custom' && finishedWeight > 0 && originals.length) {
+                for (const key of fields) {
+                    selectedRecipe[key] = key === 'fiber' && !originals.some(part => part[key] != null)
+                        ? null
+                        : originals.reduce((total, part) => total + Number(part[key] ?? 0) * Number(part.amount) / 100, 0)
+                            * Number(selectedRecipe.grams) / finishedWeight;
+                }
+            }
             form.elements.namedItem('grams').readOnly = false;
+            form.elements.namedItem('grams').value = round2(selectedRecipe.grams);
+            if (adjustingItem) {
+                recalculate();
+                return;
+            }
             const notes = document.querySelector('#food-meal-notes');
             notes.value = (selectedRecipe.recipeIngredients || []).map(ingredient =>
                 `${ingredient.name} - ${fmt(ingredient.amount)} ${ingredient.unit || 'g'}`).join(' | ');
@@ -188,6 +205,7 @@ function setupFoodSearch(picker, refresh) {
         list.replaceChildren();
         for (const [index, item] of ingredients.entries()) {
             const {row, amount, nutrition} = ingredientRow(item, () => {
+                if (adjustingItem === item) document.querySelector('#food-cancel-selection').click();
                 ingredients.splice(index, 1);
                 renderSummary();
             });
@@ -217,8 +235,7 @@ function setupFoodSearch(picker, refresh) {
                 edit.className = 'btn secondary';
                 edit.textContent = 'Adjust recipe';
                 edit.addEventListener('click', () => {
-                    ingredients.splice(index, 1);
-                    renderSummary();
+                    adjustingItem = item;
                     choose(item);
                 });
                 row.insertBefore(edit, row.lastElementChild);
@@ -233,10 +250,11 @@ function setupFoodSearch(picker, refresh) {
         selectedUnit = item.unit || 'g';
         form.hidden = false;
         form.elements.namedItem('name').value = item.name ?? '';
-        form.elements.namedItem('grams').value = item.grams ?? 100;
+        form.elements.namedItem('grams').value = round2(item.grams ?? 100);
         selectedRecipe = (item.entryMode === 'recipe' || item.entryMode === 'recipe-custom')
             ? {...item, entryMode: 'recipe'} : null;
         customizedRecipeIngredients = null;
+        recipeWeightFactor = 1;
         form.elements.namedItem('grams').readOnly = false;
         setRecipeCustomizationVisible(false);
         currentMode = (item.entryMode === 'recipe' || item.entryMode === 'recipe-custom') ? 'recipe' : item.entryMode === 'manual' || (['Manual entry', 'Manuel registrering'].includes(item.source) && !item.per100g) || (item.type !== 'drink' && !item.per100g && !item.source) ? 'manual' : 'search';
@@ -256,7 +274,7 @@ function setupFoodSearch(picker, refresh) {
             form.elements.namedItem(key).value = value == null || !Number.isFinite(Number(value)) ? '' : round2(value);
         }
         currentSource = ({'Manuel registrering': 'Manual entry', 'Mine opskrifter': 'My Recipes', 'Mine fødevarer': 'My Foods'})[item.source] || item.source || 'Manual entry';
-        if (['My Recipes', 'Mine opskrifter'].includes(item.source)) {
+        if (!adjustingItem && ['My Recipes', 'Mine opskrifter'].includes(item.source)) {
             document.querySelector('#food-meal-name').value = item.name ?? '';
             const recipeIngredients = Array.isArray(item.recipeIngredients) ? item.recipeIngredients : [];
             document.querySelector('#food-meal-notes').value = recipeIngredients.map(ingredient =>
@@ -273,6 +291,8 @@ function setupFoodSearch(picker, refresh) {
                 grams: Number(ingredient.grams),
                 per100g: {...ingredient.per100g}
             }));
+            const rawWeight = customizedRecipeIngredients.reduce((sum, ingredient) => sum + ingredient.grams, 0);
+            if (rawWeight > 0) recipeWeightFactor = Number(item.grams) / rawWeight;
             form.elements.namedItem('grams').readOnly = true;
             setRecipeCustomizationVisible(true);
             renderRecipeCustomization();
@@ -282,12 +302,15 @@ function setupFoodSearch(picker, refresh) {
         form.scrollIntoView({behavior: 'smooth', block: 'nearest'});
     }
 
-    function open(item = null) {
+    function open(item = null, {edit = false} = {}) {
         clearTimeout(debounce);
         abort?.abort();
         searchNumber++;
         ingredients = [];
-        editingId = null;
+        editingEntry = edit ? item : null;
+        adjustingItem = null;
+        document.querySelector('#food-dialog-heading').textContent = edit ? 'Edit entry' : 'Create meal';
+        saveButton.textContent = edit ? 'Save changes' : 'Save meal';
         currentSource = '';
         currentMode = 'search';
         selectedRecipe = null;
@@ -306,10 +329,13 @@ function setupFoodSearch(picker, refresh) {
         renderSummary();
         dialog.showModal();
         if (item) {
-            editingId = item.id || null;
             document.querySelector('#food-meal-name').value = item.name ?? '';
             document.querySelector('#food-meal-notes').value = item.notes ?? '';
-            if (Array.isArray(item.ingredientItems) && item.ingredientItems.length) {
+            if (item.entryMode === 'recipe' || item.entryMode === 'recipe-custom') {
+                const {id, date, type, notes, ingredients: description, ...recipe} = item;
+                ingredients = [recipe];
+                renderSummary();
+            } else if (Array.isArray(item.ingredientItems) && item.ingredientItems.length) {
                 ingredients = item.ingredientItems.map(entry => ({...entry}));
                 renderSummary();
             } else {
@@ -320,16 +346,18 @@ function setupFoodSearch(picker, refresh) {
         }
     }
 
-    window.momentumOpenFoodModal = open;
     document.querySelector('#open-food').addEventListener('click', () => open());
     document.querySelector('#close-food').addEventListener('click', () => dialog.close());
     document.querySelector('#cancel-food').addEventListener('click', () => dialog.close());
-    document.querySelector('#food-manual').addEventListener('click', () => choose({
-        name: search.value.trim() || 'Ny madvare',
-        grams: 100,
-        source: 'Manual entry',
-        kcal: null, protein: null, carbs: null, fat: null, fiber: null
-    }));
+    document.querySelector('#food-manual').addEventListener('click', () => {
+        adjustingItem = null;
+        choose({
+            name: search.value.trim() || 'Ny madvare',
+            grams: 100,
+            source: 'Manual entry',
+            kcal: null, protein: null, carbs: null, fat: null, fiber: null
+        });
+    });
     form.elements.namedItem('grams').addEventListener('input', recalculate);
     for (const key of fields) {
         form.elements.namedItem(key).addEventListener('input', () => {
@@ -356,19 +384,25 @@ function setupFoodSearch(picker, refresh) {
             warning.textContent = 'This recipe has no ingredients to adjust.';
             return;
         }
+        const finishedWeight = Number(selectedRecipe.recipeFinishedWeight);
+        const portion = adjustingItem && finishedWeight > 0 ? number('grams') / finishedWeight : 1;
         customizedRecipeIngredients = originals.map(ingredient => ({
             name: ingredient.name,
             unit: ingredient.unit,
-            grams: Number(ingredient.amount),
+            grams: Number(ingredient.amount) * portion,
             per100g: Object.fromEntries(fields.map(key => [key, ingredient[key] == null ? null : Number(ingredient[key])]))
         }));
+        const rawWeight = customizedRecipeIngredients.reduce((sum, ingredient) => sum + ingredient.grams, 0);
+        recipeWeightFactor = adjustingItem && rawWeight > 0 ? number('grams') / rawWeight : 1;
         form.elements.namedItem('grams').readOnly = true;
         setRecipeCustomizationVisible(true);
         renderRecipeCustomization();
+        updateCustomizedRecipe();
     });
     document.querySelector('#food-cancel-selection').addEventListener('click', () => {
         form.hidden = true;
         form.reset();
+        adjustingItem = null;
         selectedRecipe = null;
         selectedFoodPer100 = null;
         customizedRecipeIngredients = null;
@@ -391,7 +425,12 @@ function setupFoodSearch(picker, refresh) {
             warning.textContent = 'Check the name, grams and all four nutritional values.';
             return;
         }
-        ingredients.push(item);
+        if (adjustingItem) {
+            ingredients[ingredients.indexOf(adjustingItem)] = item;
+            adjustingItem = null;
+        } else {
+            ingredients.push(item);
+        }
         form.hidden = true;
         form.reset();
         currentSource = '';
@@ -409,6 +448,7 @@ function setupFoodSearch(picker, refresh) {
     });
     document.querySelectorAll('[data-food-source]').forEach(button => {
         button.addEventListener('click', () => {
+            adjustingItem = null;
             searchSource = button.dataset.foodSource;
             search.value = '';
             results.replaceChildren();
@@ -457,6 +497,7 @@ function setupFoodSearch(picker, refresh) {
                     button.className = 'drink-result';
                     button.textContent = item.name + ' · ' + (searchSource === 'recipes' ? 'Recipe' : searchSource === 'library' ? 'My Foods' : item.source);
                     button.addEventListener('click', () => {
+                        adjustingItem = null;
                         if (searchSource === 'recipes') {
                             choose({
                                 name: item.name,
@@ -526,18 +567,30 @@ function setupFoodSearch(picker, refresh) {
         }
         const grams = sum('grams');
         const item = {
-            id: crypto.randomUUID(), date: picker.value, name, type: 'food', grams,
+            id: editingEntry?.id ?? crypto.randomUUID(), date: editingEntry?.date ?? picker.value, name, type: 'food', grams,
             notes: document.querySelector('#food-meal-notes').value.trim(),
-            ingredients: all.map(entry => `${entry.name} (${fmt(entry.grams)} g)`).join(', '),
+            ingredients: all.map(entry => `${entry.name} (${fmt(entry.grams)} ${entry.unit || 'g'})`).join(', '),
             ingredientItems: all,
             ...(grams > 0 ? {per100g: Object.fromEntries(fields.map(key => [key, sum(key) === null ? null : sum(key) * 100 / grams]))} : {}),
             ...Object.fromEntries(fields.map(key => [key, sum(key) === null ? null : Number(sum(key).toFixed(3))]))
         };
-        write(FOOD_KEY, [...food(), item]);
+        const entries = food();
+        if (editingEntry) {
+            const index = entries.findIndex(entry => String(entry.id) === String(editingEntry.id));
+            if (index < 0) {
+                warning.textContent = 'This entry is no longer in the diary.';
+                return;
+            }
+            const {entryMode, recipeFinishedWeight, recipeIngredients, ...existing} = entries[index];
+            write(FOOD_KEY, entries.map((entry, position) => position === index ? {...existing, ...item} : entry));
+        } else {
+            write(FOOD_KEY, [...entries, item]);
+        }
         dialog.close();
         refresh();
     });
     renderSummary();
+    return open;
 }
 
 export {setupFoodSearch};

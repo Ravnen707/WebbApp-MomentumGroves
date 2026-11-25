@@ -5,8 +5,9 @@ import {isCheatDay, setCheatDay} from "../tracking/cheat-days.js";
 import {isSickDay, fiberActive, fiberKnown, fiberComplete, setSickDay} from "../tracking/sick-days.js";
 import {updateZoneDisplay, getGoals, setProgress} from "../tracking/nutrition-targets.js?v=20261118-empty-calculator";
 import {setupDrinks} from "./drinks.js";
-import {setupMealCopy} from "./meal-copy.js?v=selected-date";
-import {setupFoodSearch} from "./food-search.js?v=20261101-food-nutrition";
+import {setupMealCopy} from "./meal-copy.js?v=meal-edit";
+import {setupFoodSearch} from "./food-search.js?v=meal-edit";
+import {openMealEditor} from "./meal-editor.js?v=meal-edit";
 
 const food = () => {
     const value = read(FOOD_KEY, []);
@@ -20,6 +21,7 @@ const totals = date => food().filter(item => item.date === date).reduce((result,
 function renderFood() {
     const picker = document.querySelector('#food-date');
     if (!picker) return;
+    const openFoodModal = setupFoodSearch(picker, food, update);
     function update() {
         picker.value = selectedDate();
         const t = totals(picker.value), g = getGoals(), items = food().filter(x => x.date === picker.value);
@@ -60,7 +62,7 @@ function renderFood() {
         }));
         document.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', () => {
             const item = food().find(x => String(x.id) === btn.dataset.edit);
-            if (item && window.momentumOpenMealEditor) window.momentumOpenMealEditor(item, update);
+            if (item) openMealEditor(item, openFoodModal, food, update);
         }));
     }
 
@@ -81,9 +83,8 @@ function renderFood() {
     });
     document.addEventListener('momentum-date-change', update);
     picker.value = selectedDate();
-    setupFoodSearch(picker, update);
     setupDrinks(picker, update);
-    setupMealCopy(picker);
+    if (openFoodModal) setupMealCopy(picker, openFoodModal, food);
     update();
 }
 

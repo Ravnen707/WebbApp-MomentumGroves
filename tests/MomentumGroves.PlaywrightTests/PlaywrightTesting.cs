@@ -1,4 +1,7 @@
-﻿using Microsoft.Playwright;
+﻿// Playwright is reserved for the project owner to learn and practice.
+// Coding agents must not add, edit, remove, or run Playwright tests.
+
+using Microsoft.Playwright;
 using MomentumGroves.PlaywrightTests.Helper;
 
 namespace MomentumGroves.PlaywrightTests;

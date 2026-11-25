@@ -1,6 +1,6 @@
-import {ingredientRow, nutritionSummary} from "./ingredient-row.js";
+import {ingredientRow, nutritionSummary, roundFoodAmount} from "./ingredient-row.js?v=meal-edit";
 
-(() => {
+export const openEntryEditor = (() => {
     'use strict';
 
     const dialog = document.querySelector('#edit-meal-dialog');
@@ -13,6 +13,7 @@ import {ingredientRow, nutritionSummary} from "./ingredient-row.js";
     const message = document.querySelector('#edit-meal-message');
     const nutrientKeys = ['kcal', 'protein', 'carbs', 'fat', 'fiber'];
     const requiredKeys = ['grams', 'kcal', 'protein', 'carbs', 'fat'];
+    const numericKeys = [...requiredKeys, 'fiber'];
     const parseDecimal = value => {
         const text = String(value ?? '').trim().replace(',', '.');
         return text && /^[-+]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(text) ? Number(text) : NaN;
@@ -54,8 +55,8 @@ import {ingredientRow, nutritionSummary} from "./ingredient-row.js";
     }
 
     function showTotals(totals) {
-        for (const key of [...requiredKeys, 'fiber']) {
-            input(key).value = totals[key] == null ? '' : round(totals[key]);
+        for (const key of numericKeys) {
+            input(key).value = totals[key] == null ? '' : roundFoodAmount(totals[key]);
         }
     }
 
@@ -63,7 +64,7 @@ import {ingredientRow, nutritionSummary} from "./ingredient-row.js";
         editingIngredients = true;
         const totals = ingredientTotals();
         showTotals(totals);
-        input('ingredients').value = ingredientItems.map(item => `${item.name} (${round(item.grams)} ${item.unit || 'g'})`).join(', ');
+        input('ingredients').value = ingredientItems.map(item => `${item.name} (${roundFoodAmount(item.grams)} ${item.unit || 'g'})`).join(', ');
         message.textContent = '';
     }
 
@@ -99,7 +100,7 @@ import {ingredientRow, nutritionSummary} from "./ingredient-row.js";
                     input('grams').value = value;
                     for (const key of nutrientKeys) {
                         const baseline = totalBasis[key];
-                        input(key).value = baseline == null ? '' : round(baseline * value / totalBasis.grams);
+                        input(key).value = baseline == null ? '' : roundFoodAmount(baseline * value / totalBasis.grams);
                     }
                     nutrition.textContent = nutritionSummary(Object.fromEntries(nutrientKeys.map(key =>
                         [key, input(key).value === '' ? null : parseDecimal(input(key).value)])));
@@ -109,7 +110,7 @@ import {ingredientRow, nutritionSummary} from "./ingredient-row.js";
             if (!ingredientItems.length) {
                 for (const key of nutrientKeys) {
                     input(key).oninput = () => {
-                        totalBasis = Object.fromEntries([...requiredKeys, 'fiber'].map(field =>
+                        totalBasis = Object.fromEntries(numericKeys.map(field =>
                             [field, input(field).value === '' ? null : parseDecimal(input(field).value)]));
                         nutrition.textContent = nutritionSummary(totalBasis);
                     };
@@ -119,45 +120,21 @@ import {ingredientRow, nutritionSummary} from "./ingredient-row.js";
         }
     }
 
-    window.momentumMealEditorOpen = (item, callback) => {
+    function open(item, callback) {
         original = item;
         save = callback;
         editingIngredients = false;
         form.reset();
-        for (const key of ['name', 'notes', 'ingredients', ...requiredKeys, 'fiber']) {
-            input(key).value = item[key] ?? '';
+        for (const key of ['name', 'notes', 'ingredients', ...numericKeys]) {
+            input(key).value = item[key] == null ? '' :
+                numericKeys.includes(key) ? roundFoodAmount(item[key]) : item[key];
         }
         for (const key of nutrientKeys) input(key).oninput = null;
         ingredientItems = item.type !== 'drink' && Array.isArray(item.ingredientItems)
-            ? item.ingredientItems.flatMap(entry => {
-                // A recipe added as one item retains its original ingredient list.
-                // Expose those ingredients individually, just like recipe customization in the create modal.
-                if (entry.entryMode === 'recipe-custom' && entry.ingredientItems?.length) {
-                    return entry.ingredientItems.map(part => ({...part, per100g: {...part.per100g}}));
-                }
-                if ((entry.entryMode === 'recipe' || entry.entryMode === 'recipe-custom')
-                    && Array.isArray(entry.recipeIngredients) && entry.recipeIngredients.length) {
-                    const baseWeight = entry.recipeIngredients.reduce((sum, part) => sum + Number(part.amount), 0);
-                    const baseKcal = entry.recipeIngredients.reduce((sum, part) => sum + Number(part.kcal) * Number(part.amount) / 100, 0);
-                    const portion = entry.recipeFinishedWeight > 0
-                        ? Number(entry.grams) / entry.recipeFinishedWeight
-                        : baseKcal > 0 && entry.kcal > 0
-                            ? Number(entry.kcal) / baseKcal
-                            : baseWeight > 0 ? Number(entry.grams) / baseWeight : 1;
-                    const portionWeight = baseWeight * portion;
-                    return entry.recipeIngredients.map(part => ({
-                        name: part.name,
-                        unit: part.unit || 'g',
-                        grams: Number(part.amount) * portion,
-                        diaryWeightFactor: portionWeight > 0 ? Number(entry.grams) / portionWeight : 1,
-                        per100g: Object.fromEntries(nutrientKeys.map(key => [key, part[key] == null ? null : Number(part[key])]))
-                    }));
-                }
-                return [{...entry, per100g: Object.fromEntries(nutrientKeys.map(key =>
-                    [key, ingredientPer100(entry, key)]))}];
-            })
+            ? item.ingredientItems.map(entry => ({...entry, per100g: Object.fromEntries(nutrientKeys.map(key =>
+                [key, ingredientPer100(entry, key)]))}))
             : [];
-        totalBasis = Object.fromEntries([...requiredKeys, 'fiber'].map(key => [key, item[key]]));
+        totalBasis = Object.fromEntries(numericKeys.map(key => [key, item[key]]));
         for (const key of nutrientKeys) input(key).readOnly = ingredientItems.length > 0;
         input('ingredients').readOnly = ingredientItems.length > 0;
         document.querySelector('#edit-meal-details').open = false;
@@ -165,7 +142,7 @@ import {ingredientRow, nutritionSummary} from "./ingredient-row.js";
         message.textContent = '';
         dialog.showModal();
         input('name').focus();
-    };
+    }
 
     form.addEventListener('submit', event => {
         event.preventDefault();
@@ -186,6 +163,13 @@ import {ingredientRow, nutritionSummary} from "./ingredient-row.js";
         if (values.fiber != null && (!Number.isFinite(values.fiber) || values.fiber < 0)) {
             message.textContent = 'Check fibre.';
             return;
+        }
+        if (!editingIngredients && values.grams === roundFoodAmount(original.grams)) {
+            for (const key of numericKeys) {
+                if (original[key] != null && values[key] === roundFoodAmount(original[key])) {
+                    values[key] = Number(original[key]);
+                }
+            }
         }
         const name = input('name').value.trim();
         if (!name) {
@@ -216,4 +200,5 @@ import {ingredientRow, nutritionSummary} from "./ingredient-row.js";
         save(updated);
         close();
     });
+    return open;
 })();

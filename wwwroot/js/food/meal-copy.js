@@ -1,7 +1,6 @@
 import { fmt, shift } from "../core/utils.js";
-import { food } from "./food-diary.js?v=selected-date";
 
-    function setupMealCopy(picker) {
+    function setupMealCopy(picker, openFoodModal, food) {
         const dialog = document.querySelector('#copy-meal-dialog');
         const date = document.querySelector('#copy-date');
         const select = document.querySelector('#copy-meal');
@@ -41,7 +40,7 @@ import { food } from "./food-diary.js?v=selected-date";
                 return;
             }
             dialog.close();
-            window.momentumOpenFoodModal?.(item);
+            openFoodModal(item);
         });
     }
 

@@ -45,7 +45,7 @@
 </div>
 @await Html.PartialAsync("Modals/_DatabaseInitializationModal")
 <script src="~/js/modals/database-initialization.js" asp-append-version="true" defer></script>
-<script type="module" src="~/js/app.js?v=selected-date"></script>
+<script type="module" src="~/js/app.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
 <script>
     (() => {

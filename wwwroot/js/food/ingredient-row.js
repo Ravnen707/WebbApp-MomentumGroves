@@ -1,5 +1,7 @@
 import {fmt} from "../core/utils.js";
 
+export const roundFoodAmount = value => Number(Number(value).toFixed(2));
+
 export function nutritionSummary({kcal, protein, carbs, fat, fiber}, format = fmt) {
     return `${format(kcal)} kcal · P ${format(protein)} g · C ${format(carbs)} g · F ${format(fat)} g`
         + (fiber == null ? '' : ` · Fibre ${format(fiber)} g`);
@@ -18,7 +20,7 @@ export function ingredientRow(item, onRemove) {
     const amount = document.createElement('input');
     amount.type = 'text';
     amount.inputMode = 'decimal';
-    amount.value = item.grams;
+    amount.value = roundFoodAmount(item.grams);
     amount.className = 'food-row-amount';
     const unit = document.createElement('span');
     unit.textContent = item.unit || 'g';
