@@ -97,6 +97,23 @@ body {
     background: #15212d;
 }
 
+.technical-status {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+    gap: 16px 24px;
+    margin: 16px 0 0;
+}
+
+.technical-status dt {
+    color: #b2c0cc;
+    font-size: .875rem;
+}
+
+.technical-status dd {
+    margin: 4px 0 0;
+    overflow-wrap: anywhere;
+}
+
 .card-heading {
     display: flex;
     justify-content: space-between;

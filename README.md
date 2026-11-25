@@ -246,6 +246,12 @@ The same Admin workflow supports first-time installation and later updates. Inst
 
 Use the filenames above for a standard SQLite installation. SQLite is embedded and works without a database server or cloud credentials. The Admin installer creates the local Frida database when needed.
 
+### Exercise pictures in standalone mode
+
+Open **Admin → Technical status** to see the active application mode, database, exercise image storage, Frida storage, and Mobile Data API setting.
+
+With `ConnectionStrings:Supabase` unset or blank, MomentumGroves uses local SQLite databases and reads exercise pictures from `wwwroot/TrainingImages`. The project includes sample pictures in that folder. Add a JPG, PNG, or WebP file there, then open an exercise's picture picker and choose **Pick from program**. You can also choose **Upload picture** in the editor to save a picture to the same folder.
+
 ### Optional Supabase PostgreSQL
 
 Set `ConnectionStrings:Supabase` in .NET User Secrets for Development, or supply `ConnectionStrings__Supabase` through the deployment's secret store. Use the project's PostgreSQL connection string for the direct connection or session pooler. For certificate and hostname verification, download the CA certificate from Supabase **Database Settings → SSL Configuration**, then set `SSL Mode=VerifyFull` and point `Root Certificate` to the downloaded file. The app defaults to `SSL Mode=Require` when the connection string omits an SSL mode.
@@ -256,7 +262,7 @@ By default, keep `momentum_groves` out of the Data API's exposed schemas. Postgr
 
 To enable the optional mobile Data API, set `MobileDataApi__Enabled=true` on the **web host** and restart it before applying the reviewed SQL from the mobile repository's `docs/supabase-setup.md` guide. The setting allows web startup to coexist with the mobile grants. The SQL installation and dashboard exposure are manual. Keep the existing verified TLS settings. The mobile app uses its project URL, publishable key and user sign-in.
 
-#### Optional Storage for exercise images
+#### Exercise pictures in Supabase mode
 
 Create the private bucket and owner read policy described in the mobile repository's `docs/training-image-storage.md`. Set `TrainingImages__SupabaseUrl` and `TrainingImages__ServerKey` on the web host and restart it. The training editor on localhost uploads images to the private bucket in PostgreSQL mode. Keep the secret key on the web host. If Supabase Storage is unavailable, the picture picker reports that it could not load pictures and lets you retry.
 
@@ -267,7 +273,7 @@ $env:DOTNET_ENVIRONMENT = 'Development' # Use this when settings are in .NET Use
 dotnet run --project .\MomentumGroves.csproj -- migrate-training-images --dry-run
 ```
 
-Once you have reviewed the dry run, rerun with `--apply` to copy objects. Existing local files and training references stay in place. Standalone mode still uses `wwwroot/TrainingImages` and PC sync.
+Once you have reviewed the dry run, rerun with `--apply` to copy objects. Existing local files and training references stay in place.
 
 ### Copy existing SQLite data to Supabase
 

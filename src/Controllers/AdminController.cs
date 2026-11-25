@@ -8,14 +8,17 @@ namespace MomentumGroves.Controllers;
 public sealed class AdminController : Controller
 {
     private readonly FridaUpdateService _updates;
+    private readonly AdminTechnicalStatusService _technicalStatus;
 
     /// <summary>
     /// Initializes the administration controller.
     /// </summary>
     /// <param name="updates">The service that checks and installs Frida releases.</param>
-    public AdminController(FridaUpdateService updates)
+    /// <param name="technicalStatus">The service that reports the configured storage providers.</param>
+    public AdminController(FridaUpdateService updates, AdminTechnicalStatusService technicalStatus)
     {
         _updates = updates;
+        _technicalStatus = technicalStatus;
     }
 
     /// <summary>
@@ -30,7 +33,7 @@ public sealed class AdminController : Controller
             return Forbid();
         }
 
-        return View();
+        return View(_technicalStatus.GetStatus());
     }
 
     /// <summary>

@@ -22,6 +22,7 @@ builder.Services.AddSingleton(services => new PersonalDatabase(
     services.GetRequiredService<IConfiguration>().GetValue<bool>("MobileDataApi:Enabled"),
     allowImplicitSqliteCreation: false));
 builder.Services.AddSingleton<DatabaseInitializationService>();
+builder.Services.AddSingleton<AdminTechnicalStatusService>();
 builder.Services.AddScoped<MomentumGroves.Service.DrinkService>();
 builder.Services.AddScoped<MomentumGroves.Service.FoodService>();
 builder.Services.AddScoped<MomentumGroves.Service.MobileFoodSyncService>();

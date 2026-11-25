@@ -1,3 +1,4 @@
+@model MomentumGroves.Models.AdminTechnicalStatus
 @{
     Layout = null;
     ViewData["Title"] = "Administration";
@@ -26,6 +27,31 @@
             <h1>Databases</h1>
             <p>Manage the DTU Frida dataset. Your personal momentum.db is unaffected.</p>
         </header>
+        <section class="admin-card" aria-labelledby="technical-status-heading">
+            <h2 id="technical-status-heading">Technical status</h2>
+            <dl id="technical-status" class="technical-status">
+                <div>
+                    <dt>Application mode</dt>
+                    <dd>@Model.Mode</dd>
+                </div>
+                <div>
+                    <dt>Personal database</dt>
+                    <dd>@Model.Database</dd>
+                </div>
+                <div>
+                    <dt>Exercise image storage</dt>
+                    <dd>@Model.ExerciseImageStorage</dd>
+                </div>
+                <div>
+                    <dt>Frida dataset</dt>
+                    <dd>@Model.FridaStorage</dd>
+                </div>
+                <div>
+                    <dt>Mobile Data API</dt>
+                    <dd>@Model.MobileDataApi</dd>
+                </div>
+            </dl>
+        </section>
         <section class="admin-card" aria-labelledby="frida-heading">
             <div class="card-heading">
                 <div>
