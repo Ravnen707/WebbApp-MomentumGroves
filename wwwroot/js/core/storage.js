@@ -55,7 +55,7 @@ function showDataError(message) {
         box = document.createElement('div');
         box.id = 'momentum-data-error';
         box.setAttribute('role', 'alert');
-        box.style.cssText = 'position:sticky;top:0;z-index:1000;background:#5a3335;color:white;padding:12px 20px;text-align:center';
+        box.classList.add('momentum-data-error');
         document.body.prepend(box);
     }
     box.textContent = message;

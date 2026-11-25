@@ -1,3 +1,4 @@
+using MomentumGroves.Models;
 using System.Data;
 using Microsoft.Data.Sqlite;
 using Npgsql;
@@ -9,10 +10,9 @@ namespace MomentumGroves.Data;
 /// </summary>
 internal static class SqliteDataMigration
 {
-    private sealed record Table(string Name, string Columns, DbType[] Types, bool Optional = false);
-    private static readonly Table State = new("AppState", "Key, JsonValue, UpdatedUtc",
+    private static readonly SqliteMigrationTable State = new("AppState", "Key, JsonValue, UpdatedUtc",
         [DbType.String, DbType.String, DbType.String]);
-    private static readonly Table[] Library =
+    private static readonly SqliteMigrationTable[] Library =
     [
         new("CustomFoods", "Id, Name, Unit, Kcal, Protein, Carbs, Fat, Fiber",
             [DbType.Int64, DbType.String, DbType.String, DbType.Double, DbType.Double, DbType.Double, DbType.Double, DbType.Double]),
@@ -47,7 +47,9 @@ internal static class SqliteDataMigration
             sourceContext = libraryFile;
             using var library = OpenSource(args[1], libraryFile);
             if (state is null && library is null)
+            {
                 throw new InvalidOperationException("No personal SQLite databases were found in the source directory.");
+            }
 
             using var destination = database.OpenPostgres();
             using var transaction = destination.BeginTransaction();
@@ -59,7 +61,9 @@ internal static class SqliteDataMigration
             foreach (var table in Library.Prepend(State))
             {
                 if (Count(destination, transaction, table.Name) != 0)
+                {
                     throw new InvalidOperationException($"The destination already contains rows in {table.Name}.");
+                }
             }
 
             if (state is not null)
@@ -86,9 +90,13 @@ internal static class SqliteDataMigration
             }
 
             if (apply)
+            {
                 transaction.Commit();
+            }
             else
+            {
                 transaction.Rollback();
+            }
 
             Console.WriteLine(apply ? "Migration committed." : "Dry run validated and rolled back.");
             return 0;
@@ -118,6 +126,9 @@ internal static class SqliteDataMigration
     /// <summary>
     /// Opens an existing source file in read-only mode and returns null if the file is absent.
     /// </summary>
+    /// <param name="directory">The directory containing the SQLite snapshots.</param>
+    /// <param name="filename">The requested filename.</param>
+    /// <returns>The open, read-only SQLite snapshot connection.</returns>
     private static SqliteConnection? OpenSource(string directory, string filename)
     {
         var path = Path.Combine(directory, filename);
@@ -145,6 +156,12 @@ internal static class SqliteDataMigration
         }
     }
 
+    /// <summary>
+    /// Checks whether the named table exists in the source snapshot.
+    /// </summary>
+    /// <param name="snapshot">The SQLite connection to the source snapshot.</param>
+    /// <param name="table">The table involved in the operation.</param>
+    /// <returns>True when the source snapshot contains the named table.</returns>
     private static bool HasTable(SqliteTransaction snapshot, string table)
     {
         using var command = snapshot.Connection!.CreateCommand();
@@ -157,7 +174,10 @@ internal static class SqliteDataMigration
     /// <summary>
     /// Copies a table with its original IDs and verifies the destination row count.
     /// </summary>
-    private static void Copy(Table table, SqliteTransaction snapshot, NpgsqlTransaction transaction)
+    /// <param name="table">The table involved in the operation.</param>
+    /// <param name="snapshot">The SQLite connection to the source snapshot.</param>
+    /// <param name="transaction">The transaction that contains the database operation.</param>
+    private static void Copy(SqliteMigrationTable table, SqliteTransaction snapshot, NpgsqlTransaction transaction)
     {
         if (table.Optional && !HasTable(snapshot, table.Name))
         {
@@ -172,7 +192,9 @@ internal static class SqliteDataMigration
         {
             select.CommandText = "SELECT 1 FROM pragma_table_info('Recipes') WHERE name = 'CreatedUtc' COLLATE NOCASE";
             if (select.ExecuteScalar() is null)
+            {
                 columns = $"Id, Name, FinishedWeight, '{PersonalDatabase.LegacyRecipeCreatedUtc}'";
+            }
         }
 
         select.CommandText = $"SELECT {columns} FROM {table.Name}";
@@ -184,7 +206,9 @@ internal static class SqliteDataMigration
         var placeholders = Enumerable.Range(1, table.Types.Length).Select(index => "$" + index);
         insert.CommandText = $"INSERT INTO {table.Name} ({table.Columns}) VALUES ({string.Join(", ", placeholders)})";
         foreach (var type in table.Types)
+        {
             insert.Parameters.Add(new NpgsqlParameter { DbType = type });
+        }
 
         long copied = 0;
         while (rows.Read())
@@ -203,11 +227,20 @@ internal static class SqliteDataMigration
         }
 
         if (copied != expected || Count(transaction.Connection, transaction, table.Name) != expected)
+        {
             throw new InvalidOperationException($"Row count verification failed for {table.Name}.");
+        }
 
         Console.WriteLine($"{table.Name}: {copied} rows verified.");
     }
 
+    /// <summary>
+    /// Counts the rows in a destination table within the migration transaction.
+    /// </summary>
+    /// <param name="connection">The connection used for the database operation.</param>
+    /// <param name="transaction">The transaction that contains the database operation.</param>
+    /// <param name="table">The table involved in the operation.</param>
+    /// <returns>The number of rows in the destination table.</returns>
     private static long Count(System.Data.Common.DbConnection connection, System.Data.Common.DbTransaction transaction,
         string table)
     {
@@ -220,6 +253,9 @@ internal static class SqliteDataMigration
     /// <summary>
     /// Sets the next PostgreSQL identity value above both the highest copied ID and SQLite's saved sequence.
     /// </summary>
+    /// <param name="snapshot">The SQLite connection to the source snapshot.</param>
+    /// <param name="transaction">The transaction that contains the database operation.</param>
+    /// <param name="table">The table involved in the operation.</param>
     private static void RestartIdentity(SqliteTransaction snapshot, NpgsqlTransaction transaction, string table)
     {
         using var maximum = snapshot.Connection!.CreateCommand();
@@ -231,7 +267,9 @@ internal static class SqliteDataMigration
             maximum.CommandText = "SELECT seq FROM sqlite_sequence WHERE name=@name COLLATE NOCASE";
             maximum.Parameters.AddWithValue("@name", table);
             if (maximum.ExecuteScalar() is long sequence)
+            {
                 highWaterMark = Math.Max(highWaterMark, sequence);
+            }
         }
 
         var next = checked(highWaterMark + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);

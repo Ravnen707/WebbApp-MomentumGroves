@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MomentumGroves.Service;
+using MomentumGroves.Models;
 
 namespace MomentumGroves.Controllers;
 
@@ -9,7 +10,10 @@ public class TrainingController : Controller
     /// Displays the training page.
     /// </summary>
     /// <returns>The training view.</returns>
-    public IActionResult Index() => View();
+    public IActionResult Index()
+    {
+        return View();
+    }
 
     /// <summary>
     /// Displays the training page in its phone layout.
@@ -26,6 +30,9 @@ public class TrainingController : Controller
     /// <summary>
     /// Retrieves the training programmes for the paired phone.
     /// </summary>
+    /// <param name="data">The application service that manages stored training data.</param>
+    /// <param name="authentication">The service that verifies the mobile synchronization key.</param>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
     /// <returns>The programme snapshot, or a not-modified response for the current version.</returns>
     [HttpGet("/api/mobile/training/sync")]
     public async Task<IActionResult> Snapshot([FromServices] MomentumDataService data,
@@ -56,10 +63,13 @@ public class TrainingController : Controller
     /// <summary>
     /// Validates and saves the programme document submitted by the browser.
     /// </summary>
+    /// <param name="data">The application service that manages stored training data.</param>
+    /// <param name="save">The programme document and its original exercise weights.</param>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
     /// <returns>No content on success or a bad request for invalid programme data.</returns>
     [HttpPut("/api/training/programmes")]
     public async Task<IActionResult> Save([FromServices] MomentumDataService data,
-        [FromBody] MomentumDataService.TrainingSave save, CancellationToken cancellationToken)
+        [FromBody] TrainingSave save, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid || save is null ||
             save.Programmes.ValueKind != System.Text.Json.JsonValueKind.Object)
@@ -72,7 +82,7 @@ public class TrainingController : Controller
             await data.SaveTrainingAsync(save, cancellationToken);
             return NoContent();
         }
-        catch (MomentumDataService.TrainingConflictException)
+        catch (TrainingConflictException)
         {
             return Conflict(new { message = "A weight changed since this editor loaded. Copy any unsaved edits, then reload programmes and review the latest weight." });
         }
@@ -85,10 +95,14 @@ public class TrainingController : Controller
     /// <summary>
     /// Validates and applies mobile exercise weight edits over an authenticated HTTPS connection.
     /// </summary>
+    /// <param name="data">The application service that manages stored training data.</param>
+    /// <param name="authentication">The service that verifies the mobile synchronization key.</param>
+    /// <param name="edits">The exercise weight changes submitted by the mobile client.</param>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
     /// <returns>The updated snapshot and edit outcomes, or a request rejection.</returns>
     [HttpPost("/api/mobile/training/sync")]
     public async Task<IActionResult> Sync([FromServices] MomentumDataService data,
-        [FromServices] MobileFoodSyncService authentication, [FromBody] List<MomentumDataService.WeightEdit> edits,
+        [FromServices] MobileFoodSyncService authentication, [FromBody] List<TrainingWeightEdit> edits,
         CancellationToken cancellationToken)
     {
         if (!Request.IsHttps)
@@ -101,15 +115,12 @@ public class TrainingController : Controller
             return Unauthorized();
         }
 
-        if (!ModelState.IsValid || edits is null || edits.Count > 100 ||
-            edits.Any(edit => edit is null || edit.ChangeId == Guid.Empty ||
-                string.IsNullOrWhiteSpace(edit.ExerciseId) || edit.ExerciseId.Length > 300 ||
-                edit.Kg < 0 || edit.BaseKg < 0))
+        if (!ModelState.IsValid || !data.IsValidTrainingEditBatch(edits))
         {
             return BadRequest();
         }
 
-        var result = await data.SyncTrainingAsync(edits, cancellationToken);
+        var result = await data.SyncTrainingAsync(edits!, cancellationToken);
         Response.Headers.ETag = $"\"{result.Version()}\"";
         Response.Headers.CacheControl = "no-store";
         return Ok(result);

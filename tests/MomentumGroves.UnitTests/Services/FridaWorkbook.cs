@@ -7,6 +7,12 @@ namespace MomentumGroves.Tests.Services;
 // Small genuine XLSX files keep import tests independent of downloads and Excel installations.
 internal static class FridaWorkbook
 {
+    /// <summary>
+    /// Builds a synthetic Frida workbook in memory.
+    /// </summary>
+    /// <param name="foods">The number of synthetic food rows to generate.</param>
+    /// <param name="includeDataSheet">Whether the workbook includes the nutrition worksheet.</param>
+    /// <returns>The generated workbook as a byte array.</returns>
     public static byte[] Create(int foods, bool includeDataSheet = true)
     {
         XNamespace sheet = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
@@ -15,13 +21,35 @@ internal static class FridaWorkbook
         for (var index = 1; index <= foods + 5; index++)
         {
             var row = new XElement(sheet + "row", new XAttribute("r", index));
-            void Text(string column, string value) => row.Add(new XElement(sheet + "c",
+            /// <summary>
+            /// Writes a text cell into the current worksheet row.
+            /// </summary>
+            /// <param name="column">The worksheet column name for the test cell.</param>
+            /// <param name="value">The test value supplied for the field.</param>
+            void Text(string column, string value)
+            {
+                row.Add(new XElement(sheet + "c",
                 new XAttribute("r", column + index), new XAttribute("t", "inlineStr"),
                 new XElement(sheet + "is", new XElement(sheet + "t", value))));
-            void Number(string column, double value) => row.Add(new XElement(sheet + "c",
+            }
+            /// <summary>
+            /// Writes a numeric cell into the current worksheet row.
+            /// </summary>
+            /// <param name="column">The worksheet column name for the test cell.</param>
+            /// <param name="value">The test value supplied for the field.</param>
+            void Number(string column, double value)
+            {
+                row.Add(new XElement(sheet + "c",
                 new XAttribute("r", column + index), new XElement(sheet + "v", value)));
-            if (index <= 4) Text("A", "Header");
-            else if (index == 5) Text("A", "   "); // Blank names are skipped.
+            }
+            if (index <= 4)
+            {
+                Text("A", "Header");
+            }
+            else if (index == 5)
+            {
+                Text("A", "   ");
+            } // Blank names are skipped.
             else
             {
                 Text("A", " Food " + (index - 5) + " ");
@@ -38,6 +66,11 @@ internal static class FridaWorkbook
         using var output = new MemoryStream();
         using (var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
         {
+            /// <summary>
+            /// Writes an XML entry to the workbook archive.
+            /// </summary>
+            /// <param name="path">The entry path inside the workbook archive.</param>
+            /// <param name="content">The XML content written to the archive entry.</param>
             void Add(string path, string content)
             {
                 using var writer = new StreamWriter(zip.CreateEntry(path).Open(), Encoding.UTF8);

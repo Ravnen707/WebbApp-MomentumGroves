@@ -92,12 +92,16 @@ public sealed class PersonalDatabase : IDisposable
     /// </summary>
     /// <param name="environment">The web host environment that supplies the content root.</param>
     /// <returns>A provider for the SQLite files under the content root.</returns>
-    public static PersonalDatabase Local(IWebHostEnvironment environment) =>
-        new(Path.Combine(environment.ContentRootPath, "src", "Data"));
+    public static PersonalDatabase Local(IWebHostEnvironment environment)
+    {
+        return new(Path.Combine(environment.ContentRootPath, "src", "Data"));
+    }
 
     /// <summary>
     /// Creates an unopened connection to PostgreSQL or to the named SQLite file.
     /// </summary>
+    /// <param name="file">The file for this operation.</param>
+    /// <returns>The unopened connection for the configured provider.</returns>
     internal DbConnection CreateConnection(string file)
     {
         if (_postgres is not null)
@@ -106,12 +110,21 @@ public sealed class PersonalDatabase : IDisposable
         }
 
         if (_allowImplicitSqliteCreation)
+        {
             Directory.CreateDirectory(DirectoryPath);
+        }
         {
             return CreateSqliteConnection(file, _allowImplicitSqliteCreation);
         }
     }
 
+    /// <summary>
+    /// Prepares a SQLite connection with the requested file access and pooling options.
+    /// </summary>
+    /// <param name="file">The file for this operation.</param>
+    /// <param name="create">Whether the SQLite file may be created when it is missing.</param>
+    /// <param name="pooling">Whether SQLite connection pooling is enabled.</param>
+    /// <returns>The unopened connection to the requested SQLite file.</returns>
     private SqliteConnection CreateSqliteConnection(string file, bool create, bool pooling = true)
     {
         return new SqliteConnection(new SqliteConnectionStringBuilder
@@ -126,6 +139,8 @@ public sealed class PersonalDatabase : IDisposable
     /// <summary>
     /// Opens a connection and disposes it if opening fails.
     /// </summary>
+    /// <param name="file">The file for this operation.</param>
+    /// <returns>An open connection to the requested database.</returns>
     internal DbConnection Open(string file)
     {
         var connection = CreateConnection(file);
@@ -144,16 +159,22 @@ public sealed class PersonalDatabase : IDisposable
     /// <summary>
     /// Opens a pooled PostgreSQL connection when Supabase is configured.
     /// </summary>
-    internal NpgsqlConnection OpenPostgres() =>
-        (_postgres ?? throw new InvalidOperationException("Configure ConnectionStrings:Supabase first."))
+    /// <returns>An open PostgreSQL connection.</returns>
+    internal NpgsqlConnection OpenPostgres()
+    {
+        return (_postgres ?? throw new InvalidOperationException("Configure ConnectionStrings:Supabase first."))
         .OpenConnection();
+    }
 
     /// <summary>
     /// Ensures the private PostgreSQL schema is ready when Supabase is configured.
     /// </summary>
     public void InitializePostgres()
     {
-        if (UsesPostgres) _ = _postgresSchema.Value;
+        if (UsesPostgres)
+        {
+            _ = _postgresSchema.Value;
+        }
     }
 
     /// <summary>
@@ -173,6 +194,10 @@ public sealed class PersonalDatabase : IDisposable
         InitializeStateSchema(connection);
     }
 
+    /// <summary>
+    /// Creates the application state table and indexes when needed.
+    /// </summary>
+    /// <param name="connection">The connection used for the database operation.</param>
     private static void InitializeStateSchema(DbConnection connection)
     {
         Execute(connection, null, """
@@ -200,6 +225,10 @@ public sealed class PersonalDatabase : IDisposable
         InitializeLibrarySchema(connection);
     }
 
+    /// <summary>
+    /// Creates the local food and recipe schema when needed.
+    /// </summary>
+    /// <param name="connection">The connection used for the database operation.</param>
     private static void InitializeLibrarySchema(DbConnection connection)
     {
         using var transaction = connection.BeginTransaction();
@@ -234,12 +263,20 @@ public sealed class PersonalDatabase : IDisposable
         transaction.Commit();
     }
 
+    /// <summary>
+    /// Creates local state and library files when they are absent.
+    /// </summary>
     internal void CreateMissingSqliteDatabases()
     {
         CreateMissingSqliteDatabase(StateFile, InitializeStateSchema);
         CreateMissingSqliteDatabase(LibraryFile, InitializeLibrarySchema);
     }
 
+    /// <summary>
+    /// Initializes a staged SQLite file and publishes it as a new database.
+    /// </summary>
+    /// <param name="file">The file for this operation.</param>
+    /// <param name="initialize">The operation that initializes the SQLite schema.</param>
     private void CreateMissingSqliteDatabase(string file, Action<DbConnection> initialize)
     {
         var destination = Path.Combine(DirectoryPath, file);
@@ -270,6 +307,9 @@ public sealed class PersonalDatabase : IDisposable
     /// <summary>
     /// Creates the personal data schema in the supplied transaction and restricts access by Data API roles.
     /// </summary>
+    /// <param name="connection">The connection used for the database operation.</param>
+    /// <param name="transaction">The transaction that contains the database operation.</param>
+    /// <param name="mobileDataApiEnabled">Whether the cloud mobile data API is enabled.</param>
     internal static void InitializePostgres(NpgsqlConnection connection, NpgsqlTransaction transaction,
         bool mobileDataApiEnabled = false)
     {
@@ -332,6 +372,8 @@ public sealed class PersonalDatabase : IDisposable
     /// <summary>
     /// Creates the SQLite import tracking table on demand or serializes PostgreSQL food imports.
     /// </summary>
+    /// <param name="connection">The connection used for the database operation.</param>
+    /// <param name="transaction">The transaction that contains the database operation.</param>
     internal void EnsureMobileImports(DbConnection connection, DbTransaction transaction)
     {
         if (UsesPostgres)
@@ -348,6 +390,8 @@ public sealed class PersonalDatabase : IDisposable
     /// <summary>
     /// Serializes PostgreSQL writes to foods and import mappings during duplicate checks.
     /// </summary>
+    /// <param name="connection">The connection used for the database operation.</param>
+    /// <param name="transaction">The transaction that contains the database operation.</param>
     internal void LockFoodWrites(DbConnection connection, DbTransaction transaction)
     {
         if (UsesPostgres)
@@ -359,6 +403,8 @@ public sealed class PersonalDatabase : IDisposable
     /// <summary>
     /// Prevents concurrent PostgreSQL writes from changing import mappings or recipe ingredients during a food deletion.
     /// </summary>
+    /// <param name="connection">The connection used for the database operation.</param>
+    /// <param name="transaction">The transaction that contains the database operation.</param>
     internal void LockFoodDeletion(DbConnection connection, DbTransaction transaction)
     {
         if (UsesPostgres)
@@ -371,6 +417,9 @@ public sealed class PersonalDatabase : IDisposable
     /// <summary>
     /// Checks whether import tracking is available, including in older SQLite databases.
     /// </summary>
+    /// <param name="connection">The connection used for the database operation.</param>
+    /// <param name="transaction">The transaction that contains the database operation.</param>
+    /// <returns>True when the provider has the mobile import tracking table.</returns>
     internal bool HasMobileImports(DbConnection connection, DbTransaction transaction)
     {
         if (UsesPostgres)
@@ -387,6 +436,10 @@ public sealed class PersonalDatabase : IDisposable
     /// <summary>
     /// Starts a state transaction and serializes writes so updates can safely read and modify existing data.
     /// </summary>
+    /// <param name="connection">The connection used for the database operation.</param>
+    /// <param name="write">Whether the transaction can write state.</param>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>The transaction holding the required state access.</returns>
     internal static async Task<DbTransaction> BeginStateAsync(DbConnection connection, bool write,
         CancellationToken cancellationToken)
     {
@@ -418,24 +471,34 @@ public sealed class PersonalDatabase : IDisposable
     /// <summary>
     /// Identifies integrity constraint failures reported by either database provider.
     /// </summary>
-    internal static bool IsConstraintViolation(DbException exception) =>
-        exception is SqliteException { SqliteErrorCode: 19 } ||
+    /// <param name="exception">The exception to inspect.</param>
+    /// <returns>True when the exception reports a database constraint violation.</returns>
+    internal static bool IsConstraintViolation(DbException exception)
+    {
+        return exception is SqliteException { SqliteErrorCode: 19 } ||
         exception is PostgresException
         {
             SqlState: PostgresErrorCodes.ForeignKeyViolation or
             PostgresErrorCodes.CheckViolation or PostgresErrorCodes.NotNullViolation or
             PostgresErrorCodes.UniqueViolation
         };
+    }
 
     /// <summary>
     /// Returns the current UTC time in the millisecond format used for stored timestamps.
     /// </summary>
-    internal static string UtcNow() =>
-        DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture);
+    /// <returns>The current UTC timestamp in round-trip format.</returns>
+    internal static string UtcNow()
+    {
+        return DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture);
+    }
 
     /// <summary>
     /// Executes a SQL statement without reading a result, using the supplied transaction when present.
     /// </summary>
+    /// <param name="connection">The connection used for the database operation.</param>
+    /// <param name="transaction">The transaction that contains the database operation.</param>
+    /// <param name="sql">The SQL statement to execute.</param>
     internal static void Execute(DbConnection connection, DbTransaction? transaction, string sql)
     {
         using var command = connection.CreateCommand();
@@ -447,7 +510,10 @@ public sealed class PersonalDatabase : IDisposable
     /// <summary>
     /// Disposes the PostgreSQL connection pool when one was created.
     /// </summary>
-    public void Dispose() => _postgres?.Dispose();
+    public void Dispose()
+    {
+        _postgres?.Dispose();
+    }
 }
 
 /// <summary>
@@ -458,6 +524,10 @@ internal static class DatabaseParameters
     /// <summary>
     /// Adds a command parameter and converts null to a database null, using an explicit type when supplied.
     /// </summary>
+    /// <param name="command">The database command that receives the parameter.</param>
+    /// <param name="name">The SQL parameter name.</param>
+    /// <param name="value">The value to bind, or null for a database null.</param>
+    /// <param name="type">The database type to assign to the parameter.</param>
     public static void AddParameter(this DbCommand command, string name, object? value,
         DbType? type = null)
     {

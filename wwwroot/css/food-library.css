@@ -1,0 +1,178 @@
+.library-page {
+    max-width: 1050px;
+}
+
+.library-form {
+    display: grid;
+    gap: 14px;
+    margin: 16px 0 24px;
+}
+
+.library-form label, .library-page > label {
+    display: grid;
+    gap: 6px;
+}
+
+.library-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.library-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.library-results {
+    display: grid;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.library-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.library-item > div:first-child {
+    flex: 1 1 210px;
+    display: grid;
+    gap: 4px;
+}
+
+.library-item small {
+    color: var(--muted);
+}
+
+.library-item input[type="number"] {
+    width: 110px;
+}
+
+.library-result-button {
+    width: 100%;
+    text-align: left;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.library-result-button:hover {
+    background: rgba(127, 127, 127, 0.12);
+}
+
+/* Compact food library pages and recipe editor. */
+
+.library-page h1 {
+    margin-bottom: 20px;
+}
+
+.library-page h2 {
+    margin: 18px 0 8px;
+}
+
+.library-page .library-form {
+    gap: 12px;
+    margin: 10px 0 20px;
+}
+
+.library-page .library-results:empty {
+    display: none;
+    margin: 0;
+}
+
+.library-page .library-item {
+    padding: 9px 12px;
+}
+
+.library-recipe-rows {
+    margin: 0 0 6px;
+}
+
+.library-ingredient-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.library-ingredient-row > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.library-ingredient-row > input {
+    width: 110px;
+}
+
+.library-recipe-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.library-status-badge {
+    border-radius: 20px;
+    padding: 6px 10px;
+    background: #303b39;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.library-status-badge.ready {
+    background: #31543c;
+    color: #d8f3c7;
+}
+
+.library-search-results {
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.recipe-live-nutrition {
+    margin: 18px 0;
+    padding: 16px;
+    border: 1px solid var(--border, #34414a);
+    border-radius: 12px;
+}
+
+.recipe-live-nutrition h3 {
+    margin: 0 0 14px;
+}
+
+.recipe-live-nutrition-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+    gap: 10px;
+}
+
+.recipe-live-nutrition-grid > div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
+    border: 1px solid var(--border, #34414a);
+    border-radius: 9px;
+}
+
+.recipe-live-nutrition-grid span {
+    font-size: .82rem;
+    opacity: .8;
+}
+
+.recipe-live-nutrition-grid strong {
+    font-size: 1.1rem;
+}
+
+.recipe-live-nutrition > p {
+    margin: 12px 0 0;
+}

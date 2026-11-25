@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
+using MomentumGroves.Models;
 using MomentumGroves.Service;
 
 namespace MomentumGroves.Tests.Services;
@@ -10,6 +11,9 @@ public class MomentumDataServiceTests : DatabaseServiceTests
     private TestLogger<MomentumDataService> _logger = null!;
     private MomentumDataService _service = null!;
 
+    /// <summary>
+    /// Creates the state service and logger against the temporary database.
+    /// </summary>
     [SetUp]
     public void SetUp()
     {
@@ -17,6 +21,10 @@ public class MomentumDataServiceTests : DatabaseServiceTests
         _service = new(Environment, _logger);
     }
 
+    /// <summary>
+    /// Checks that a new database yields the default empty training document.
+    /// </summary>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [Test]
     public async Task ReadAll_NewDatabase_ReturnsOnlyEmptyTraining()
     {
@@ -25,6 +33,11 @@ public class MomentumDataServiceTests : DatabaseServiceTests
         Assert.That(values[MomentumDataService.TrainingKey].GetProperty("groups").GetArrayLength(), Is.Zero);
     }
 
+    /// <summary>
+    /// Checks that application state preserves the submitted JSON across a write and read.
+    /// </summary>
+    /// <param name="json">The JSON submitted for deserialization or storage.</param>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [TestCase("null")]
     [TestCase("[]")]
     [TestCase("{\"name\":\"private\",\"weight\":72.5}")]
@@ -39,6 +52,38 @@ public class MomentumDataServiceTests : DatabaseServiceTests
         Assert.That(_logger.Entries, Is.Empty);
     }
 
+    /// <summary>
+    /// Checks that a mobile weight edit persists, can be replayed, and rejects a conflicting edit.
+    /// </summary>
+    /// <returns>A task that completes after the stored training weight is verified.</returns>
+    [Test]
+    public async Task SyncTraining_StoresWeightAndRejectsConflictingEdit()
+    {
+        const string exerciseId = "exercise-1";
+        var programmes = Json("""
+            {"groups":[{"id":"group-1","programmes":[{"id":"programme-1","exercises":[{"id":"exercise-1","kg":10}]}]}]}
+            """);
+        await _service.SaveTrainingAsync(new TrainingSave(programmes, new()), default);
+
+        var edit = new TrainingWeightEdit(Guid.NewGuid(), exerciseId, 10, 12);
+        var conflictingEdit = new TrainingWeightEdit(Guid.NewGuid(), exerciseId, 10, 15);
+        var saved = await _service.SyncTrainingAsync([edit], default);
+        var replayed = await _service.SyncTrainingAsync([edit], default);
+        var conflict = await _service.SyncTrainingAsync([conflictingEdit], default);
+        var state = await _service.ReadAllAsync(default);
+        var weight = state[MomentumDataService.TrainingKey].GetProperty("groups")[0]
+            .GetProperty("programmes")[0].GetProperty("exercises")[0].GetProperty("kg").GetDecimal();
+
+        Assert.That(saved.Results, Is.EqualTo(new[] { new TrainingWeightResult(edit.ChangeId, "saved") }));
+        Assert.That(replayed.Results, Is.EqualTo(saved.Results));
+        Assert.That(conflict.Results, Is.EqualTo(new[] { new TrainingWeightResult(conflictingEdit.ChangeId, "conflict") }));
+        Assert.That(weight, Is.EqualTo(12m));
+    }
+
+    /// <summary>
+    /// Checks that saving an existing key replaces its stored value.
+    /// </summary>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [Test]
     public async Task Save_ExistingKey_ReplacesValue()
     {
@@ -49,6 +94,11 @@ public class MomentumDataServiceTests : DatabaseServiceTests
         Assert.That(result["sunhed.goal.v1"].GetInt32(), Is.EqualTo(2));
     }
 
+    /// <summary>
+    /// Checks that each supported application data key can be saved.
+    /// </summary>
+    /// <param name="key">The synchronization key or application data key exercised by the case.</param>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [TestCase("sunhed.food.v1")]
     [TestCase("sunhed.workouts.v1")]
     [TestCase("sunhed.done.v1")]
@@ -70,6 +120,10 @@ public class MomentumDataServiceTests : DatabaseServiceTests
         Assert.That((await _service.ReadAllAsync(default)).ContainsKey(key), Is.True);
     }
 
+    /// <summary>
+    /// Checks that an unsupported application data key produces a validation error.
+    /// </summary>
+    /// <param name="key">The synchronization key or application data key exercised by the case.</param>
     [TestCase("")]
     [TestCase("unknown")]
     [TestCase("SUNHED.PROFILE.V1")]
@@ -79,6 +133,12 @@ public class MomentumDataServiceTests : DatabaseServiceTests
         Assert.That(_logger.Entries.Single().Level, Is.EqualTo(LogLevel.Warning));
     }
 
+    /// <summary>
+    /// Checks that the JSON size limit includes the serialized string quotes.
+    /// </summary>
+    /// <param name="length">The number of characters used in the boundary case.</param>
+    /// <param name="accepted">Whether the service should accept the input.</param>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [TestCase(9_999_998, true)]
     [TestCase(9_999_999, false)]
     public async Task Save_JsonSizeBoundary_IncludesStringQuotes(int length, bool accepted)
@@ -90,9 +150,16 @@ public class MomentumDataServiceTests : DatabaseServiceTests
             Assert.That((await _service.ReadAllAsync(default))["sunhed.profile.v1"].GetString(),
                 Has.Length.EqualTo(length));
         }
-        else Assert.ThrowsAsync<ArgumentException>(() => _service.SaveAsync("sunhed.profile.v1", value, default));
+        else
+        {
+            Assert.ThrowsAsync<ArgumentException>(() => _service.SaveAsync("sunhed.profile.v1", value, default));
+        }
     }
 
+    /// <summary>
+    /// Checks that importing state preserves existing values and counts only inserted keys.
+    /// </summary>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [Test]
     public async Task ImportMissing_PreservesExistingValues_AndCountsOnlyNewKeys()
     {
@@ -106,10 +173,20 @@ public class MomentumDataServiceTests : DatabaseServiceTests
         Assert.That((await _service.ReadAllAsync(default))["sunhed.profile.v1"].GetInt32(), Is.EqualTo(1));
     }
 
+    /// <summary>
+    /// Checks that an empty state import inserts zero values.
+    /// </summary>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [Test]
-    public async Task ImportMissing_EmptyBatch_ReturnsZero() =>
+    public async Task ImportMissing_EmptyBatch_ReturnsZero()
+    {
         Assert.That(await _service.ImportMissingAsync(new(), default), Is.Zero);
+    }
 
+    /// <summary>
+    /// Checks that an invalid final import key prevents earlier values from being saved.
+    /// </summary>
+    /// <returns>A task that completes after the assertions finish.</returns>
     [Test]
     public async Task ImportMissing_InvalidLastKey_DoesNotWriteFirstKey()
     {
@@ -121,6 +198,10 @@ public class MomentumDataServiceTests : DatabaseServiceTests
             Is.EqualTo(new[] { MomentumDataService.TrainingKey }));
     }
 
+    /// <summary>
+    /// Checks that a database operation logs and rethrows a storage failure.
+    /// </summary>
+    /// <param name="operation">The operation exercised by the case.</param>
     [TestCase("read")]
     [TestCase("save")]
     [TestCase("import")]
@@ -132,6 +213,10 @@ public class MomentumDataServiceTests : DatabaseServiceTests
             operation == "read" ? "ReadAllAsync" : operation == "save" ? "SaveAsync" : "ImportMissingAsync");
     }
 
+    /// <summary>
+    /// Checks that caller cancellation propagates without an error log.
+    /// </summary>
+    /// <param name="operation">The operation exercised by the case.</param>
     [TestCase("read")]
     [TestCase("save")]
     [TestCase("import")]
@@ -143,6 +228,9 @@ public class MomentumDataServiceTests : DatabaseServiceTests
         Assert.That(_logger.Entries, Is.Empty);
     }
 
+    /// <summary>
+    /// Checks that reading corrupt stored JSON logs and rethrows the error.
+    /// </summary>
     [Test]
     public void ReadAll_CorruptStoredJson_IsLoggedAndRethrown()
     {
@@ -151,6 +239,9 @@ public class MomentumDataServiceTests : DatabaseServiceTests
         _logger.AssertError(exception!, "ReadAllAsync");
     }
 
+    /// <summary>
+    /// Checks that an invalid state database path is logged and rejected during initialization.
+    /// </summary>
     [Test]
     public void Constructor_InvalidStoragePath_LogsAndThrows()
     {
@@ -168,10 +259,19 @@ public class MomentumDataServiceTests : DatabaseServiceTests
         }
     }
 
-    private Task Execute(string operation, CancellationToken token) => operation switch
+    /// <summary>
+    /// Invokes the named state operation for failure or cancellation checks.
+    /// </summary>
+    /// <param name="operation">The operation exercised by the case.</param>
+    /// <param name="token">The token used to cancel the test operation.</param>
+    /// <returns>The task for the selected operation.</returns>
+    private Task Execute(string operation, CancellationToken token)
+    {
+        return operation switch
     {
         "read" => _service.ReadAllAsync(token),
         "save" => _service.SaveAsync("sunhed.profile.v1", Json("{}"), token),
         _ => _service.ImportMissingAsync(new() { ["sunhed.profile.v1"] = Json("{}") }, token)
     };
+    }
 }

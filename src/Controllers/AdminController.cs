@@ -12,7 +12,7 @@ public sealed class AdminController : Controller
     /// <summary>
     /// Initializes the administration controller.
     /// </summary>
-    /// <param name="updates"></param>
+    /// <param name="updates">The service that checks and installs Frida releases.</param>
     public AdminController(FridaUpdateService updates)
     {
         _updates = updates;
@@ -21,7 +21,7 @@ public sealed class AdminController : Controller
     /// <summary>
     /// Displays the administration page for local requests.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The administration page or a forbidden response.</returns>
     [HttpGet("")]
     public IActionResult Index()
     {
@@ -36,8 +36,8 @@ public sealed class AdminController : Controller
     /// <summary>
     /// Returns the installed food database version and food count for local requests.
     /// </summary>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>The installed Frida version and food count, or a forbidden response.</returns>
     [HttpGet("api/status")]
     public async Task<IActionResult> Status(CancellationToken cancellationToken)
     {
@@ -53,8 +53,8 @@ public sealed class AdminController : Controller
     /// <summary>
     /// Checks for food database updates and returns diagnostic results for local requests.
     /// </summary>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>The update check diagnostics or a forbidden response.</returns>
     [HttpGet("api/test")]
     public async Task<IActionResult> Test(CancellationToken cancellationToken)
     {
@@ -72,10 +72,10 @@ public sealed class AdminController : Controller
     }
 
     /// <summary>
-    /// Explaining the check api
+    /// Checks whether a newer Frida release is available for local installation.
     /// </summary>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>The Frida update status or a forbidden response.</returns>
     [HttpGet("api/check")]
     public async Task<IActionResult> Check(CancellationToken cancellationToken)
     {
@@ -90,17 +90,22 @@ public sealed class AdminController : Controller
     /// <summary>
     /// Installs a food database update for local requests.
     /// </summary>
-    /// <param name="request"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <param name="request">The request containing the selected Frida release.</param>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>The installation outcome or a forbidden response.</returns>
     [HttpPost("api/install")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Install([FromBody] FridaInstallRequest request,
+    public async Task<IActionResult> Install([FromBody] FridaInstallRequest? request,
         CancellationToken cancellationToken)
     {
         if (!IsLocalRequest())
         {
             return Forbid();
+        }
+
+        if (!ModelState.IsValid || request is null)
+        {
+            return BadRequest();
         }
 
         return Ok(await _updates.InstallAsync(request, cancellationToken));
@@ -109,7 +114,7 @@ public sealed class AdminController : Controller
     /// <summary>
     /// Determines whether the request originates from a loopback address.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>True when the request came from a loopback address.</returns>
     private bool IsLocalRequest()
     {
         var address = HttpContext.Connection.RemoteIpAddress;

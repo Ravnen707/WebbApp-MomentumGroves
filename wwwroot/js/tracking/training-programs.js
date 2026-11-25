@@ -19,6 +19,13 @@ function renderTraining() {
     const root = document.querySelector('#training-days');
     if (!root || root.dataset.initialized === 'true') return;
     root.dataset.initialized = 'true';
+    root.addEventListener('error', event => {
+        const image = event.target;
+        if (image instanceof HTMLImageElement && image.closest('.training-exercise-media')) {
+            image.classList.add('training-image-load-failed');
+            image.title = 'Image could not be loaded';
+        }
+    }, true);
     const tabs = document.querySelector('#training-program-tabs');
     const addBox = document.querySelector('#training-add-box');
     const saveButton = document.querySelector('#save-workouts');
@@ -330,7 +337,7 @@ function renderTraining() {
             const rows = box.exercises.map((x, i) => {
                 const cardio = x.type === 'cardio';
                 return `<article class="training-exercise-card" data-exercise-index="${i}">
-                    <div class="training-exercise-media">${x.image ? `<img src="${esc(x.image)}" alt="${esc(x.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.opacity=0.25;this.title='Image could not be loaded'"><span class="training-image-empty" hidden>Image could not be loaded – upload your own image</span>` : '<div class="training-image-empty">No image</div>'}
+                    <div class="training-exercise-media">${x.image ? `<img src="${esc(x.image)}" alt="${esc(x.name)}" loading="lazy" referrerpolicy="no-referrer"><span class="training-image-empty" hidden>Image could not be loaded – upload your own image</span>` : '<div class="training-image-empty">No image</div>'}
                         <button type="button" class="training-image-upload" data-image-picker>${x.image ? 'Change image' : '+ Add image'}</button>
                         ${x.image ? '<button type="button" class="training-image-remove" data-image-remove>Remove image</button>' : ''}</div>
                     <div class="training-exercise-content"><div class="training-exercise-heading"><input data-field="name" aria-label="Exercise name" value="${esc(x.name || '')}"><div class="training-exercise-tools"><button type="button" class="btn secondary" data-exercise-move="up" title="Move up" ${i === 0 ? 'disabled' : ''}>↑</button><button type="button" class="btn secondary" data-exercise-move="down" title="Move down" ${i === box.exercises.length - 1 ? 'disabled' : ''}>↓</button><button type="button" class="btn danger" data-remove-exercise aria-label="Delete exercise">×</button></div></div>

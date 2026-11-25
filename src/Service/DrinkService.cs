@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using MomentumGroves.Models;
 
@@ -15,6 +15,12 @@ public sealed class DrinkService
     private readonly IMemoryCache _cache;
     private readonly ILogger<DrinkService> _logger;
 
+    /// <summary>
+    /// Initializes drink search with an HTTP client factory, cache, and logger.
+    /// </summary>
+    /// <param name="clients">The factory for Open Food Facts HTTP clients.</param>
+    /// <param name="cache">The cache that holds successful drink searches.</param>
+    /// <param name="logger">The logger for diagnostics and operation failures.</param>
     public DrinkService(IHttpClientFactory clients, IMemoryCache cache, ILogger<DrinkService> logger)
     {
         _clients = clients;
@@ -22,6 +28,12 @@ public sealed class DrinkService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Searches and caches matching beverages from Open Food Facts.
+    /// </summary>
+    /// <param name="query">The name fragment to search for.</param>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>The matching drinks or a provider failure.</returns>
     public async Task<DrinkSearchResult> SearchAsync(string query, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -57,6 +69,12 @@ public sealed class DrinkService
         }
     }
 
+    /// <summary>
+    /// Fetches and parses beverage candidates from Open Food Facts.
+    /// </summary>
+    /// <param name="query">The name fragment to search for.</param>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>The eligible drinks parsed from the provider response.</returns>
     private async Task<List<DrinkResult>> SearchOpenFoodFactsAsync(string query, CancellationToken cancellationToken)
     {
         await SearchGate.WaitAsync(cancellationToken);
@@ -124,6 +142,11 @@ public sealed class DrinkService
         }
     }
 
+    /// <summary>
+    /// Locates the product array in the provider response.
+    /// </summary>
+    /// <param name="root">The root of the provider response document.</param>
+    /// <returns>The products array, or an undefined element if it is absent.</returns>
     private static JsonElement FindProducts(JsonElement root)
     {
         if (root.ValueKind == JsonValueKind.Array)
@@ -163,6 +186,11 @@ public sealed class DrinkService
         return default;
     }
 
+    /// <summary>
+    /// Unwraps a product from its enclosing response item.
+    /// </summary>
+    /// <param name="item">The array element that may wrap a product.</param>
+    /// <returns>The unwrapped product element.</returns>
     private static JsonElement GetProductObject(JsonElement item)
     {
         if (item.TryGetProperty("_source", out var source) && source.ValueKind == JsonValueKind.Object)
@@ -183,6 +211,11 @@ public sealed class DrinkService
         return item;
     }
 
+    /// <summary>
+    /// Maps an eligible provider product to a drink with available nutrition values.
+    /// </summary>
+    /// <param name="product">The JSON object containing the provider product.</param>
+    /// <returns>The parsed drink, or null for an unusable product.</returns>
     private static DrinkResult? ParseDrink(JsonElement product)
     {
         var name = GetString(product, "product_name");
@@ -256,6 +289,12 @@ public sealed class DrinkService
     }
 
 
+    /// <summary>
+    /// Reads a string property from the supplied JSON object.
+    /// </summary>
+    /// <param name="element">The JSON object containing the property.</param>
+    /// <param name="name">The property name to read.</param>
+    /// <returns>The property value, or null when no suitable value exists.</returns>
     private static string? GetString(JsonElement element, string name)
     {
         if (!element.TryGetProperty(name, out var value))
@@ -266,6 +305,11 @@ public sealed class DrinkService
         return value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     }
 
+    /// <summary>
+    /// Extracts the first usable brand label from the provider product.
+    /// </summary>
+    /// <param name="product">The JSON object containing the provider product.</param>
+    /// <returns>The usable brand name, or null if unknown.</returns>
     private static string? GetBrand(JsonElement product)
     {
         if (!product.TryGetProperty("brands", out var brands))
@@ -289,6 +333,11 @@ public sealed class DrinkService
         return null;
     }
 
+    /// <summary>
+    /// Checks the provider categories and serving data for beverage indicators.
+    /// </summary>
+    /// <param name="product">The JSON object containing the provider product.</param>
+    /// <returns>True when the product is identified as a beverage.</returns>
     private static bool IsBeverage(JsonElement product)
     {
         if (!product.TryGetProperty("categories_tags", out var categories) ||
@@ -301,6 +350,12 @@ public sealed class DrinkService
             x.ValueKind == JsonValueKind.String && x.GetString() == "en:beverages");
     }
 
+    /// <summary>
+    /// Reads a finite nonnegative nutrition number from a JSON property.
+    /// </summary>
+    /// <param name="element">The JSON object containing the property.</param>
+    /// <param name="name">The nutrition property name to read.</param>
+    /// <returns>The valid numeric value, or null when unknown.</returns>
     private static double? GetNumber(JsonElement element, string name)
     {
         if (!element.TryGetProperty(name, out var value) || value.ValueKind != JsonValueKind.Number)
@@ -312,6 +367,11 @@ public sealed class DrinkService
     }
 
 
+    /// <summary>
+    /// Checks whether the provider product is identified as Danish.
+    /// </summary>
+    /// <param name="product">The JSON object containing the provider product.</param>
+    /// <returns>True when the product is identified as Danish.</returns>
     private static bool IsDanish(JsonElement product)
     {
         return product.TryGetProperty("countries_tags", out var tags)

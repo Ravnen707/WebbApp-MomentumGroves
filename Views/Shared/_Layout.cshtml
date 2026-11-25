@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>@ViewData["Title"] – Momentum Groves</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/css/food-library.css" asp-append-version="true"/>
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
 <div class="app-shell">
@@ -45,16 +47,6 @@
 </div>
 <script type="module" src="~/js/app.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
-<script>
-    (() => {
-        const menu = document.getElementById('food-library-nav');
-        if (!menu) return;
-        const saved = sessionStorage.getItem('momentum-food-library-nav');
-        if (saved !== null) menu.open = saved === 'open';
-        menu.addEventListener('toggle', () => {
-            sessionStorage.setItem('momentum-food-library-nav', menu.open ? 'open' : 'closed');
-        });
-    })();
-</script>
+<script src="~/js/core/food-library-navigation.js" asp-append-version="true"></script>
 </body>
 </html>

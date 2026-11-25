@@ -1,28 +1,48 @@
 using System.Text.Json;
 using MomentumGroves.Service;
+using MomentumGroves.Repositories;
 
 namespace MomentumGroves.Data.TrainingImages;
 
+/// <summary>
+/// Initializes the copy workflow for moving local pictures into cloud storage.
+/// </summary>
+/// <param name="cloud">The configured exercise image store.</param>
 public sealed class TrainingImageMigration(ITrainingImageStore cloud)
 {
+    /// <summary>
+    /// Copies a supported local picture unless the cloud object already exists or this is a dry run.
+    /// </summary>
+    /// <param name="file">The file for this operation.</param>
+    /// <param name="apply">Whether to copy the file during this run.</param>
+    /// <param name="token">The token used to cancel the operation.</param>
+    /// <returns>The copy result for the supplied image.</returns>
     public async Task<string> CopyAsync(string file, bool apply, CancellationToken token)
     {
         var name = Path.GetFileName(file);
         var info = new FileInfo(file);
         if (!TrainingImageService.IsImageName(name) || info.Length is 0 or > TrainingImageService.MaxUploadBytes)
+        {
             return "invalid";
+        }
 
         var bytes = await File.ReadAllBytesAsync(file, token);
         var extension = TrainingImageService.GetExtension(bytes);
         if (extension is null || bytes.Length > TrainingImageService.MaxUploadBytes)
+        {
             return "invalid";
+        }
 
         var existing = await cloud.ReadAsync(name, token);
         if (existing is not null)
+        {
             return bytes.AsSpan().SequenceEqual(existing.Bytes) ? "already copied" : "conflict";
+        }
 
         if (!apply)
+        {
             return "would copy";
+        }
 
         try
         {
@@ -34,11 +54,19 @@ public sealed class TrainingImageMigration(ITrainingImageStore cloud)
             // A concurrent copy or a lost response can leave an object at this key.
             existing = await cloud.ReadAsync(name, token);
             if (existing is not null)
+            {
                 return bytes.AsSpan().SequenceEqual(existing.Bytes) ? "already copied" : "conflict";
+            }
             throw;
         }
     }
 
+    /// <summary>
+    /// Runs the training picture migration command and reports its outcome.
+    /// </summary>
+    /// <param name="services">The registered application services for the command.</param>
+    /// <param name="args">The command arguments selecting dry-run or apply mode.</param>
+    /// <returns>The command exit code.</returns>
     public static async Task<int> RunAsync(IServiceProvider services, string[] args)
     {
         if (args.Length != 1 || args[0] is not ("--dry-run" or "--apply"))
@@ -67,7 +95,9 @@ public sealed class TrainingImageMigration(ITrainingImageStore cloud)
             keys.UnionWith(paths.Select(Path.GetFileName).OfType<string>().Where(TrainingImageService.IsImageName));
             var missing = await MissingReferencesAsync(database, keys, token);
             foreach (var image in missing)
+            {
                 Console.WriteLine($"missing reference: {image}");
+            }
 
             var failed = missing.Count != 0;
             foreach (var path in paths.Where(path => TrainingImageService.IsImageName(Path.GetFileName(path))))
@@ -86,31 +116,37 @@ public sealed class TrainingImageMigration(ITrainingImageStore cloud)
         }
     }
 
+    /// <summary>
+    /// Finds picture references in application state that are absent from the available image names.
+    /// </summary>
+    /// <param name="database">The configured personal database.</param>
+    /// <param name="imageNames">The available picture names to compare against training references.</param>
+    /// <param name="token">The token used to cancel the operation.</param>
+    /// <returns>The image filenames referenced by training but absent from storage.</returns>
     private static async Task<HashSet<string>> MissingReferencesAsync(PersonalDatabase database,
         HashSet<string> imageNames, CancellationToken token)
     {
         var missing = new HashSet<string>(StringComparer.Ordinal);
-        await using var connection = database.CreateConnection("momentum.db");
-        await connection.OpenAsync(token);
-        await using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT jsonvalue FROM appstate
-            WHERE key IN ('sunhed.training-programs.v3', 'sunhed.training-programs.v2')
-            ORDER BY key DESC LIMIT 1
-            """;
-        if (await command.ExecuteScalarAsync(token) is string json)
+        var repository = new MomentumDataRepository(database);
+        if (await repository.ReadCurrentTrainingJsonAsync(token) is { } json)
         {
             using var document = JsonDocument.Parse(json);
             Collect(document.RootElement);
         }
         return missing;
 
+        /// <summary>
+        /// Collects picture references while traversing the training JSON document.
+        /// </summary>
+        /// <param name="node">The JSON node being inspected for picture references.</param>
         void Collect(JsonElement node)
         {
             if (node.ValueKind == JsonValueKind.Array)
             {
                 foreach (var item in node.EnumerateArray())
+                {
                     Collect(item);
+                }
             }
             else if (node.ValueKind == JsonValueKind.Object)
             {
@@ -120,9 +156,13 @@ public sealed class TrainingImageMigration(ITrainingImageStore cloud)
                     if (property.NameEquals("image") && property.Value.ValueKind == JsonValueKind.String &&
                         property.Value.GetString() is { } path && path.StartsWith(prefix, StringComparison.Ordinal) &&
                         !imageNames.Contains(Uri.UnescapeDataString(path[prefix.Length..])))
+                    {
                         missing.Add(path);
+                    }
                     else
+                    {
                         Collect(property.Value);
+                    }
                 }
             }
         }

@@ -6,6 +6,10 @@ namespace MomentumGroves.Helper;
 /// </summary>
 public static class DotEnvLoader
 {
+    /// <summary>
+    /// Loads environment variables from the supplied dotenv file.
+    /// </summary>
+    /// <param name="path">The path to the file to process.</param>
     public static void Load(string path)
     {
         if (!File.Exists(path))

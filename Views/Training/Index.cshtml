@@ -1,4 +1,7 @@
 @{ ViewData["Title"] = "Training"; }
+@section Styles {
+    <link rel="stylesheet" href="~/css/training.css" asp-append-version="true"/>
+}
 <div class="heading">
     <div><p class="eyebrow">TRAINING</p>
         <h1>Your training programmes</h1>
@@ -15,31 +18,8 @@
     <button type="button" id="training-add-box" class="btn secondary">+ Add programme</button>
 </div>
 <div id="training-days" class="training-stack"></div>
-<dialog id="training-group-dialog" class="drink-dialog" aria-labelledby="training-group-heading">
-    <form class="dialog-inner">
-        <h2 id="training-group-heading"></h2>
-        <label>Group name<input name="groupName" required maxlength="80"></label>
-        <div class="modal-actions">
-            <button type="button" class="btn secondary" data-cancel-group>Cancel</button>
-            <button type="submit" class="btn">Save group</button>
-        </div>
-    </form>
-</dialog>
-<dialog id="training-image-dialog" class="drink-dialog" aria-labelledby="training-image-heading">
-    <div class="dialog-inner">
-        <div class="section-head">
-            <h2 id="training-image-heading">Exercise picture</h2>
-            <button type="button" class="btn secondary" data-close-image aria-label="Close">×</button>
-        </div>
-        <div class="training-image-actions">
-            <button type="button" class="btn secondary" data-pick-image>Pick from program</button>
-            <button type="button" class="btn" data-upload-image>Upload picture</button>
-            <input type="file" accept="image/jpeg,image/png,image/webp" data-image-file hidden>
-        </div>
-        <p class="muted" data-image-status role="status"></p>
-        <div class="training-image-gallery" data-image-gallery></div>
-    </div>
-</dialog>
+<partial name="~/Views/Training/Modal/_TrainingGroupModal.cshtml" />
+<partial name="~/Views/Training/Modal/_TrainingImageModal.cshtml" />
 <div class="training-footer">
     <button id="save-workouts" class="btn">Save training programme</button>
     <span class="muted" id="save-message" role="status"></span></div>

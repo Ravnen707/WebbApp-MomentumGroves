@@ -1,8 +1,8 @@
 using MomentumGroves.Data.TrainingImages;
 using MomentumGroves.Data;
-using MomentumGroves.Repository;
 using MomentumGroves.Service;
 using Microsoft.AspNetCore.Mvc.Controllers;
+using MomentumGroves.Repositories;
 
 MomentumGroves.Helper.DotEnvLoader.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
 var migrate = args.FirstOrDefault() == "migrate-sqlite";

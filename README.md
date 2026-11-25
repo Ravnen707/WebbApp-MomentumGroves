@@ -258,7 +258,7 @@ To enable the optional mobile Data API, set `MobileDataApi__Enabled=true` on the
 
 #### Optional Storage for exercise images
 
-Create the private bucket and owner read policy described in the mobile repository's `docs/training-image-storage.md`. Set `TrainingImages__SupabaseUrl` and `TrainingImages__ServerKey` on the web host and restart it. The training editor on localhost uploads images to the private bucket in PostgreSQL mode. Keep the secret key on the web host.
+Create the private bucket and owner read policy described in the mobile repository's `docs/training-image-storage.md`. Set `TrainingImages__SupabaseUrl` and `TrainingImages__ServerKey` on the web host and restart it. The training editor on localhost uploads images to the private bucket in PostgreSQL mode. Keep the secret key on the web host. If Supabase Storage is unavailable, the picture picker reports that it could not load pictures and lets you retry.
 
 To inspect existing local pictures before copying them, run from the web repository:
 

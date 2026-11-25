@@ -1,91 +1,81 @@
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Data.Common;
-using MomentumGroves.Data;
+using MomentumGroves.Models;
+using MomentumGroves.Repositories;
 
 namespace MomentumGroves.Service;
 
 public sealed partial class MomentumDataService
 {
-    public const string TrainingKey = "sunhed.training-programs.v3";
-    private const string LegacyTrainingKey = "sunhed.training-programs.v2";
+    public const string TrainingKey = MomentumDataRepository.TrainingKey;
+    private const string LegacyTrainingKey = MomentumDataRepository.LegacyTrainingKey;
 
-    public sealed record WeightEdit(Guid ChangeId, string ExerciseId, decimal BaseKg, decimal Kg);
+    private const int MaximumTrainingEdits = 100;
+    private const int MaximumExerciseIdLength = 300;
 
-    public sealed record WeightResult(Guid ChangeId, string Status);
-
-    public sealed record TrainingSyncResult(JsonObject Programmes, List<WeightResult> Results)
+    /// <summary>
+    /// Checks the size and contents of a mobile training weight edit batch.
+    /// </summary>
+    /// <param name="edits">The edits submitted by the mobile client.</param>
+    /// <returns>True when all edit IDs, exercise IDs, and weights are valid.</returns>
+    public bool IsValidTrainingEditBatch(IReadOnlyList<TrainingWeightEdit>? edits)
     {
-        /// <summary>
-        /// Computes a version fingerprint from the serialized training programmes.
-        /// </summary>
-        /// <returns>The SHA-256 fingerprint as a hexadecimal string.</returns>
-        public string Version() =>
-            Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Programmes.ToJsonString())));
+        return edits is not null && edits.Count <= MaximumTrainingEdits &&
+            edits.All(edit => edit is not null && edit.ChangeId != Guid.Empty &&
+                !string.IsNullOrWhiteSpace(edit.ExerciseId) && edit.ExerciseId.Length <= MaximumExerciseIdLength &&
+                edit.Kg >= 0 && edit.BaseKg >= 0);
     }
-
-    public sealed class TrainingConflictException : Exception;
-
-    public sealed record TrainingSave(JsonElement Programmes, Dictionary<string, decimal> OriginalWeights);
 
     /// <summary>
     /// Applies mobile weight edits in one transaction when their original weights match the stored values.
     /// </summary>
+    /// <param name="edits">The exercise weight changes submitted by the mobile client.</param>
+    /// <param name="token">The token used to cancel the operation.</param>
     /// <returns>The resulting programmes and the outcome of each edit.</returns>
-    public async Task<TrainingSyncResult> SyncTrainingAsync(List<WeightEdit> edits, CancellationToken token)
+    public Task<TrainingSyncResult> SyncTrainingAsync(List<TrainingWeightEdit> edits, CancellationToken token)
     {
-        await using var connection = _database.CreateConnection("momentum.db");
-        await connection.OpenAsync(token);
-        await using var transaction = await PersonalDatabase.BeginStateAsync(connection, edits.Count > 0, token);
-        var programmes = await ReadTrainingAsync(connection, transaction, token);
-        var exercises = ExercisesById(programmes);
-        var results = new List<WeightResult>();
-        var changed = false;
-        foreach (var edit in edits)
+        return _repository.WithTrainingAsync<TrainingSyncResult>(edits.Count > 0, (current, legacy) =>
         {
-            if (!exercises.TryGetValue(edit.ExerciseId, out var exercise) ||
-                exercise["type"]?.ToString() == "cardio")
+            var programmes = NormalizeTraining(current, legacy);
+            var exercises = ExercisesById(programmes);
+            var results = new List<TrainingWeightResult>();
+            var changed = false;
+            foreach (var edit in edits)
             {
-                results.Add(new(edit.ChangeId, "missing"));
+                if (!exercises.TryGetValue(edit.ExerciseId, out var exercise) ||
+                    exercise["type"]?.ToString() == "cardio")
                 {
+                    results.Add(new(edit.ChangeId, "missing"));
                     continue;
                 }
-            }
 
-            var kg = Weight(exercise);
-            if (kg != edit.BaseKg && kg != edit.Kg)
-            {
-                results.Add(new(edit.ChangeId, "conflict"));
+                var kg = Weight(exercise);
+                if (kg != edit.BaseKg && kg != edit.Kg)
                 {
+                    results.Add(new(edit.ChangeId, "conflict"));
                     continue;
                 }
+
+                if (kg != edit.Kg)
+                {
+                    exercise["kg"] = edit.Kg;
+                    changed = true;
+                }
+
+                results.Add(new(edit.ChangeId, "saved"));
             }
 
-            if (kg != edit.Kg)
-            {
-                exercise["kg"] = edit.Kg;
-                changed = true;
-            }
-
-            results.Add(new(edit.ChangeId, "saved"));
-        }
-
-        if (changed)
-        {
-            await StoreTrainingAsync(connection, transaction, programmes, token);
-        }
-
-        await transaction.CommitAsync(token);
-        return new(programmes, results);
+            return (new TrainingSyncResult(programmes, results), changed ? programmes : null);
+        }, token);
     }
 
     /// <summary>
-    /// Reads the stored exercise weights for the browser to refresh.
+    /// Saves browser edits and detects conflicting changes to stored weights.
     /// </summary>
-    /// <returns>The weights in kilograms keyed by exercise ID.</returns>
-    public async Task SaveTrainingAsync(TrainingSave save, CancellationToken token)
+    /// <param name="save">The programme document and its original exercise weights.</param>
+    /// <param name="token">The token used to cancel the operation.</param>
+    /// <returns>A task that completes after the training document is saved.</returns>
+    public Task SaveTrainingAsync(TrainingSave save, CancellationToken token)
     {
         Validate(TrainingKey, save.Programmes);
         if (JsonNode.Parse(save.Programmes.GetRawText()) is not JsonObject incoming ||
@@ -96,99 +86,55 @@ public sealed partial class MomentumDataService
 
         incoming = NormalizeTraining(incoming, null);
 
-        await using var connection = _database.CreateConnection("momentum.db");
-        await connection.OpenAsync(token);
-        await using var transaction = await PersonalDatabase.BeginStateAsync(connection, true, token);
-
-        var current = ExercisesById(await ReadTrainingAsync(connection, transaction, token));
-        var submitted = ExercisesById(incoming);
-
-        if (_database.UsesPostgres && save.OriginalWeights.Any(original =>
-                !submitted.ContainsKey(original.Key) && current.TryGetValue(original.Key, out var exercise) &&
-                Weight(exercise) != original.Value))
-            throw new TrainingConflictException();
-
-        foreach (var (id, exercise) in submitted)
+        return _repository.WithTrainingAsync(true, (currentDocument, legacyDocument) =>
         {
-            if (!current.TryGetValue(id, out var savedExercise))
-                continue;
+            var current = ExercisesById(NormalizeTraining(currentDocument, legacyDocument));
+            var submitted = ExercisesById(incoming);
 
-            var stored = Weight(savedExercise);
-            var requested = Weight(exercise);
-            if (!save.OriginalWeights.TryGetValue(id, out var original))
+            if (_repository.UsesCloudStorage && save.OriginalWeights.Any(original =>
+                    !submitted.ContainsKey(original.Key) && current.TryGetValue(original.Key, out var exercise) &&
+                    Weight(exercise) != original.Value))
             {
-                if (_database.UsesPostgres && requested != stored)
-                    throw new TrainingConflictException();
-                continue;
-            }
-
-            if (requested == original)
-                exercise["kg"] = stored;
-            else if (_database.UsesPostgres && stored != original && stored != requested)
                 throw new TrainingConflictException();
-        }
-
-        await StoreTrainingAsync(connection, transaction, incoming, token);
-        await transaction.CommitAsync(token);
-    }
-
-    /// <summary>
-    /// Loads the current and legacy training documents within the supplied transaction.
-    /// </summary>
-    /// <returns>The normalized training document.</returns>
-    private static async Task<JsonObject> ReadTrainingAsync(DbConnection connection,
-        DbTransaction transaction, CancellationToken token)
-    {
-        using var command = connection.CreateCommand();
-
-        command.Transaction = transaction;
-        command.CommandText = "SELECT Key, JsonValue FROM AppState WHERE Key IN (@current, @legacy)";
-        command.AddParameter("@current", TrainingKey);
-        command.AddParameter("@legacy", LegacyTrainingKey);
-
-        JsonNode? current = null;
-        JsonNode? legacy = null;
-
-        await using var reader = await command.ExecuteReaderAsync(token);
-        while (await reader.ReadAsync(token))
-        {
-            var value = JsonNode.Parse(reader.GetString(1));
-            if (reader.GetString(0) == TrainingKey)
-            {
-                current = value;
             }
-            else
+
+            foreach (var (id, exercise) in submitted)
             {
-                legacy = value;
+                if (!current.TryGetValue(id, out var savedExercise))
+                {
+                    continue;
+                }
+
+                var stored = Weight(savedExercise);
+                var requested = Weight(exercise);
+                if (!save.OriginalWeights.TryGetValue(id, out var original))
+                {
+                    if (_repository.UsesCloudStorage && requested != stored)
+                    {
+                        throw new TrainingConflictException();
+                    }
+                    continue;
+                }
+
+                if (requested == original)
+                {
+                    exercise["kg"] = stored;
+                }
+                else if (_repository.UsesCloudStorage && stored != original && stored != requested)
+                {
+                    throw new TrainingConflictException();
+                }
             }
-        }
 
-        return NormalizeTraining(current, legacy);
-    }
-
-    /// <summary>
-    /// Inserts or replaces the current training document within the supplied transaction.
-    /// </summary>
-    /// <returns>A task that completes when the database finishes the write.</returns>
-    private static async Task StoreTrainingAsync(DbConnection connection, DbTransaction transaction,
-        JsonObject programmes, CancellationToken token)
-    {
-        using var command = connection.CreateCommand();
-        command.Transaction = transaction;
-        command.CommandText = """
-                              INSERT INTO AppState (Key, JsonValue, UpdatedUtc) VALUES (@key, @json, @updated)
-                              ON CONFLICT(Key) DO UPDATE SET JsonValue = excluded.JsonValue,
-                                  UpdatedUtc = excluded.UpdatedUtc
-                              """;
-        command.AddParameter("@key", TrainingKey);
-        command.AddParameter("@json", programmes.ToJsonString());
-        command.AddParameter("@updated", PersonalDatabase.UtcNow());
-        await command.ExecuteNonQueryAsync(token);
+            return (true, incoming);
+        }, token);
     }
 
     /// <summary>
     /// Converts legacy programme groups to the current format and fills in missing exercise IDs.
     /// </summary>
+    /// <param name="current">The current training document, if present.</param>
+    /// <param name="legacy">The legacy training document, if present.</param>
     /// <returns>A training document containing programme groups and stable exercise IDs.</returns>
     private static JsonObject NormalizeTraining(JsonNode? current, JsonNode? legacy)
     {
@@ -250,6 +196,7 @@ public sealed partial class MomentumDataService
     /// <summary>
     /// Indexes training exercises that have an ID.
     /// </summary>
+    /// <param name="programmes">The normalized training programme document.</param>
     /// <returns>The first exercise found for each ID, keyed by that ID.</returns>
     private static Dictionary<string, JsonObject> ExercisesById(JsonObject programmes)
     {
@@ -284,10 +231,13 @@ public sealed partial class MomentumDataService
     /// <summary>
     /// Reads an exercise weight using culture-independent numeric parsing.
     /// </summary>
+    /// <param name="exercise">The exercise that contains the weight value.</param>
     /// <returns>The weight in kilograms, or zero if the value is absent or invalid.</returns>
-    private static decimal Weight(JsonObject exercise) =>
-        decimal.TryParse(exercise["kg"]?.ToString(), System.Globalization.NumberStyles.Float,
+    private static decimal Weight(JsonObject exercise)
+    {
+        return decimal.TryParse(exercise["kg"]?.ToString(), System.Globalization.NumberStyles.Float,
             System.Globalization.CultureInfo.InvariantCulture, out var kg)
             ? kg
             : 0;
+    }
 }

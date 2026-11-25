@@ -1,4 +1,5 @@
 using MomentumGroves.Data;
+using MomentumGroves.Repositories;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -7,7 +8,7 @@ namespace MomentumGroves.Service;
 public sealed partial class MomentumDataService
 {
     private readonly ILogger<MomentumDataService> _logger;
-    private readonly PersonalDatabase _database;
+    private readonly MomentumDataRepository _repository;
 
     private static readonly HashSet<string> AllowedKeys = new(StringComparer.Ordinal)
     {
@@ -20,18 +21,28 @@ public sealed partial class MomentumDataService
         "momentum.drinks.recent.v1"
     };
 
+    /// <summary>
+    /// Initializes application state operations and prepares the configured state schema.
+    /// </summary>
+    /// <param name="environment">The environment that supplies the application content root.</param>
+    /// <param name="logger">The logger for diagnostics and operation failures.</param>
     public MomentumDataService(IWebHostEnvironment environment, ILogger<MomentumDataService> logger)
         : this(PersonalDatabase.Local(environment), logger)
     {
     }
 
+    /// <summary>
+    /// Initializes application state operations and prepares the configured state schema.
+    /// </summary>
+    /// <param name="database">The configured personal database.</param>
+    /// <param name="logger">The logger for diagnostics and operation failures.</param>
     public MomentumDataService(PersonalDatabase database, ILogger<MomentumDataService> logger)
     {
-        _database = database;
+        _repository = new MomentumDataRepository(database);
         _logger = logger;
         try
         {
-            _database.InitializeState();
+            database.InitializeState();
         }
         catch (Exception exception)
         {
@@ -40,21 +51,16 @@ public sealed partial class MomentumDataService
         }
     }
 
+    /// <summary>
+    /// Loads stored application state and normalizes the training document.
+    /// </summary>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>The JSON values keyed by their application state keys.</returns>
     public async Task<Dictionary<string, JsonElement>> ReadAllAsync(CancellationToken cancellationToken)
     {
         try
         {
-            var result = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
-            await using var connection = _database.CreateConnection("momentum.db");
-            await connection.OpenAsync(cancellationToken);
-            await using var command = connection.CreateCommand();
-            command.CommandText = "SELECT Key, JsonValue FROM AppState";
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-            while (await reader.ReadAsync(cancellationToken))
-            {
-                result[reader.GetString(0)] = JsonSerializer.Deserialize<JsonElement>(reader.GetString(1));
-            }
-
+            var result = await _repository.ReadAllAsync(cancellationToken);
             result[TrainingKey] = JsonSerializer.SerializeToElement(NormalizeTraining(
                 result.TryGetValue(TrainingKey, out var current) ? JsonNode.Parse(current.GetRawText()) : null,
                 result.TryGetValue(LegacyTrainingKey, out var legacy) ? JsonNode.Parse(legacy.GetRawText()) : null));
@@ -69,25 +75,23 @@ public sealed partial class MomentumDataService
         }
     }
 
+    /// <summary>
+    /// Validates and saves one application state document.
+    /// </summary>
+    /// <param name="key">The application data key to validate or update.</param>
+    /// <param name="value">The supplied value to process.</param>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>A task that completes after the value is stored.</returns>
     public async Task SaveAsync(string key, JsonElement value, CancellationToken cancellationToken)
     {
         Validate(key, value);
-        if (_database.UsesPostgres && (key is TrainingKey or LegacyTrainingKey))
+        if (_repository.UsesCloudStorage && (key is TrainingKey or LegacyTrainingKey))
+        {
             throw new ArgumentException("Use the training endpoint to save programmes.");
+        }
         try
         {
-            await using var connection = _database.CreateConnection("momentum.db");
-            await connection.OpenAsync(cancellationToken);
-            await using var command = connection.CreateCommand();
-            command.CommandText = """
-                                  INSERT INTO AppState (Key, JsonValue, UpdatedUtc)
-                                  VALUES (@key, @json, @updated)
-                                  ON CONFLICT(Key) DO UPDATE SET JsonValue = excluded.JsonValue, UpdatedUtc = excluded.UpdatedUtc
-                                  """;
-            command.AddParameter("@key", key);
-            command.AddParameter("@json", value.GetRawText());
-            command.AddParameter("@updated", PersonalDatabase.UtcNow());
-            await command.ExecuteNonQueryAsync(cancellationToken);
+            await _repository.SaveAsync(key, value, cancellationToken);
         }
         catch (Exception exception) when (!(exception is OperationCanceledException &&
                                             cancellationToken.IsCancellationRequested))
@@ -97,6 +101,12 @@ public sealed partial class MomentumDataService
         }
     }
 
+    /// <summary>
+    /// Validates the entire batch before inserting missing values.
+    /// </summary>
+    /// <param name="values">The submitted values keyed by application data key.</param>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>The number of previously missing values inserted.</returns>
     public async Task<int> ImportMissingAsync(Dictionary<string, JsonElement> values,
         CancellationToken cancellationToken)
     {
@@ -107,24 +117,7 @@ public sealed partial class MomentumDataService
 
         try
         {
-            await using var connection = _database.CreateConnection("momentum.db");
-            await connection.OpenAsync(cancellationToken);
-            await using var transaction = await PersonalDatabase.BeginStateAsync(connection, true, cancellationToken);
-            var count = 0;
-            foreach (var (key, value) in values)
-            {
-                await using var command = connection.CreateCommand();
-                command.Transaction = transaction;
-                command.CommandText =
-                    "INSERT INTO AppState (Key, JsonValue, UpdatedUtc) VALUES (@key, @json, @updated) ON CONFLICT(Key) DO NOTHING";
-                command.AddParameter("@key", key);
-                command.AddParameter("@json", value.GetRawText());
-                command.AddParameter("@updated", PersonalDatabase.UtcNow());
-                count += await command.ExecuteNonQueryAsync(cancellationToken);
-            }
-
-            await transaction.CommitAsync(cancellationToken);
-            return count;
+            return await _repository.ImportMissingAsync(values, cancellationToken);
         }
         catch (Exception exception) when (!(exception is OperationCanceledException &&
                                             cancellationToken.IsCancellationRequested))
@@ -134,6 +127,11 @@ public sealed partial class MomentumDataService
         }
     }
 
+    /// <summary>
+    /// Rejects unsupported application data keys and oversized JSON values.
+    /// </summary>
+    /// <param name="key">The application data key to validate or update.</param>
+    /// <param name="value">The supplied value to process.</param>
     private void Validate(string key, JsonElement value)
     {
         if (!AllowedKeys.Contains(key))

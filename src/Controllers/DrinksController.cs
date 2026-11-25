@@ -12,7 +12,7 @@ public sealed class DrinksController : ControllerBase
     /// <summary>
     /// Initializes the drinks controller.
     /// </summary>
-    /// <param name="drinkService"></param>
+    /// <param name="drinkService">The service that searches available beverages.</param>
     public DrinksController(DrinkService drinkService)
     {
         _drinkService = drinkService;
@@ -21,9 +21,9 @@ public sealed class DrinksController : ControllerBase
     /// <summary>
     /// Searches for drinks and handles validation and search errors.
     /// </summary>
-    /// <param name="q"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <param name="q">The optional name fragment provided by the caller.</param>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>The matching drinks or a response describing the provider failure.</returns>
     [HttpGet("search")]
     public async Task<IActionResult> Search([FromQuery] string? q, CancellationToken cancellationToken)
     {

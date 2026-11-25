@@ -12,7 +12,7 @@ public sealed class FoodsController : ControllerBase
     /// <summary>
     /// Initializes the foods controller.
     /// </summary>
-    /// <param name="foodService"></param>
+    /// <param name="foodService">The service that searches the local Frida dataset.</param>
     public FoodsController(FoodService foodService)
     {
         _foodService = foodService;
@@ -21,9 +21,9 @@ public sealed class FoodsController : ControllerBase
     /// <summary>
     /// Searches for foods and handles validation and search errors.
     /// </summary>
-    /// <param name="q"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <param name="q">The optional name fragment provided by the caller.</param>
+    /// <param name="cancellationToken">The token used to cancel the operation.</param>
+    /// <returns>The matching Frida foods or a response describing a storage failure.</returns>
     [HttpGet("search")]
     public async Task<IActionResult> Search([FromQuery] string? q, CancellationToken cancellationToken)
     {
