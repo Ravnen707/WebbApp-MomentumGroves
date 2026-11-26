@@ -1,7 +1,8 @@
 # MomentumGroves
 
-MomentumGroves is a personal project for tracking meals, workouts, and weight over time. Open the English README for the story behind it, its features, and the programming languages, frameworks, and tools I use. You’ll also find what I’m learning, how to get started, and what’s planned next.
+---
 
+MomentumGroves is a personal project for tracking meals, workouts, and weight over time. Open the English README for the story behind it, its features, and the programming languages, frameworks, and tools I use. You’ll also find what I’m learning, how to get started, and what’s planned next.
 <details>
 <summary><strong>English README</strong></summary>
 
@@ -450,8 +451,9 @@ You can also select the unit test project in your IDE's test runner.
 
 </details>
 
-MomentumGroves er mit personlige projekt til at registrere måltider, træning og vægt over tid. Åbn den danske README for at læse om historien bag projektet, appens funktioner og de programmeringssprog, frameworks og værktøjer, jeg bruger. Du kan også læse om, hvad jeg lærer undervejs, hvordan du kommer i gang, og hvad jeg har planer om at bygge videre på.
+---
 
+MomentumGroves er mit personlige projekt til at registrere måltider, træning og vægt over tid. Åbn den danske README for at læse om historien bag projektet, appens funktioner og de programmeringssprog, frameworks og værktøjer, jeg bruger. Du kan også læse om, hvad jeg lærer undervejs, hvordan du kommer i gang, og hvad jeg har planer om at bygge videre på.
 <details>
 <summary><strong>Dansk README</strong></summary>
 
@@ -859,5 +861,138 @@ Du kan også vælge unit test-projektet i din IDE's testværktøj.
 *Eventuelle noter til repositoryets ejer ligger separat fra denne offentlige opsætningsvejledning.*
 
 </details>
+
+</details>
+
+---
+
+<details>
+<summary><strong>Showcase</strong></summary>
+
+A look at the MomentumGroves web application and its main features.
+
+### Dashboard
+
+Daily overview, training programmes, seven-day nutrition balance and meals for the selected date.
+
+<p>
+<img width="1890" alt="Dashboard daily overview and training programmes" src="https://github.com/user-attachments/assets/d3aada51-f3fa-4d8c-bed6-48d3e77d1357" /><br>
+<img width="1885" alt="Dashboard seven day nutrition balance and overview" src="https://github.com/user-attachments/assets/d77de3d3-468d-4037-bd92-e9024d4cc79e" /><br>
+<img width="1885" alt="Dashboard meals for the selected date" src="https://github.com/user-attachments/assets/86114ee8-ed51-4d53-95d6-e00320ba3c07" />
+</p>
+
+### Dashboard controls and details
+
+Date selection, nutrition ranges, nutrient filters and recent meals.
+
+<p>
+<img width="339" alt="Dashboard date picker" src="https://github.com/user-attachments/assets/94271d7b-8ab2-4dc0-9ae5-6c69d80c8908" /><br>
+<img width="1002" alt="Dashboard daily nutrition ranges" src="https://github.com/user-attachments/assets/7d0ef784-8dfb-4c1d-b3a3-5bd99982f81a" /><br>
+<img width="249" alt="Dashboard nutrition balance nutrient selection" src="https://github.com/user-attachments/assets/69725147-bc11-4bf9-9fe9-db3ad98bf273" /><br>
+<img width="285" alt="Dashboard seven day overview nutrient selection" src="https://github.com/user-attachments/assets/d4828aea-dc3f-4b2c-a7cd-0b97fbf2a902" /><br>
+<img width="1003" alt="Dashboard recent meals dialog" src="https://github.com/user-attachments/assets/d86c57ec-a9f4-48db-ba49-0886d8944380" />
+</p>
+
+### Food Diary
+
+Daily nutrition, drinks, meals and previous entries.
+
+<p>
+<img width="1887" alt="Food diary daily nutrition drinks and meals" src="https://github.com/user-attachments/assets/8d271d85-a376-42f9-b1b2-485d93bed110" /><br>
+<img width="1890" alt="Food diary entries and previous meals" src="https://github.com/user-attachments/assets/2b75261c-ab24-485a-98c8-2a0b4cc23ad9" />
+</p>
+
+### Sick Day and Cheat Day
+
+Alternative day modes and their visual indicators.
+
+<p>
+<img width="1552" alt="Food diary sick day mode" src="https://github.com/user-attachments/assets/2df471b1-8c35-4e88-9ad1-8c528a614fff" /><br>
+<img width="1555" alt="Food diary cheat day mode" src="https://github.com/user-attachments/assets/9a9209de-0a40-40cd-bd38-41a7e06c4401" />
+</p>
+
+### Adding drinks
+
+Drink search and manual nutrition entry.
+
+<p>
+<img width="718" alt="Food diary add drink" src="https://github.com/user-attachments/assets/21ca6063-4ff6-4be2-82b6-18a8aedbf7f5" /><br>
+<img width="685" alt="Food diary manual drink entry" src="https://github.com/user-attachments/assets/0d0ff0d7-e9f2-41ee-a9cf-ad0d4673e2fe" />
+</p>
+
+### Creating a meal
+
+Create a meal, search Frida or saved recipes, adjust quantities and review before saving.
+
+<p>
+<img width="759" alt="Food diary create meal" src="https://github.com/user-attachments/assets/9658eba5-3791-4146-9304-ddadad2c409b" /><br>
+<img width="762" alt="Food diary search dtu frida" src="https://github.com/user-attachments/assets/0bd9ce10-40c1-48db-a493-b7673045bc9a" /><br>
+<img width="746" alt="Food diary search saved recipes" src="https://github.com/user-attachments/assets/34816edd-0561-48f8-9da4-3d5668ca6820" /><br>
+<img width="737" alt="Food diary adjust selected food or recipe amount" src="https://github.com/user-attachments/assets/b2d3785f-d138-4ab9-b11c-decf3a93e6fa" /><br>
+<img width="738" alt="Food diary review meal before saving" src="https://github.com/user-attachments/assets/f8d3b3ed-6347-41ec-85d0-d8c56d7d6478" />
+</p>
+
+### Editing and copying meals
+
+Edit an existing entry or copy a previous meal.
+
+<p>
+<img width="720" alt="Food diary edit entry" src="https://github.com/user-attachments/assets/d7cdf9ff-012b-44b2-9b29-97d1cdbffaf4" /><br>
+<img width="712" alt="Food diary copy a previous meal" src="https://github.com/user-attachments/assets/01e29df1-022e-4f4b-8a9e-b6de742aa09e" />
+</p>
+
+### Training
+
+Training programmes, exercise picture selection and training progress.
+
+<p>
+<img width="1886" alt="Training training programmes" src="https://github.com/user-attachments/assets/c6f44b03-231f-4346-b9dd-5ccf87a23678" /><br>
+<img width="719" alt="Training exercise picture dialog" src="https://github.com/user-attachments/assets/d8fea129-3e52-46de-b4c3-c79e396d1307" /><br>
+<img width="1889" alt="Training training progress" src="https://github.com/user-attachments/assets/d9f6b00c-4702-4eef-868f-eac973d3daba" />
+</p>
+
+### Health & Nutrition Calculator
+
+Calculate daily nutrition targets.
+
+<p>
+<img width="1660" alt="Health nutrition calculator calculate daily targets" src="https://github.com/user-attachments/assets/0dc5b2ad-1328-482a-a9c4-26a5837f0a6d" />
+</p>
+
+### Weight Progress
+
+Weight logging, goals, trend chart and weigh-in history.
+
+<p>
+<img width="1865" alt="Weight progress weight logging and goals" src="https://github.com/user-attachments/assets/68aceaeb-9203-401a-98ef-8e6c0a312dbb" /><br>
+<img width="1877" alt="Weight progress weight chart and estimated trend" src="https://github.com/user-attachments/assets/e3b4dc1b-5cd6-4eaa-9a2a-57fa5537a1b7" /><br>
+<img width="1865" alt="Weight progress weight history" src="https://github.com/user-attachments/assets/d46fcfa0-6cee-4699-b45d-34932009342e" />
+</p>
+
+### Food Library — My Foods
+
+Manage custom foods and their nutritional values.
+
+<p>
+<img width="1297" alt="Food library my foods save foods that cannot be scanned with the mobile app" src="https://github.com/user-attachments/assets/7296a0b3-5e57-45db-b5e2-108a39aaa717" />
+</p>
+
+### Food Library — My Recipes
+
+Create reusable recipes for the Food Diary.
+
+<p>
+<img width="1656" alt="Food library my recipes create reusable recipes for the food diary" src="https://github.com/user-attachments/assets/5dd727b4-3875-43ef-84d8-91bbd5f5f77e" />
+</p>
+
+### Administration
+
+Technical status, database management, Frida connection testing and update checks.
+
+<p>
+<img width="1235" alt="Administration technical status and database management" src="https://github.com/user-attachments/assets/8d9d3193-71fc-49f4-b9f0-f8dbb759fb85" /><br>
+<img width="1227" alt="Administration dtu frida connection test" src="https://github.com/user-attachments/assets/465cb458-30c3-48f9-8822-02e3a2efcb4a" /><br>
+<img width="924" alt="Administration dtu frida update check" src="https://github.com/user-attachments/assets/02d36324-f977-4bdb-a172-c24f863b5690" />
+</p>
 
 </details>
