@@ -20,11 +20,13 @@ NUnit uses temporary SQLite fixtures. Playwright starts its own loopback web hos
 
 Start an isolated MomentumGroves instance with disposable SQLite data and no Supabase connection. The k6 and TypeScript projects default to `http://127.0.0.1:5070`. Set the `MOMENTUMGROVES_BASE_URL` environment variable if your isolated instance uses another URL.
 
-With the [k6 CLI installed](https://grafana.com/docs/k6/latest/set-up/install-k6/), run this from the repository root. The script makes one request and checks that MomentumGroves serves its logo as a PNG.
+Complete local database setup in the isolated instance and confirm the homepage shows “Your daily overview.” With the [k6 CLI installed](https://grafana.com/docs/k6/latest/set-up/install-k6/), run this from the repository root. One virtual user runs one iteration and checks the dashboard HTML, the PNG logo, and the response times.
 
 ```powershell
 k6 run tests/MomentumGroves.K6Tests/Smoke/smoke.js
 ```
+
+The `k6` and `k6/http` imports are built into the k6 runtime. To launch the test from Rider, add a **Native Executable** configuration under **Run → Edit Configurations**. Select `k6.exe` as the executable, use `run tests/MomentumGroves.K6Tests/Smoke/smoke.js` as the program arguments, and set the working directory to the repository root. Select that configuration in the Run toolbar when you want to run the smoke test.
 
 Keep smoke scenarios in `Smoke` and shared code in `Helper` as it becomes useful.
 
