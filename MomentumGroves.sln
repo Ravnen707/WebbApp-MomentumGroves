@@ -11,6 +11,36 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MomentumGroves.UnitTests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MomentumGroves.PlaywrightTests", "tests\MomentumGroves.PlaywrightTests\MomentumGroves.PlaywrightTests.csproj", "{F30C1144-89DD-4FF1-ABD7-4F023C609D62}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MomentumGroves.K6Tests", "MomentumGroves.K6Tests", "{4BAD9B11-D26F-40AA-88DE-516E5854A0B8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MomentumGroves.PlaywrightTypescriptTests", "MomentumGroves.PlaywrightTypescriptTests", "{8489860C-6D07-4448-91FE-8FBEF4F2D3D5}"
+	ProjectSection(SolutionItems) = preProject
+		tests\MomentumGroves.PlaywrightTypescriptTests\package.json = tests\MomentumGroves.PlaywrightTypescriptTests\package.json
+		tests\MomentumGroves.PlaywrightTypescriptTests\package-lock.json = tests\MomentumGroves.PlaywrightTypescriptTests\package-lock.json
+		tests\MomentumGroves.PlaywrightTypescriptTests\playwright.config.ts = tests\MomentumGroves.PlaywrightTypescriptTests\playwright.config.ts
+		tests\MomentumGroves.PlaywrightTypescriptTests\tsconfig.json = tests\MomentumGroves.PlaywrightTypescriptTests\tsconfig.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Smoke", "Smoke", "{4A8DB862-0748-4437-BEFF-8153A550D254}"
+	ProjectSection(SolutionItems) = preProject
+		tests\MomentumGroves.K6Tests\Smoke\smoke.js = tests\MomentumGroves.K6Tests\Smoke\smoke.js
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Helper", "Helper", "{AF16EE31-112B-4A2D-A030-8A29B4B64549}"
+	ProjectSection(SolutionItems) = preProject
+		tests\MomentumGroves.K6Tests\Helper\README.md = tests\MomentumGroves.K6Tests\Helper\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Specs", "Specs", "{8174C2AC-647B-45FC-901F-7DDC2EF6CA7A}"
+	ProjectSection(SolutionItems) = preProject
+		tests\MomentumGroves.PlaywrightTypescriptTests\Specs\README.md = tests\MomentumGroves.PlaywrightTypescriptTests\Specs\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Helper", "Helper", "{D004C61E-929F-4111-A962-4A56AE18E004}"
+	ProjectSection(SolutionItems) = preProject
+		tests\MomentumGroves.PlaywrightTypescriptTests\Helper\playwrightMethodsHelper.ts = tests\MomentumGroves.PlaywrightTypescriptTests\Helper\playwrightMethodsHelper.ts
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -64,5 +94,11 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{61AB0FFC-6AE0-4C9D-8F80-7463E0B7DA38} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{F30C1144-89DD-4FF1-ABD7-4F023C609D62} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{4BAD9B11-D26F-40AA-88DE-516E5854A0B8} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{8489860C-6D07-4448-91FE-8FBEF4F2D3D5} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{4A8DB862-0748-4437-BEFF-8153A550D254} = {4BAD9B11-D26F-40AA-88DE-516E5854A0B8}
+		{AF16EE31-112B-4A2D-A030-8A29B4B64549} = {4BAD9B11-D26F-40AA-88DE-516E5854A0B8}
+		{8174C2AC-647B-45FC-901F-7DDC2EF6CA7A} = {8489860C-6D07-4448-91FE-8FBEF4F2D3D5}
+		{D004C61E-929F-4111-A962-4A56AE18E004} = {8489860C-6D07-4448-91FE-8FBEF4F2D3D5}
 	EndGlobalSection
 EndGlobal
