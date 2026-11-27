@@ -177,7 +177,14 @@ nav a:hover, nav a.active {
 
 .dashboard-nutrition .stat {
     font-size: clamp(27px, 3vw, 34px);
-    white-space: normal;
+    overflow: clip;
+}
+
+.dashboard-nutrition .stat-value {
+    display: inline-block;
+    width: max-content;
+    transform: scale(var(--stat-scale, 1));
+    transform-origin: left bottom;
 }
 
 .dashboard-nutrition .stat small {

@@ -1,6 +1,6 @@
 import {initializeData, pendingSave, showDataError} from './core/storage.js';
 import {setupDatePicker} from './core/selected-date.js';
-import {drawChart, renderCalorieBalance, renderHome} from './home/dashboard.js?v=selected-date';
+import {drawChart, renderCalorieBalance, renderHome} from './home/dashboard.js?v=fit-nutrition-values';
 import {renderFood} from './food/food-diary.js?v=meal-edit';
 import {renderTraining} from './tracking/training-programs.js?v=selected-date';
 import {renderCalculator} from './tracking/nutrition-targets.js?v=20261118-empty-calculator';
