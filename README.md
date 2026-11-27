@@ -174,7 +174,7 @@ The installed SDK must support `net10.0`. This web repository does **not** requi
 3. Set `MobileSync__Key` if you use mobile food synchronization.
 4. Do not put real keys into `.env.example`, README files, source code, or Git commits.
 
-`Program.cs` calls `DotEnvLoader.Load(...)` for the root `.env` file, so **this application does load `.env`** when started from the repository root. If you run it with a different working directory, check that the file is being found.
+`Program.cs` calls `DotEnvLoader.Load(...)` for the root `.env` file, so **this application does load `.env`** when started from the repository root. If you run it with a different working directory, check that the file is being found. Values in `.env` take precedence over matching process environment variables, including values supplied by Rider.
 
 ### Step 3 — First-run database setup
 
@@ -627,7 +627,7 @@ Det installerede SDK skal understøtte `net10.0`. Webprojektet kræver ingen MAU
 3. Angiv `MobileSync__Key`, hvis du vil synkronisere madvarer fra mobilen.
 4. Hold virkelige nøgler ude af `.env.example`, README-filer, kildekode og Git-commits.
 
-`Program.cs` kalder `DotEnvLoader.Load(...)` og indlæser `.env`, når appen startes fra projektets rodmappe. Hvis du starter appen fra en anden arbejdsmappe, så kontrollér, at filen bliver fundet.
+`Program.cs` kalder `DotEnvLoader.Load(...)` og indlæser `.env`, når appen startes fra projektets rodmappe. Hvis du starter appen fra en anden arbejdsmappe, så kontrollér, at filen bliver fundet. Værdier i `.env` har forrang over tilsvarende miljøvariabler for processen, herunder værdier angivet i Rider.
 
 ### Trin 3 — Opsætning af databaser ved første start
 

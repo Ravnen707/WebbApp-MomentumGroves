@@ -2,7 +2,7 @@ namespace MomentumGroves.Helper;
 
 /// <summary>
 /// Loads local environment settings before ASP.NET Core configuration is created.
-/// Existing process environment variables take precedence over the .env file.
+/// Values in the .env file take precedence over existing process environment variables.
 /// </summary>
 public static class DotEnvLoader
 {
@@ -43,10 +43,7 @@ public static class DotEnvLoader
                 value = value[1..^1];
             }
 
-            if (Environment.GetEnvironmentVariable(name) == null)
-            {
-                Environment.SetEnvironmentVariable(name, value);
-            }
+            Environment.SetEnvironmentVariable(name, value);
         }
     }
 }

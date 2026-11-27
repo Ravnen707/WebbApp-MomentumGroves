@@ -197,6 +197,24 @@ function renderHomeWorkouts(date) {
     }));
 }
 
+const nutritionValues = document.querySelectorAll('.dashboard-nutrition .stat-value');
+if (nutritionValues.length) {
+    // Observe both the available width and the natural text width, which can change independently.
+    const fitNutritionValues = new ResizeObserver(entries => {
+        for (const {target} of entries) {
+            const value = target.matches('.stat-value') ? target : target.firstElementChild;
+            const naturalWidth = value.offsetWidth;
+            const availableWidth = value.parentElement.clientWidth;
+            const scale = naturalWidth > availableWidth ? availableWidth / naturalWidth : 1;
+            value.style.setProperty('--stat-scale', scale);
+        }
+    });
+    for (const value of nutritionValues) {
+        fitNutritionValues.observe(value);
+        fitNutritionValues.observe(value.parentElement);
+    }
+}
+
 function renderHome() {
     if (!document.querySelector('#kcal-stat')) return;
     const date = selectedDate();
@@ -207,7 +225,7 @@ function renderHome() {
         const unit = key === 'kcal' ? 'kcal' : 'g', delta = g[key] - t[key];
         const incomplete = key === 'fiber' && needsFibre;
         const intake = incomplete && !fiberKnown(date) ? '–' : fmt(t[key]);
-        setHTML(`#${key}-stat`,
+        setHTML(`#${key}-stat .stat-value`,
             hasTargets ? `${intake} <small>/ ${fmt(g[key])} ${unit}</small>` : '0<small>/0</small>');
         setProgress(`#${key}-bar`, t[key], g[key], date, key);
         updateZoneDisplay(key, t[key], g[key], date, 'home');
